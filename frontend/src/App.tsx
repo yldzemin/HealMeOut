@@ -6,6 +6,10 @@ import { StatusBar } from "@/components/StatusBar";
 import { LeftRail } from "@/components/LeftRail";
 import { ScreenPlaceholder } from "@/screens/ScreenPlaceholder";
 import { PersonalScreen } from "@/screens/PersonalScreen";
+import { CrewDeckScreen } from "@/screens/CrewDeckScreen";
+import { EmergencyOverlay } from "@/components/EmergencyOverlay";
+import { CheckInScreen } from "@/screens/CheckInScreen";
+import { INITIAL_ROUTINE, type Routine } from "@/data/personal";
 
 const SCREENS: Record<ScreenId, { title: string; description: string }> = {
   personal: {
@@ -34,17 +38,23 @@ export default function App() {
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [role, setRole] = useState<ViewerRole>({ kind: "astronaut", crewId: "C3" });
   const [screen, setScreen] = useState<ScreenId>("personal");
+  // L4 emergency takes over the full screen from any screen (FRONTEND.md, Crew Deck decision 3).
+  const [routine, setRoutine] = useState<Routine>(INITIAL_ROUTINE);
+  const [emergency, setEmergency] = useState<{ patientId: string; startedAt: number } | null>(null);
 
   useEffect(() => {
     getCrew().then(setCrew).catch((err) => console.error(err));
   }, []);
 
+  const liveCrew = emergency
+    ? crew.map((c) => (c.id === emergency.patientId ? { ...c, level: "L4" as const } : c))
+    : crew;
   // L1 is self-care; an "open alert" needs CMO or ground action (L2+).
-  const openAlerts = crew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
+  const openAlerts = liveCrew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <StatusBar crew={crew} role={role} onRoleChange={setRole} openAlerts={openAlerts} />
+      <StatusBar crew={liveCrew} role={role} onRoleChange={setRole} openAlerts={openAlerts} />
       <div className="flex min-h-0 flex-1">
         <LeftRail current={screen} onSelect={setScreen} />
         <main className="min-w-0 flex-1 overflow-auto p-8">
@@ -58,7 +68,14 @@ export default function App() {
               transition={{ duration: 0.18 }}
             >
               {screen === "personal" ? (
-                <PersonalScreen crew={crew} role={role} />
+                <PersonalScreen crew={liveCrew} role={role} routine={routine} />
+              ) : screen === "crew" ? (
+                <CrewDeckScreen
+                  crew={liveCrew}
+                  onStartEmergency={(patientId) => setEmergency({ patientId, startedAt: Date.now() })}
+                />
+              ) : screen === "checkin" ? (
+                <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} />
               ) : (
                 <ScreenPlaceholder {...SCREENS[screen]} />
               )}
@@ -66,6 +83,14 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+      {emergency && (
+        <EmergencyOverlay
+          crew={liveCrew}
+          patientId={emergency.patientId}
+          startedAt={emergency.startedAt}
+          onEnd={() => setEmergency(null)}
+        />
+      )}
       <footer className="border-t border-border bg-sidebar px-5 py-1.5 text-xs text-muted-foreground">
         Simulation, not medical advice · NASA data via OSDR · Values marked “simulated” are modelled
       </footer>

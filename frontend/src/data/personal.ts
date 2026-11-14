@@ -256,18 +256,35 @@ export interface TodayTask {
   done: boolean;
 }
 
+/** What the user did in this session (check-in, reaction test). */
+export interface Routine {
+  checkinDone: boolean;
+  reactionBestMs: number;
+}
+
+export const INITIAL_ROUTINE: Routine = { checkinDone: false, reactionBestMs: 241 };
+
+/** Simulated baseline for the reaction test (median, ms). */
+export const REACTION_BASELINE_MS = 265;
+
+/** Nights under 6 h in the last 7 (simulated sleep trend), for check-in notes. */
+export function recentShortNights(crewId: string): number {
+  const head = getRegions(crewId).find((r) => r.id === "head");
+  return head?.trend?.points.filter((p) => p.value < 6).length ?? 0;
+}
+
 /** Simulated daily routine. Fluid target 2.5 L/day: CLAUDE_HAFIZASI.md §4.1. */
-export function getToday() {
+export function getToday(routine: Routine = INITIAL_ROUTINE) {
   const tasks: TodayTask[] = [
-    { id: "checkin", label: "Daily check-in", done: true },
+    { id: "checkin", label: "Daily check-in", done: routine.checkinDone },
     { id: "morning", label: "Morning vitals", done: true },
     { id: "exercise", label: "Exercise log", done: false },
     { id: "fluids", label: "Fluids 2.5 L (1.4 L so far)", done: false },
   ];
   return {
     tasks,
-    streakDays: 6,
+    streakDays: routine.checkinDone ? 7 : 6,
     nextMeasurement: "Evening vitals at 19:30 GMT",
-    reactionBestMs: 241,
+    reactionBestMs: routine.reactionBestMs,
   };
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CrewMember, StatusLevel, ViewerRole } from "@/types";
-import { getRegions, getToday, LEVEL_RANK, type Region, type RegionId } from "@/data/personal";
+import { getRegions, getToday, LEVEL_RANK, type Region, type RegionId, type Routine } from "@/data/personal";
 import { Body3D, MODEL_CREDIT } from "@/components/Body3D";
 import { RegionChips } from "@/components/RegionChips";
 import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
@@ -46,11 +46,11 @@ function DaySummary({ regions, onSelect }: { regions: Region[]; onSelect: (id: R
   );
 }
 
-export function PersonalScreen({ crew, role }: { crew: CrewMember[]; role: ViewerRole }) {
+export function PersonalScreen({ crew, role, routine }: { crew: CrewMember[]; role: ViewerRole; routine: Routine }) {
   const crewId = role.kind === "astronaut" ? role.crewId : "C3";
   const member = crew.find((c) => c.id === crewId);
   const regions = useMemo(() => getRegions(crewId), [crewId]);
-  const today = useMemo(() => getToday(), []);
+  const today = useMemo(() => getToday(routine), [routine]);
   const top = worst(regions);
 
   // An alert opens its region; otherwise start on the day summary.
