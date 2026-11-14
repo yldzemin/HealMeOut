@@ -184,6 +184,7 @@ Enforce here, not only in the UI:
 | Vitals detail | ✔ | ✔ | — | ✔ |
 | Medication | ✔ | ✔ | only if opted in | allergies + current meds |
 | Psych check-in | ✔ | — (shared to BHP by the astronaut) | **never** | **never** |
+| Support companion conversation (§10) | ✔ | **never** | **never** | **never** |
 | Crew climate | own answers | aggregate | aggregate, min. response threshold | — |
 
 Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psychological communications); AMIS 2024 (NTRS 20240004505); IOM *Safe Passage*.
@@ -228,3 +229,31 @@ Flowing data in CSV, in and out. Wearable values are **simulated** in the style 
 - **Privacy:** every row passes the vitals policy (§6). CMO and the emergency view see everyone, SELF only itself, and the Crew Deck gets 403.
 - **Memory:** the reading store keeps the last 20,000 readings plus the latest value of every crew × metric, so slow metrics such as glucose never drop out.
 - **Sample:** `data/stream/sample_telemetry.csv` has 20 minutes × 7 crew. C5's simulated SpO2 drop to 88% fires the SpO2 rule during a replay.
+
+---
+
+## 10. Support companion (local LLM, #47)
+
+A private peer-support chat for one astronaut. It is not a therapist, gives no diagnosis and names no medication. It runs on a **local** model through Ollama (`phi3.5` by default), so it works without internet and the conversation never leaves the station.
+
+Every message goes through these steps in order:
+
+| Step | Class | What it does |
+|---|---|---|
+| 1. Safety gate | `SafetyGate` | Crisis wording (EN/TR, accent-insensitive) gets a fixed reply: "contact your flight surgeon or behavioral health provider now, do not stay alone". Questions about medication, doses or diagnosis are redirected to the CMO. **The model is not called** in either case. |
+| 2. Responder | `SupportResponder` → `OllamaResponder` | Calls `http://127.0.0.1:11434/api/chat` with the conditioning prompt, a worked example and the last 4 messages. |
+| 3. Output filter | `OutputFilter` | Rejects replies that name a drug or a dose, give a diagnosis, or claim to be human. Removes bracketed asides and cuts an unfinished last sentence. |
+| Fallback | `GuidedResponder` | Rule-based reply, used when the model is off, unreachable or failing, or its reply was filtered. |
+
+- **Conditioning prompt** (`SupportPrompt`):
+  - Always English, 2–4 sentences, under 70 words.
+  - Reflect what the crew member said, then offer one or two options, then at most one question.
+  - Use only the support options sourced in `PSYCHOLOGY_AND_LONG_DURATION.md` §2–§3: PPC with the behavioral health provider every two weeks; family conference weekly and special conference monthly; Cupola, Earth photography and journaling; exercise; sleep window and light; workload with the CMO and mission control; one-to-one talks.
+  - The model may never schedule, remind or contact anyone.
+- **Privacy:** conversations are psychological data. Only `viewer=SELF&crewId=<own id>` may read or write them; CMO, Crew Deck and emergency get 403. They are kept in memory, never logged, and the astronaut can clear them.
+  - The check-in is not sent to the model: in testing, phi3.5 repeated it back in the third person.
+- **Routes:**
+  - `GET /api/support/status` (public: engine and availability).
+  - `GET /api/support/conversation`, `POST /api/support/message` with body `{"text"}`, and `POST /api/support/clear` (all SELF only).
+- **Options:** `--llm-url http://127.0.0.1:11434`, `--llm-model phi3.5`, `--llm off` (guided only).
+- **Open decision (needs-human):** a crisis message currently gets the fixed reply and nothing else. Whether it should also alert the CMO or the flight surgeon, overriding the privacy rule for safety, is a team decision.

@@ -122,6 +122,19 @@
       <h2>Alerts</h2>
       <div id="alerts"></div>
     </section>
+    <section>
+      <h2>Support companion <span class="tag private">private</span></h2>
+      <div id="supportStatus" class="small muted"></div>
+      <div id="supportLog" class="small" aria-live="polite"></div>
+      <form id="supportForm" class="row" hidden>
+        <input id="supportText" maxlength="1000" required aria-label="Message to the support companion"
+               placeholder="How are you feeling?" style="flex:1; min-width:200px">
+        <button type="submit" id="supportSend">Send</button>
+        <button type="button" id="supportClear">Clear</button>
+      </form>
+      <div class="small muted">Runs on a local model; nothing leaves the station. Not a therapist and not medical advice.
+        In a crisis, contact your flight surgeon or behavioral health provider now.</div>
+    </section>
   </div>
 </main>
 <script>
@@ -329,9 +342,25 @@ async function init() {
   const onViewerChange = async () => {
     $("selfCrew").hidden = $("viewer").value !== "SELF";
     await refresh();
+    renderSupport();
     const s = await updateStreamStatus();
     if (s.running) followStream(); else renderStreamRows([]);
   };
+  $("supportForm").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const text = $("supportText").value.trim();
+    if (!text) return;
+    $("supportSend").disabled = true;
+    $("supportSend").textContent = "Thinking…";
+    try {
+      await api("POST", "support/message", { text });
+      $("supportText").value = "";
+    } catch (e) { alert(e.message); }
+    $("supportSend").disabled = false;
+    $("supportSend").textContent = "Send";
+    renderSupport();
+  };
+  $("supportClear").onclick = async () => { await api("POST", "support/clear"); renderSupport(); };
   $("viewer").onchange = onViewerChange;
   $("selfCrew").onchange = onViewerChange;
   $("bCrew").onchange = renderBaselines;
@@ -341,8 +370,31 @@ async function init() {
     run(() => api("POST", "readings", { crewId: $("rCrew").value, metric, unit, value: Number($("rValue").value) }));
   };
   await refresh();
+  renderSupport();
   const s = await updateStreamStatus();
   if (s.running) followStream();
+}
+
+// ---- Support companion: private, only in the Self view ----
+async function renderSupport() {
+  const st = await api("GET", "support/status");
+  $("supportStatus").textContent = `Engine: ${st.primary}${st.primaryAvailable ? " (ready)" : st.primary === "off" ? "" : " (not reachable)"} · fallback: ${st.fallback}`;
+  const self = $("viewer").value === "SELF";
+  $("supportForm").hidden = !self;
+  if (!self) {
+    $("supportLog").innerHTML = `<div class="muted">Private: only the astronaut can open their companion. Switch the viewer to <b>Self</b>.</div>`;
+    return;
+  }
+  try {
+    const conversation = await api("GET", "support/conversation");
+    $("supportLog").innerHTML = conversation.length ? conversation.map((m) => `
+      <div class="alert ${m.author === "crew" ? "" : "L1"}" style="${m.author === "crew" ? "" : "border-left-color:var(--info)"}">
+        <b>${m.author === "crew" ? esc($("selfCrew").value) : "Companion"}</b>
+        ${m.author === "crew" ? "" : `<span class="tag">${esc(m.source)}</span>${(m.flags || []).map((f) => `<span class="tag">${esc(f)}</span>`).join("")}`}
+        <div>${esc(m.text)}</div></div>`).join("") : `<div class="muted">No messages yet.</div>`;
+  } catch (e) {
+    $("supportLog").innerHTML = `<div class="error">${esc(e.message)}</div>`;
+  }
 }
 init();
 </script>

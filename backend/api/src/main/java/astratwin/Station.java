@@ -5,6 +5,7 @@ import astratwin.cache.CacheLoader;
 import astratwin.domain.Alert;
 import astratwin.domain.AlertStatus;
 import astratwin.domain.BaselineStats;
+import astratwin.domain.CheckIn;
 import astratwin.domain.ConditionProbability;
 import astratwin.domain.CrewMember;
 import astratwin.domain.DataKind;
@@ -186,6 +187,12 @@ public final class Station {
                 environment.latest(e -> e.co2_mmHg() != null).orElse(null),
                 environment.latest(e -> e.doseEqRate_uSv_h() != null).orElse(null),
                 scenarios.state().orElse(null), DISCLAIMER);
+    }
+
+    /** The member's own latest check-in; private context for the support companion. */
+    public synchronized Optional<CheckIn> latestCheckIn(String crewId) {
+        List<CheckIn> list = checkIns.forCrew(crewId);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(list.size() - 1));
     }
 
     /** Latest reading of every crew member's vital metrics; seeds the telemetry simulator. */

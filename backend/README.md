@@ -24,6 +24,7 @@ Open **http://127.0.0.1:8080/demo/**:
 - **Viewer** (top right): switch between CMO, Crew Deck, Emergency and Self to see the privacy filter. The Crew Deck never sees vitals or psychological check-ins.
 - **Add a reading:** e.g. glucose 52 for C3 → L3 alert; then approve or reject it as the CMO.
 - **Live telemetry (CSV stream):** *Start simulated* streams wearable values (heart rate, SpO2, temperature) for the whole crew every second; *Replay sample CSV* plays `data/stream/sample_telemetry.csv`, where C5's SpO2 drops and the rule fires. The panel reads the live CSV line by line; each run is also logged to `data/stream/out/`.
+- **Support companion (Self view only):** switch the viewer to *Self*, pick a crew member and write how you feel. Replies come from a local model through Ollama (`phi3.5`); crisis wording and medication questions get a fixed reply without the model; if Ollama is not running, a rule-based fallback answers. Setup: install Ollama, then `ollama pull phi3.5` (about 2.2 GB, once).
 - **Personal baseline & twin:** real pre-flight baselines with the commercial-mission tag (SpaceX Inspiration4, NASA OSDR), and the T+6/T+12 dose forecast.
 
 Every value is labelled `real` or `simulated`. *Simulation — not medical advice.*
@@ -61,5 +62,7 @@ All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SE
 | GET | `/api/stream/telemetry.csv` | live CSV stream (chunked; `&limit=N`); vitals policy per row, Crew Deck gets 403 |
 | GET | `/api/stream/recent.csv?n=100` · `/api/stream/status` | recent rows as CSV · stream status |
 | POST | `/api/stream/start?source=sim\|replay&file=<name>.csv&intervalMs=1000` · `/api/stream/stop` | start or stop the stream |
+| GET | `/api/support/status` | companion engine and availability (public) |
+| GET · POST | `/api/support/conversation` · `/api/support/message` (body `{"text"}`) · `/api/support/clear` | **SELF only** (`viewer=SELF&crewId=Cx`); others get 403 |
 
-Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch).
+Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch) [--llm-url http://127.0.0.1:11434] [--llm-model phi3.5] [--llm off].

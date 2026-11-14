@@ -12,6 +12,7 @@ import astratwin.stream.SimulatedTelemetrySource;
 import astratwin.stream.TelemetryRow;
 import astratwin.stream.TelemetrySource;
 import astratwin.stream.TelemetryStreamer;
+import astratwin.support.SupportService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -37,6 +38,8 @@ import java.util.function.Predicate;
  * /api/scenario/stop, /api/readings, /api/alerts/{id}/approve|reject.
  * Telemetry: GET /api/stream/status, /api/stream/telemetry.csv (live, chunked), /api/stream/recent.csv;
  * POST /api/stream/start?source=sim|replay&file=sample_telemetry.csv&intervalMs=1000, /api/stream/stop.
+ * Support companion (SELF only): GET /api/support/status, /api/support/conversation;
+ * POST /api/support/message (body {"text"}), /api/support/clear.
  * Viewer: ?viewer=CMO|CREW_DECK|EMERGENCY|SELF&crewId=C1; the default is CREW_DECK (most restricted).
  * The demo console is served at /demo/.
  */
@@ -44,13 +47,15 @@ public final class ApiServer {
     private final Station station;
     private final TelemetryStreamer streamer;
     private final Path streamDir;
+    private final SupportService support;
     private final HttpServer server;
 
-    public ApiServer(Station station, TelemetryStreamer streamer, Path streamDir, String host, int port)
-            throws IOException {
+    public ApiServer(Station station, TelemetryStreamer streamer, Path streamDir, SupportService support,
+            String host, int port) throws IOException {
         this.station = station;
         this.streamer = streamer;
         this.streamDir = streamDir;
+        this.support = support;
         this.server = HttpServer.create(new InetSocketAddress(host, port), 0);
         // One virtual thread per request, so long-lived CSV streams never block other requests.
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
@@ -200,6 +205,29 @@ public final class ApiServer {
                 yield station.doseSeries();
             }
             case "GET imm" -> station.imm();
+            case "GET support" -> {
+                require(p.length == 2, "use GET /api/support/status or /api/support/conversation");
+                if (p[1].equals("status")) {
+                    yield support.status();
+                }
+                require(p[1].equals("conversation"), "use GET /api/support/status or /api/support/conversation");
+                yield support.conversation(selfCrewId(request));
+            }
+            case "POST support" -> {
+                require(p.length == 2, "use POST /api/support/message or /api/support/clear");
+                String crewId = selfCrewId(request);
+                if (p[1].equals("clear")) {
+                    support.clear(crewId);
+                    yield Map.of("cleared", true);
+                }
+                require(p[1].equals("message"), "use POST /api/support/message or /api/support/clear");
+                Map<String, Object> body = JsonParser.parseObject(new String(ex.getRequestBody().readAllBytes(),
+                        StandardCharsets.UTF_8));
+                if (!(body.get("text") instanceof String text)) {
+                    throw new IllegalArgumentException("text must be a string");
+                }
+                yield Map.of("reply", support.send(crewId, text), "conversation", support.conversation(crewId));
+            }
             case "GET stream" -> {
                 require(p.length == 2 && p[1].equals("status"), "use GET /api/stream/status, /telemetry.csv or /recent.csv");
                 yield streamer.status();
@@ -215,6 +243,22 @@ public final class ApiServer {
             }
             default -> throw new NoSuchElementException("no route " + method + " " + ex.getRequestURI().getPath());
         };
+    }
+
+    /**
+     * Support conversations are psychological data (PSYCH policy): only the astronaut, as
+     * viewer SELF with their own crewId, may use them. CMO, Crew Deck and emergency get 403.
+     */
+    private String selfCrewId(ViewRequest request) {
+        if (request.viewer() != Viewer.SELF || request.viewerCrewId() == null) {
+            throw new SecurityException("only the astronaut (viewer=SELF&crewId=…) can use their support companion");
+        }
+        String crewId = request.viewerCrewId();
+        station.member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
+        if (!station.allows(DataKind.PSYCH, request, crewId)) {
+            throw new SecurityException("not allowed");
+        }
+        return crewId;
     }
 
     /** {@code source=sim} (default) or {@code source=replay&file=<name in data/stream/>}. */

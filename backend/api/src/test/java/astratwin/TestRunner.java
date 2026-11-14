@@ -20,6 +20,7 @@ public final class TestRunner {
         PrivacyTest.register(tests, cache);
         ScenarioTest.register(tests, cache);
         StreamTest.register(tests, cache);
+        SupportTest.register(tests, cache);
 
         List<String> failed = new ArrayList<>();
         for (Map.Entry<String, Test> t : tests.entrySet()) {
