@@ -1,6 +1,8 @@
 # ASTRA-TWIN — Doğrulanmış Araştırma Raporu
 
 > **Update 2026-11-14:** The verified NASA data source inventory is in [`NASA_DATA_SOURCES.md`](NASA_DATA_SOURCES.md). Values listed in its §9 supersede this report: CO2 congestion threshold, light-time, NOAA exclusion, DONKI endpoint, Chang'e-4 in RadLab, compression garments, and the ISS formulary source.
+>
+> **Scope change 2026-11-14 (#16):** The project now targets the **ISS** only. Mars and Moon content in this report (light delay, Mars SPE, Mars landing) is kept as background for the "future extension" part of the presentation and is not built into the app. ISS-specific facts are in `NASA_DATA_SOURCES.md` §11.
 
 **Tarih:** 2026-11-09
 **Yöntem:** Canlı web sayfaları, NASA teknik dokümanları, PubMed ve canlı API sorguları. Her iddianın yanında kaynağı var.

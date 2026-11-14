@@ -9,7 +9,9 @@ Kullanıcıyla Türkçe konuş. Teslim içeriği (UI metinleri, README, demo alt
 
 ## 1. Proje
 
-**ASTRA-TWIN:** Mars görevindeki astronotlar için sağlık izleme ve dijital ikiz aracı. Karar vermez, ekip doktoruna (CMO) karar desteği sunar. Ayrıntılar DESIGN.md §1–2'de.
+**ASTRA-TWIN:** Uluslararası Uzay İstasyonu (ISS) mürettebatı için sağlık izleme ve dijital ikiz aracı. Karar vermez, ekip doktoruna (CMO) karar desteği sunar. Ayrıntılar DESIGN.md §1–2'de.
+
+**Kapsam kararı (2026-11-14, #16):** Uygulama yalnızca **ISS** için geliştirilir. Ay ve Mars görevleri **gelecek genişleme** olarak yalnızca sunumda anlatılır ("the same system scales to Moon and Mars"). Mars'a özgü özellikler (dakikalarca ışık gecikmesi, güneş kavuşumu kesintisi, Mars SPE verisi) koda girmez; veri envanterinde "future extension" etiketiyle durur.
 
 ## 2. Hackathon kuralları (kritik)
 
@@ -40,7 +42,7 @@ nasa space apps araştırma sonucu olasılıklar.docx  ← ilk taslak spec (hata
 nasa örnek siteler araştırma.pdf              ← ilk kaynak listesi (OSDR ID'lerinde hatalar var, bkz. DESIGN.md §5)
 57110f2f9bef1ff11b47b3e897d3eee2.jpg          ← UI estetik referansı
 data/osdr/                                    ← NASA OSDR'den indirilmiş gerçek Inspiration4 verisi
-data/cache/                                   ← DONKI ve Horizons önbelleği (internetsiz demo için)
+data/cache/                                   ← API önbelleği (internetsiz demo için): EDA, RadLab ISS, DONKI
 kaynaklar/                                    ← NASA teknik dokümanları (OCHMO brief'leri, HRP RAP, M2M HHP)
 ```
 
@@ -59,7 +61,7 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 - [ ] 2026 Project Submission ve Judging & Awards rehberlerini tarayıcıyla oku, §2'deki farkları işle.
 - [ ] Kriz senaryolarını doğrulanmış değerler ve ISS formülerisiyle yeniden yaz (DESIGN.md §4).
 - [ ] Doğrulanamayanları kontrol et (rapor §7): Vol 1 Rev C, Hassler 2014 birincil kaynağı, EMU içme torbası boyutu.
-- [ ] DONKI ve Horizons önbelleğini `data/cache/` içine oluştur.
+- [ ] ISS verilerinin önbelleğini `data/cache/` içine oluştur (EDA CO2, RadLab ISS dozu, DONKI). Horizons yalnızca "future extension" sunumu için gerekirse.
 
 ## 6. GitHub kullanım kuralları
 

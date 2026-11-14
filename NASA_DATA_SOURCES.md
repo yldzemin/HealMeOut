@@ -11,6 +11,10 @@
 
 This file supersedes some values in `ARASTIRMA_RAPORU.md` (2026-11-09). The list is in §9.
 
+> **Scope (2026-11-14, #16):** The app targets the **International Space Station (ISS)** only. Moon and Mars are a **future extension** shown in the presentation, not built.
+> - Sources marked **[future extension]** below (Mars light-time, Mars SPE, Artemis I, Mars IMM tables) stay in this inventory for that slide.
+> - The ISS-first integration list is §6; ISS operational facts are §11.
+
 ---
 
 ## 1. Challenge resources and 2026 rules
@@ -176,7 +180,7 @@ Water needed for a 50% dose reduction: 2.3–5.3 g/cm².
 - Formats: `csv`, `tsv`, `json`, `html`.
 - **Always filter by time.** Unfiltered queries take minutes or return nothing.
 
-**Mars, September 2017 SPE (MSL-RAD-Surface).** VERIFIED: HTTP 200, 732 rows.
+**Mars, September 2017 SPE (MSL-RAD-Surface). [future extension]** VERIFIED: HTTP 200, 732 rows.
 
 `https://visualization.osdr.nasa.gov/radlab/api/?celestial_body=Mars&timestamp%3E=2017-09-08&timestamp%3C2017-09-16&absorbed_dose_rate&format=csv`
 
@@ -191,7 +195,7 @@ Water needed for a 50% dose reduction: 2.3–5.3 g/cm².
 | 09-14 | 6.56 | 7.55 |
 | 09-15 | 6.81 | 8.79 |
 
-**Artemis I, Orion (NASA HERA).** VERIFIED.
+**Artemis I, Orion (NASA HERA). [future extension]** VERIFIED.
 
 `…/api/?spacecraft=Orion&timestamp%3E=2022-11-10&timestamp%3C2022-12-20&absorbed_dose_rate&dose_equivalent_rate&trajectory&format=csv`
 
@@ -237,7 +241,7 @@ Chang'e-4 LND is **not** in RadLab (the query returned no rows). This corrects `
 
 ## 5. Live APIs
 
-### 5.1 JPL Horizons: Mars light-time
+### 5.1 JPL Horizons: Mars light-time [future extension]
 VERIFIED: HTTP 200, 1.9 s, no key.
 
 `https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='499'&OBJ_DATA='NO'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&CENTER='500@399'&START_TIME='2026-11-14'&STOP_TIME='2026-11-16'&STEP_SIZE='1%20h'&QUANTITIES='20,21'`
@@ -299,19 +303,24 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 
 ---
 
-## 6. Recommended integrations (NASA-only)
+## 6. Recommended integrations (NASA-only, ISS-first)
 
-1. **JPL Horizons:** live light-time delay. Cache an hourly table for 14–15 Nov and the daily 2026–2035 table.
-2. **OSDR RadLab:**
-   - Mars Sep 2017 SPE replay.
-   - Artemis I HERA, ISS-RAD, REM and TEPC for ISS and deep-space baselines.
-   - Use only the NASA instruments in §4.2.
-3. **OSDR OSD-575 and OSD-569:** real crew blood baselines and reference ranges.
-4. **OSDR EDA:** real ISS cabin CO2, temperature and humidity for the CO2 scenario.
-5. **DONKI via `ccmc.gsfc.nasa.gov`:** event catalog for Sep 2017 and May 2024. Label or drop the NOAA-derived fields (team decision).
-6. **CDAWeb `STA_L1_HET`:** NASA-mission proton flux for the May 2024 replay.
-7. **NTRS evidence reports (§3):** thresholds and countermeasures.
-8. **NLSP:** orthostatic, sleep, EVA and CO2 datasets once the download path is confirmed.
+**Build (ISS):**
+
+1. **OSDR EDA:** real ISS cabin CO2, temperature and humidity. Core of the environment panel and the CO2 scenario.
+2. **OSDR RadLab, ISS instruments (IV-TEPC, RAD-COL1A2; see §11.3):** ISS dose baseline and the Sep 2017 SPE replay on the ISS. Use only the NASA instruments in §4.2.
+3. **OSDR OSD-575 and OSD-569:** real crew blood baselines and reference ranges (Inspiration4, LEO).
+4. **NASA IMM, LEO 6-month probabilities (§10.1):** which conditions an ISS crew is most likely to face; drives scenario priority.
+5. **NTRS evidence reports (§3):** thresholds and countermeasures.
+6. **DONKI via `ccmc.gsfc.nasa.gov`:** event catalog for Sep 2017 and May 2024. Label or drop the NOAA-derived fields (team decision).
+7. **NLSP:** orthostatic, sleep, EVA and CO2 datasets once the download path is confirmed.
+
+**Future extension (presentation only):**
+
+8. **JPL Horizons:** Mars light-time (§5.1).
+9. **OSDR RadLab:** Mars Sep 2017 SPE (MSL-RAD) and Artemis I HERA.
+10. **CDAWeb `STA_L1_HET`:** deep-space proton flux.
+11. **IMM Mars risk assessment (§10.1).**
 
 ---
 
@@ -387,7 +396,7 @@ OCHMO published IMM results on nasa.gov in Aug–Sep 2026. This is NASA data tha
 | Hearing loss | 0.094 |
 | Fingernail delamination | 0.065 |
 
-**Mars mission outcomes**
+**Mars mission outcomes [future extension]**
 
 | Outcome | 426 days | 923 days |
 |---|---|---|
@@ -436,3 +445,51 @@ The challenge page (opened 2026-11-14) names these items, and ASTRA-TWIN does no
 - **UNVERIFIED:**
   - A 2015 ISS ammonia false alarm (search snippets only).
   - An EVA core-temperature +1 °F performance threshold (NASA OIG IG-17-018; the PDF is encrypted).
+
+---
+
+## 11. ISS operational facts (scope change, 2026-11-14)
+
+Checked on 2026-11-14 for the ISS-only scope (#16). Quotes were read from the linked pages or PDFs.
+
+### 11.1 Crew, volume and ground contact
+
+| Fact | Value | Source |
+|---|---|---|
+| Crew size | "An international crew of seven people" | [NASA ISS facts and figures](https://www.nasa.gov/international-space-station/space-station-facts-and-figures/) |
+| Habitable volume | 388 m³ (13,696 ft³), not including visiting vehicles; pressurized volume 1,005 m³ | same |
+| Ground link coverage | "Typically, coverage ranges from 90-95% on S-band and 80-90% on Ku-band" | [NASA ISS Technology Demonstration mini-book](https://www.nasa.gov/wp-content/uploads/2023/08/np-2022-06-009-jsc-iss-tech-demo-mini-book-proof-3.pdf) |
+| Payload data latency | Downlink "5 sec"; command uplink "10 sec … up to 15 sec total" | same |
+| Loss of signal | Payloads "should plan to internally store and retain any data essential" until signal returns | same |
+| Flight surgeon contact | Day-to-day issues worked "real-time" by flight surgeons at MCC; a weekly private medical conference with each crew member | [NTRS 20080010877](https://ntrs.nasa.gov/citations/20080010877), [NASA podcast](https://www.nasa.gov/podcasts/houston-we-have-a-podcast/mission-control-crew-health-consoles) |
+
+**Implication for the design:** on the ISS the ground is close (seconds, ~80–95% coverage). The onboard twin's value is not light delay but (a) the minutes before the ground is involved, (b) loss-of-signal gaps, (c) coordinating seven people across a 388 m³ station, and (d) helping a non-physician CMO.
+
+### 11.2 Medical early return: Crew-11 (January 2026)
+
+- Mike Fincke: "On Jan. 7, while aboard the International Space Station, I experienced a medical event that required immediate attention from my incredible crewmates. Thanks to their quick response and the guidance of our NASA flight surgeons, my status quickly stabilized." ([NASA, 2026-02-25](https://www.nasa.gov/blogs/commercialcrew/2026/02/25/nasas-spacex-crew-11-astronaut-update/))
+- NASA chose "an early return … not an emergency, but a carefully coordinated plan to be able to take advantage of advanced medical imaging not available on the space station." Splashdown was Jan. 15, 2026 (same source; [splashdown release](https://www.nasa.gov/news-release/nasas-spacex-crew-11-mission-returns-splashes-down-off-california/)).
+- Undocking 5:20 p.m. EST Jan. 14 to splashdown about 10 h 20 min later ([NASA blog](https://www.nasa.gov/blogs/spacestation/2026/01/14/dragon-undocks-from-station-heads-for-splashdown/)); event to landing about 8 days.
+- **Why it matters:** a real, recent ISS case of exactly the challenge-video situation: crewmates respond first, flight surgeons guide, imaging is the limiting capability.
+
+### 11.3 Environment
+
+- **CO2 limit:** "[V2 6004] limits the average 1-hour CO2 partial pressure (ppCO2) in the habitable volume to no more than 3 mmHg." ISS operations use a "24-hour ppCO2 limit at or below 3 mmHg". "To keep the risk of headache below 1%, average 7-day CO2 needs to be maintained below 2.5 mmHg (current ISS range: 1 to 9 mmHg…)". ([OCHMO-TB-004](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf))
+- **Radiation, ISS instruments in RadLab (live query):** `https://visualization.osdr.nasa.gov/radlab/api/?celestial_body=Earth&timestamp%3E=2017-09-04&timestamp%3C2017-09-20&absorbed_dose_rate&format=tsv`
+  - DosTel1/DosTel2: readings every ~20–60 s, Sep 4–19, 2017, including South Atlantic Anomaly spikes.
+  - RAD-COL1A2-pre: daily baseline ~12.2–13.3; **18.39 on Sep 11, 2017** (SPE), 15.02 on Sep 12.
+  - IV-TEPC-NOD2PCQ/NOD2PD3-pre: ~12.8–14.6 daily, with a gap Sep 7–14.
+  - `instrument=ISS-RAD` returned no rows; `instrument=TEPC` matches IV-TEPC.
+  - UNVERIFIED: units of `absorbed_dose_rate` (likely µGy/h) and whether DosTel is NASA or partner hardware (check §4.2 rule before use).
+- **Generic dose:** "space environment exposure is approximately 0.5 mSv per day" (OCHMO-TB-020, not ISS-specific).
+
+### 11.4 Medical capability
+
+- Remote-guided ultrasound by the CMO: Pettit scanned Wilmore's veins "with remote guidance from specialists on Earth" ([NASA, 2025-02-13](https://www.nasa.gov/blogs/spacestation/2025/02/13/vein-scans-muscle-study-on-station-informing-ways-to-keep-crews-healthy/)).
+
+### 11.5 Still UNVERIFIED for the ISS
+
+- ISS-specific daily dose from a NASA page, and how much an SPE adds on the ISS.
+- Voice latency and typical loss-of-signal duration.
+- IMM medical evacuation probability for a 6-month ISS mission.
+- OSDR EDA contents (app unreachable during the check).
