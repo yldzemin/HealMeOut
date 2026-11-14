@@ -33,6 +33,9 @@ CLAUDE.md                                     ← bu dosya: kurallar ve çalış
 DESIGN.md                                     ← proje tasarımı: konsept, mimari, UI, tıbbi değerler, veri
 ARASTIRMA_RAPORU.md                           ← doğrulanmış araştırmanın tamamı (kaynaklarıyla)
 (çevrimiçi) Proje Kapsam Dokümanı             ← ekip için tam kapsam, 6 senaryo, API'ler: https://claude.ai/artifact/V9p1PiJczNXqhjp5WoEpUT
+ASTRA-TWIN — Proje Kapsam Dokümanı.md / .pdf  ← kapsam dokümanının yerel kopyası
+Seminer Raporu -space app.docx                ← seminer raporu
+ESKI_CLAUDE_2026-11-09.md                     ← eski CLAUDE.md (9 Kasım). DESIGN.md gelene kadar "kodda KULLANMA" tablosunun tek kopyası (#5)
 nasa space apps araştırma sonucu olasılıklar.docx  ← ilk taslak spec (hatalı değerler var, bkz. DESIGN.md §4)
 nasa örnek siteler araştırma.pdf              ← ilk kaynak listesi (OSDR ID'lerinde hatalar var, bkz. DESIGN.md §5)
 57110f2f9bef1ff11b47b3e897d3eee2.jpg          ← UI estetik referansı
