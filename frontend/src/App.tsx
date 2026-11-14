@@ -5,6 +5,7 @@ import { getCrew } from "@/api/client";
 import { StatusBar } from "@/components/StatusBar";
 import { LeftRail } from "@/components/LeftRail";
 import { ScreenPlaceholder } from "@/screens/ScreenPlaceholder";
+import { PersonalScreen } from "@/screens/PersonalScreen";
 
 const SCREENS: Record<ScreenId, { title: string; description: string }> = {
   personal: {
@@ -38,7 +39,8 @@ export default function App() {
     getCrew().then(setCrew).catch((err) => console.error(err));
   }, []);
 
-  const openAlerts = crew.filter((c) => c.level !== "L0").length;
+  // L1 is self-care; an "open alert" needs CMO or ground action (L2+).
+  const openAlerts = crew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -49,12 +51,17 @@ export default function App() {
           <AnimatePresence mode="wait">
             <motion.div
               key={screen}
+              className="h-full"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18 }}
             >
-              <ScreenPlaceholder {...SCREENS[screen]} />
+              {screen === "personal" ? (
+                <PersonalScreen crew={crew} role={role} />
+              ) : (
+                <ScreenPlaceholder {...SCREENS[screen]} />
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
