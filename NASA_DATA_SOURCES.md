@@ -231,6 +231,13 @@ Chang'e-4 LND is **not** in RadLab (the query returned no rows). This corrects `
   - HAPI: `https://cdaweb.gsfc.nasa.gov/hapi/data?id=ISS_DOSANL_TEPC&time.min=…&time.max=…&parameters=DOSE,DOSE_EQ60`
   - Fields: DOSE in μGy/min, DOSE_EQ60 in μSv/min.
   - Files: https://spdf.gsfc.nasa.gov/pub/data/international_space_station_iss/dos_tepc/
+  - **Sep 4–19, 2017** (checked 2026-11-14, #30): VERIFIED. 22,915 one-minute rows, no fill values.
+    - HAPI `info` lists the contact as Edward Semones, NASA Space Radiation Analysis Group/JSC, and `DOSE_EQ60` as "Average Dose Equivalent Rate (ICRP-60)".
+    - Normal days: 14.3–17.9 μGy/h absorbed and 32.2–39.1 μSv/h dose equivalent (0.77–0.94 mSv/day).
+    - Sep 11: 1.71 mSv/day, 1.90× the Sep 4–9 daily median. Sep 12: 1.17×.
+    - Dose equivalent / absorbed: 2.06–2.26.
+    - Hourly: South Atlantic Anomaly passes reach 183 μSv/h before the event; the SPE peak hour is 218.5 μSv/h (Sep 11, 09:00 UTC).
+    - This is dose equivalent at the instrument, not effective dose; compare with Simonsen 2025 (0.2–0.5 mSv/day effective) only with that label.
   - ⚠️ data.nasa.gov describes a PS-TEPC, which is a JAXA design. The origin needs confirming.
 - **MSL RAD in PDS PPI:** https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/. VERIFIED.
   - Raw PDS3 RDR files whose labels contain dose rates (`TOT_DOSE_*` in μGy/h).
@@ -481,6 +488,7 @@ Checked on 2026-11-14 for the ISS-only scope (#16). Quotes were read from the li
   - IV-TEPC-NOD2PCQ/NOD2PD3-pre: ~12.8–14.6 daily, with a gap Sep 7–14.
   - `instrument=ISS-RAD` returned no rows; `instrument=TEPC` matches IV-TEPC.
   - UNVERIFIED: units of `absorbed_dose_rate` (likely µGy/h) and whether DosTel is NASA or partner hardware (check §4.2 rule before use).
+  - RadLab returns **no `dose_equivalent_rate` for any ISS instrument**: checked 2016-06, 2017-09, 2018-01, 2019-06 and 2022-06 on 2026-11-14 (#30). For dose equivalent, use the CDAWeb ISS TEPC data (§4.3).
 - **Generic dose:** "space environment exposure is approximately 0.5 mSv per day" (OCHMO-TB-020, not ISS-specific).
 
 ### 11.4 Medical capability

@@ -115,7 +115,7 @@ Rules: never show these answers on the Crew Deck; no diagnostic wording; escalat
 Environment panel curve from real EDA data; headache symptom prompt; L1 → L2 as limits are crossed (BACKEND §5).
 
 ### `spe-iss` (Target)
-Dose-rate chart replaying RadLab `RAD-*-pre` around Sep 11, 2017; shelter recommendation card.
+Dose-rate chart replaying the ISS TEPC dose equivalent (μSv/h, `iss_dose.json`) around Sep 11, 2017; shelter recommendation card. Label it "instrument dose equivalent, not effective dose" (BACKEND §3.2).
 
 ### `bad-news` (Target)
 Personal screen support steps; Crew Deck shows only "C3 requested reduced tasking", no reason.

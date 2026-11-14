@@ -39,7 +39,7 @@ NASA_DATA_SOURCES.md                          ← doğrulanmış NASA veri envan
 PSYCHOLOGY_AND_LONG_DURATION.md               ← psikoloji araştırması ve modül önerisi, uzun görev arka planı
 57110f2f9bef1ff11b47b3e897d3eee2.jpg          ← UI estetik referansı
 data/osdr/                                    ← NASA OSDR'den indirilmiş gerçek Inspiration4 verisi
-data/cache/                                   ← API önbelleği (internetsiz demo için): EDA, RadLab ISS, DONKI
+data/cache/                                   ← API önbelleği (internetsiz demo için): EDA, ISS TEPC dozu (CDAWeb), DONKI
 kaynaklar/                                    ← NASA teknik dokümanları (OCHMO brief'leri, HRP RAP, M2M HHP)
 ```
 
@@ -82,7 +82,7 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 - [ ] 2026 Project Submission ve Judging & Awards rehberlerini tarayıcıyla oku, §2'deki farkları işle.
 - [ ] Kriz senaryolarını doğrulanmış değerler ve ISS formülerisiyle yeniden yaz (§4.1).
 - [ ] Doğrulanamayanları kontrol et (rapor §7): Vol 1 Rev C, Hassler 2014 birincil kaynağı, EMU içme torbası boyutu.
-- [ ] ISS verilerinin önbelleğini `data/cache/` içine oluştur (EDA CO2, RadLab ISS dozu, DONKI). Horizons yalnızca "future extension" sunumu için gerekirse.
+- [ ] ISS verilerinin önbelleğini `data/cache/` içine oluştur (EDA CO2, ISS TEPC dozu (CDAWeb, #30), DONKI). Horizons yalnızca "future extension" sunumu için gerekirse.
 
 ## 6. GitHub kullanım kuralları
 

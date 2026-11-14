@@ -82,12 +82,13 @@ Both sides use these names and values. If one changes, update this section in th
 | Entity | Key fields |
 |---|---|
 | `CrewMember` | `id` (C1–C7), `callsign` (fictional), `role` (`CMO1`, `CMO2`, `CREW`), `module`, `level` |
-| `Baseline` | `crewId`, `source` (`OSD-575`/`OSD-569`), `analyte`, `value`, `unit`, `refLow`, `refHigh` |
+| `Baseline` | `crewId`, `source` (`OSD-575`/`OSD-569`), `analyte`, `timepoint` (`L-92` … `R+194`), `value`, `unit`, `refLow`, `refHigh`, `mission` (`MissionTag`) |
+| `MissionTag` | `name`, `kind` (`commercial`/`nasa`), `start`, `end` (ISO dates), `orbit`, `crew`, `hostedBy`, `studyId`, `link` |
 | `Reading` | `crewId`, `metric`, `value`, `unit`, `timestamp`, `provenance`, `measuredHow` |
 | `CheckIn` | `crewId`, `date`, mood/fatigue/stress/conflict (0–100), sleep hours and quality, workload, crew climate, MCC frustration, family, restorative activities, food |
 | `Alert` | `id`, `crewId`, `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`) |
 | `Forecast` | `crewId`, `horizonHours` (6/12), `metric`, `points[]`, `label: "modelled"` |
-| `Environment` | `co2_mmHg`, `temp_C`, `rh_pct`, `doseRate_uGy_h`, `timestamp`, `provenance` |
+| `Environment` | `co2_mmHg`, `temp_C`, `rh_pct`, `doseRate_uGy_h` (absorbed), `doseEqRate_uSv_h` (dose equivalent, ICRP-60; empty if the source has none), `instrument`, `timestamp`, `provenance` |
 | `Scenario` | `id`, `title`, `steps[]` |
 
 ### 4.3 Labels every value carries
@@ -103,14 +104,16 @@ Both sides use these names and values. If one changes, update this section in th
 | Mood, stress, cognition | `periodic` | VAS items, Reaction Self Test, WinSCAT monthly (`PSYCHOLOGY_AND_LONG_DURATION.md`) |
 | Food intake | `periodic` | ISS Food Intake Tracker app (ESA) |
 | Blood panel (CBC/CMP) | `sample-return` | Samples are frozen and analysed on Earth (NTRS 20090014816); on-board analysers are tech demos (CSA Bio-Analyzer 2019, rHEALTH 2022) |
+| Blood glucose | `periodic` | **Team assumption (#30):** in-flight glucose measurement is assumed available; not verified for the ISS. Every glucose value and alert says so. |
 | Gut microbiome, chromosomes | `research-only` | Twins Study; no in-flight measurement |
 | Cabin CO2, temperature, humidity | `live` | OSDR EDA; limits in OCHMO-TB-004 |
-| Radiation dose | `live` | ISS-RAD, TEPC, REM (RadLab) |
+| Radiation dose | `live` | ISS TEPC (NASA SRAG, CDAWeb `ISS_DOSANL_TEPC`): absorbed dose and dose equivalent; ISS-RAD, REM (RadLab, absorbed only) |
 
 ### 4.4 Crew identities
 
 - Real Inspiration4 baselines (C001–C004) are mapped to **fictional callsigns**. Never show real names.
 - C5–C7 use modelled baselines and are labelled `simulated`.
+- **Commercial-mission tag (#30):** every Inspiration4 value carries `mission`, and the UI shows it next to the value, for example: "Commercial mission · SpaceX Inspiration4 · 16–18 Sep 2021 · low Earth orbit · data hosted by NASA OSDR". Name and dates come from the OSDR study metadata.
 
 ---
 
@@ -135,7 +138,7 @@ Both sides use these names and values. If one changes, update this section in th
 |---|---|---|---|
 | `chest-pain` | Crewmate chest pain and collapse | **MVP** (challenge video; Crew-11, Jan 2026) | Hinkelbein 2020 CPR guideline; Diaz 2024 |
 | `co2` | Cabin CO2 build-up | MVP | OCHMO-TB-004 |
-| `spe-iss` | Solar particle event on the ISS, Sep 10, 2017 | Target | RadLab `RAD-*-pre` |
+| `spe-iss` | Solar particle event on the ISS, Sep 10, 2017 | Target | CDAWeb ISS TEPC (NASA SRAG), 1-minute dose equivalent |
 | `bad-news` | Bad news from home | Target | Picano 2024; OCHMO-TB-016 |
 | others | Dehydration/hypoglycemia, sleep disruption, landing orthostatic intolerance | Extra | `ARASTIRMA_RAPORU.md` |
 
