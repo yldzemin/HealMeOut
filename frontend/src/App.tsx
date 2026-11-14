@@ -9,6 +9,7 @@ import { PersonalScreen } from "@/screens/PersonalScreen";
 import { CrewDeckScreen } from "@/screens/CrewDeckScreen";
 import { EmergencyOverlay } from "@/components/EmergencyOverlay";
 import { CheckInScreen } from "@/screens/CheckInScreen";
+import { TwinScreen } from "@/screens/TwinScreen";
 import { INITIAL_ROUTINE, type Routine } from "@/data/personal";
 
 const SCREENS: Record<ScreenId, { title: string; description: string }> = {
@@ -74,6 +75,8 @@ export default function App() {
                   crew={liveCrew}
                   onStartEmergency={(patientId) => setEmergency({ patientId, startedAt: Date.now() })}
                 />
+              ) : screen === "twin" ? (
+                <TwinScreen role={role} />
               ) : screen === "checkin" ? (
                 <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} />
               ) : (
