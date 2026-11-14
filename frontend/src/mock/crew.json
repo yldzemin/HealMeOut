@@ -1,0 +1,9 @@
+[
+  { "id": "C1", "callsign": "ORION", "role": "CMO1", "module": "Destiny", "level": "L0", "baselineProvenance": "real" },
+  { "id": "C2", "callsign": "VEGA", "role": "CREW", "module": "Harmony (Node 2)", "level": "L0", "baselineProvenance": "real" },
+  { "id": "C3", "callsign": "LYRA", "role": "CREW", "module": "Columbus", "level": "L0", "baselineProvenance": "real" },
+  { "id": "C4", "callsign": "ALTAIR", "role": "CMO2", "module": "Kibo", "level": "L0", "baselineProvenance": "real" },
+  { "id": "C5", "callsign": "RIGEL", "role": "CREW", "module": "Tranquility (Node 3)", "level": "L0", "baselineProvenance": "simulated" },
+  { "id": "C6", "callsign": "NOVA", "role": "CREW", "module": "Unity (Node 1)", "level": "L0", "baselineProvenance": "simulated" },
+  { "id": "C7", "callsign": "ATLAS", "role": "CREW", "module": "Zvezda", "level": "L0", "baselineProvenance": "simulated" }
+]
