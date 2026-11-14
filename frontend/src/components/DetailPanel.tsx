@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, ExternalLink, Siren } from "l
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { Indicator, MeasuredHow, Region } from "@/data/personal";
 import { LEVEL_RANK } from "@/data/personal";
-import { LEVEL_COLOR, LEVEL_WORD } from "@/components/BodyFigure";
+import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
 import { TrendChart } from "@/components/TrendChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CrewMember, StatusLevel, ViewerRole } from "@/types";
 import { getRegions, getToday, LEVEL_RANK, type Region, type RegionId } from "@/data/personal";
-import { BodyFigure, LEVEL_COLOR, LEVEL_WORD, RegionChips } from "@/components/BodyFigure";
+import { Body3D, MODEL_CREDIT } from "@/components/Body3D";
+import { RegionChips } from "@/components/RegionChips";
+import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
 import { DetailPanel } from "@/components/DetailPanel";
 import { TodayStrip } from "@/components/TodayStrip";
 import { Card, CardContent } from "@/components/ui/card";
@@ -81,10 +83,11 @@ export function PersonalScreen({ crew, role }: { crew: CrewMember[]; role: Viewe
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-5">
         <div className="flex min-h-[520px] flex-col gap-4">
-          <div className="min-h-0 flex-1">
-            <BodyFigure regions={regions} selected={selected} onSelect={setSelected} />
+          <div className="min-h-0 flex-1 rounded-xl border border-border bg-card/40">
+            <Body3D regions={regions} selected={selected} onSelect={setSelected} />
           </div>
           <RegionChips regions={regions} selected={selected} onSelect={setSelected} />
+          <p className="text-center text-[11px] text-muted-foreground">{MODEL_CREDIT}</p>
         </div>
 
         <div className="min-h-0">

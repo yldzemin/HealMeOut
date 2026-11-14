@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { Check, Clock, Flame, Timer } from "lucide-react";
 import type { StatusLevel } from "@/types";
 import type { TodayTask } from "@/data/personal";
-import { LEVEL_COLOR } from "@/components/BodyFigure";
+import { LEVEL_COLOR } from "@/components/regionStyle";
 
 function Ring({ done, total }: { done: number; total: number }) {
   const r = 22;
