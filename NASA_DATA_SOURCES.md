@@ -315,11 +315,11 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 
 ---
 
-## 7. Open team decisions (issue #9)
+## 7. Open team decisions
 
-1. **Medication recommendations:** keep the non-NASA ISS formulary paper (Diaz 2024), or limit recommendations to NASA sources (Wotring, HSRB)?
-2. **NOAA-derived DONKI fields:** label them "NOAA instrument via NASA DONKI", or drop them?
-3. **Partner and commercial data:** do partner instruments in RadLab (DLR, ESA, ASI) and commercial missions curated by OSDR (Inspiration4, Axiom) count as NASA data?
+1. **Medication recommendations** (#11): keep the non-NASA ISS formulary paper (Diaz 2024), or limit recommendations to NASA sources (Wotring, HSRB)?
+2. **NOAA-derived DONKI fields** (#12): label them "NOAA instrument via NASA DONKI", or drop them?
+3. **Partner and commercial data** (#13): do partner instruments in RadLab (DLR, ESA, ASI) and commercial missions curated by OSDR (Inspiration4, Axiom) count as NASA data?
 
 ---
 
@@ -347,3 +347,92 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 | NOAA SWPC as a live source | Recommended (#2) | **Excluded** by the team NASA-only rule; use the NASA alternatives in §5.3 | `CLAUDE_HAFIZASI.md` §2 |
 | DONKI | api.nasa.gov, 503 | api.nasa.gov is unreliable; use `ccmc.gsfc.nasa.gov/DONKI/WS/get/` | §5.2 |
 | ISS formulary (Diaz 2024) | Used as the drug reference | ⚠️ Not NASA-authored; needs a team decision | §3 |
+
+---
+
+## 10. Gap analysis: conditions and features not yet covered
+
+**Checked on:** 2026-11-14.
+**Scope:** compares the six current scenarios (SPE, EVA dehydration/hypoglycemia, circadian/stress, suit hypoxia, cabin CO2, orthostatic intolerance) with NASA medical-risk data and the challenge text.
+**Status:** this section lists options. Which gaps become scenarios is a team scope decision (#14).
+
+### 10.1 NASA Integrated Medical Model (IMM) probability data
+
+OCHMO published IMM results on nasa.gov in Aug–Sep 2026. This is NASA data that can sit in the core of a "mission medical risk" layer.
+
+| Document | URL | Content | Status |
+|---|---|---|---|
+| IMM overview | https://www.nasa.gov/nasa-integrated-medical-model-imm-overview/ | What the model is | VERIFIED |
+| Ranking of Medical Conditions by Probability (iMED v5.0, 2015-02-02) | https://www.nasa.gov/wp-content/uploads/2026/08/ranking-of-medical-conditions-by-probability.pdf | Probability of ≥1 event for 98 of 100 conditions across 12 design reference missions (LEO 6 months to Planetary 36 months with 50 EVAs) | VERIFIED (HTTP 200, PDF; values read from the text) |
+| Medical Risk Assessment for an Accelerated and Standard Mars Mission (S-20200303-423, 2020-04-13) | https://www.nasa.gov/wp-content/uploads/2026/08/medical-risk-assessment-for-an-accelerated-and-standard-mars-mission.pdf | Total events, evacuation and loss-of-crew probabilities, and the conditions that drive them | VERIFIED (HTTP 200, PDF) |
+| Accepted Medical Condition List (NASA/TM-2022-220299) | https://ntrs.nasa.gov/api/citations/20220003136/downloads/NASA-T_1.pdf | Mars transit pilot: 194 conditions (135 "Should Plan to Treat"); Appendix B has per-condition probabilities | VERIFIED |
+
+**LEO, 6 months, 1 EVA: probability of ≥1 event**
+
+| Condition | Probability |
+|---|---|
+| Late insomnia | 0.912 |
+| Skin abrasion | 0.821 |
+| Skin rash | 0.821 |
+| Space motion sickness | 0.730 |
+| Eye abrasion (foreign body) | 0.722 |
+| Late headache | 0.592 |
+| Nasal congestion | 0.586 |
+| Back pain (space adaptation) | 0.525 |
+| UTI (female) | 0.490 |
+| Respiratory infection | 0.453 |
+| Barotrauma (ear/sinus) | 0.433 |
+| VIIP/SANS | 0.341 |
+| CO2-induced headache | 0.306 |
+| Hearing loss | 0.094 |
+| Fingernail delamination | 0.065 |
+
+**Mars mission outcomes**
+
+| Outcome | 426 days | 923 days |
+|---|---|---|
+| Total medical events | 156 | 603 |
+| P(consider evacuation) | 0.0625 | 0.294 |
+| P(loss of crew life) | 0.0057 | 0.0158 |
+
+- **Top evacuation drivers, 426 days:** herpes zoster 15.4%, nephrolithiasis ~11.5%, sepsis 5.7%, UTI 4.2%, eye chemical burn 4.1%, dental abscess 3.7%, stroke 3.6%.
+- **Top evacuation drivers, 923 days:** DCS after EVA 30.8%, herpes zoster 11.5%, UTI 8.0%, eye chemical burn 6.4%.
+- **Top loss-of-crew drivers:** sepsis 31.8%, stroke 21.2%, medication overdose/adverse reaction 8.1%, ammonia exposure 7.5%, appendicitis 5.4%, burns from fire 5.3%.
+
+**Implication:** the current scenarios cover rare, dramatic events. The model says the most frequent events are insomnia, skin, eye foreign body, space motion sickness, headache, congestion and back pain. On Mars, evacuation and death are driven by shingles, kidney stones, sepsis, DCS and toxic exposure.
+
+### 10.2 Missing conditions, ranked for the hackathon
+
+| # | Gap | Evidence | Onboard monitoring / NASA guidance | Public NASA data | Priority |
+|---|---|---|---|---|---|
+| A | Common space-adaptation and minor conditions: SMS, headache, congestion, back pain, insomnia, rash, eye foreign body, urinary retention | IMM table above. Shuttle: 94% of 219 person-flights used medication; 47% of users for SMS, 45% for sleep (Putcha 1999, PMID 10417009, abstract). ISS: skin rash 1.12 and upper-respiratory symptoms 0.97 events per flight-year ([Crucian 2016](https://doi.org/10.2147/IJGM.S114188)) | Symptom self-report (fits a body-map check-in) | IMM probabilities | High |
+| B | Venous thrombosis (internal jugular vein) | Stagnant or reverse flow in 6 of 11 ISS crew; 1 occlusive clot ([Marshall-Goebel 2019](https://doi.org/10.1001/jamanetworkopen.2019.15011)). ASAP Q3-2026 minutes: 3 crew treated in flight for jugular and/or cerebral thrombosis ([minutes](https://www.nasa.gov/wp-content/uploads/2026/10/3rd-quarterly-2026-public-meeting-minutes-final-003.pdf)) | [OCHMO-MTB-007](https://www.nasa.gov/wp-content/uploads/2026/01/ochmo-mtb-007-venous-thrombosis-in-spaceflight.pdf) (rev 2026-01-08): jugular ultrasound surveillance for all ISS crew. If a clot is found: apixaban 10 mg twice daily × 7 days, then 5 mg twice daily; no EVA or ARED for ≥30 days. Stasis plus a risk factor: prophylaxis 2.5 mg twice daily. Watch for neck or facial swelling, headache and SANS signs | Protocol only, no patient data | High |
+| C | SANS | NASA calls it "currently NASA's leading spaceflight-related health risk" ([HRP risks](https://www.nasa.gov/hrp/risks/)). 70% of long-duration crew show ≥1 sign; 18% clinically concerning ([OCHMO-MTB-001](https://www.nasa.gov/wp-content/uploads/2024/02/ochmo-mtb-001-sans.pdf)) | Eye exams at FD30, FD90 and R-30: OCT, fundoscopy, ocular ultrasound, tonometry, visual acuity, Amsler grid | Brief only | High |
+| D | Kidney stones | About 11.5% of evacuations, 426-day Mars mission (IMM). No symptomatic in-flight stone in a U.S. crewmember to date, but urine chemistry is altered ([NTRS 20160013663](https://ntrs.nasa.gov/citations/20160013663), abstract). Potassium citrate held supersaturation at preflight levels in 30 crew ([Whitson 2009](https://doi.org/10.1016/j.juro.2009.07.010), abstract) | Fluid intake, urine output, ultrasound. Mitigations: hydration and exercise ([risk page](https://www.nasa.gov/directorates/esdmd/hhp/risk-of-renal-stone-formation/)) | OSD-575 BUN and creatinine | High (risk index); medium (full scenario) |
+| E | Toxic exposure: ammonia, smoke/fire, chemical | Ammonia is 7.5% of loss-of-crew risk (IMM, 426 days). Past events include Apollo-Soyuz N2O4, STS-40 formaldehyde, Mir 1997 fire, and an ammonia release during EVA in 1998 ([OCHMO-TB-015](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-015-spaceflight-toxicology.pdf)) | Ammonia SMACs: 30 ppm for 1 h, 20 ppm for 24 h, 10 ppm for 7–180 days, 1.4 ppm for 360 days; irritation at about 100 ppm ([NTRS 20090015899](https://ntrs.nasa.gov/api/citations/20090015899/downloads/20090015899.pdf)) | Limits only | Medium-high |
+| F | Immune dysregulation and viral reactivation | Herpesvirus shedding in 14 of 23 ISS astronauts (61%) ([Rooney 2019](https://doi.org/10.3389/fmicb.2019.00016), abstract). Herpes zoster is the top evacuation driver on the 426-day mission | Skin checks; saliva sampling is research only | OSD-575 cytokines (IL-6, CRP) | Medium |
+| G | Bone and muscle loss, exercise compliance | Bone density −1 to −1.5% per month ([bone risk](https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/)). Exercise prescription 1.5 h/day, 6–7 days/week; 12–38% of crew lose >20% strength or fitness ([fitness risk](https://www.nasa.gov/reference/risk-of-reduced-cardiorespiratory-and-musculoskeletal-fitness/)) | Daily exercise minutes | Rates only | Medium (cheap) |
+| H | Behavioral health and cognition | Depressive symptoms in 2 of 7 Shuttle-Mir astronauts. Monthly WinSCAT cognitive test against a preflight baseline ([OCHMO-TB-016](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-016-behavioral-health.pdf)) | Mood scale, short cognitive test, private psychological conferences | Spaceflight Standard Measures data is request-only ([NTRS 20230014025](https://ntrs.nasa.gov/citations/20230014025)) | Medium |
+| I | EVA-specific: DCS, fingernail delamination, water in helmet | DCS after EVA is 30.8% of evacuations on the 923-day mission (IMM). EVA 23 (2013-07-16): about 1.5 L of water entered the helmet ([NTRS 20140016950](https://ntrs.nasa.gov/citations/20140016950), abstract) | Joint pain and paresthesia symptoms; existing local file `kaynaklar/OCHMO-TB-037_DCS.pdf` | Briefs only | Medium (extend scenario 4) |
+| J | Noise and hearing | Hearing loss probability 0.094 for 6-month LEO (IMM). Hazard limit 85 dBA; sleep areas NC-40 ([OCHMO-TB-035](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-035-acoustics.pdf)) | Noise dosimetry | Limits only | Low |
+
+### 10.3 Challenge-text gaps
+
+The challenge page (opened 2026-11-14) names these items, and ASTRA-TWIN does not cover them yet:
+
+| Challenge item | Current state | Option |
+|---|---|---|
+| "Ultrasound images" as a data type | Not covered | A guided-ultrasound checklist (probe placement, ground guider) linked to B, C and D. No public NASA diagnostic ultrasound dataset was found: an OSDR "ultrasound" search returned non-spaceflight studies, and NASA Image Library hits are photos of crew scanning. |
+| "Mood" and "daily sleep hours" | Only inside scenarios | Daily log on the body map |
+| "Inadequate nutrition" (hazards text) | No scenario | ISS crew ate about 80% of recommended energy ([NTRS 20050164251](https://ntrs.nasa.gov/citations/20050164251), abstract) |
+| Environments: spacecraft, station, rover, planetary or lunar base | ISS and Mars only | Environment selector |
+| Prompts to take measurements | Planned, not scheduled | NASA schedule: eye exams at FD30 and FD90, jugular ultrasound surveillance, monthly cognitive test |
+
+### 10.4 Data limits
+
+- No public dataset gives in-flight heart rate, SpO2 or core temperature; these must be simulated.
+- No public NASA diagnostic ultrasound dataset was found.
+- Spaceflight Standard Measures (sleep, cognition, immune) is request-only.
+- **UNVERIFIED:**
+  - A 2015 ISS ammonia false alarm (search snippets only).
+  - An EVA core-temperature +1 °F performance threshold (NASA OIG IG-17-018; the PDF is encrypted).
