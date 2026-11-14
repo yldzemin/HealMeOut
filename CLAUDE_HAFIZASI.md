@@ -34,12 +34,10 @@ Kaynak: 2025 Project Submission Guide (3 Ekim 2025). 2026 sürümüyle karşıla
 CLAUDE.md                                     ← bu dosya: kurallar ve çalışma metodolojisi
 DESIGN.md                                     ← proje tasarımı: konsept, mimari, UI, tıbbi değerler, veri
 ARASTIRMA_RAPORU.md                           ← doğrulanmış araştırmanın tamamı (kaynaklarıyla)
-(çevrimiçi) Proje Kapsam Dokümanı             ← ekip için tam kapsam, 6 senaryo, API'ler: https://claude.ai/artifact/V9p1PiJczNXqhjp5WoEpUT
-ASTRA-TWIN — Proje Kapsam Dokümanı.md / .pdf  ← kapsam dokümanının yerel kopyası
+(çevrimiçi) Proje Kapsam Dokümanı             ← ilk kapsam (Mars odaklı, 9 Kasım; ISS kapsamı için #16): https://claude.ai/artifact/V9p1PiJczNXqhjp5WoEpUT
+NASA_DATA_SOURCES.md                          ← doğrulanmış NASA veri envanteri, ISS gerçekleri (§11)
+PSYCHOLOGY_AND_LONG_DURATION.md               ← psikoloji araştırması ve modül önerisi, uzun görev arka planı
 Seminer Raporu -space app.docx                ← seminer raporu
-ESKI_CLAUDE_2026-11-09.md                     ← eski CLAUDE.md (9 Kasım). DESIGN.md gelene kadar "kodda KULLANMA" tablosunun tek kopyası (#5)
-nasa space apps araştırma sonucu olasılıklar.docx  ← ilk taslak spec (hatalı değerler var, bkz. DESIGN.md §4)
-nasa örnek siteler araştırma.pdf              ← ilk kaynak listesi (OSDR ID'lerinde hatalar var, bkz. DESIGN.md §5)
 57110f2f9bef1ff11b47b3e897d3eee2.jpg          ← UI estetik referansı
 data/osdr/                                    ← NASA OSDR'den indirilmiş gerçek Inspiration4 verisi
 data/cache/                                   ← API önbelleği (internetsiz demo için): EDA, RadLab ISS, DONKI
@@ -51,15 +49,39 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 ## 4. Çalışma kuralları
 
 - **Varsayım yapma.** Her sayısal eşik ve tıbbi iddia için bir kaynak göster. Kaynak yoksa "doğrulanamadı" de. Yeni bilgi ARASTIRMA_RAPORU.md'ye kaynağıyla eklenir.
-- **Tasarım değişiklikleri DESIGN.md'ye işlenir.** Kodda DESIGN.md ile çelişen bir değer veya davranış olamaz. DESIGN.md §4'teki "kodda KULLANMA" tablosundaki değerler hiçbir koda girmez.
+- **Tasarım değişiklikleri DESIGN.md'ye işlenir.** Kodda DESIGN.md ile çelişen bir değer veya davranış olamaz. §4.1'deki "kodda KULLANMA" tablosundaki değerler hiçbir koda girmez.
 - spaceappschallenge.org sayfaları JavaScript ile oluşturulur; WebFetch boş veya eski sürüm döner. Tarayıcı ya da Wayback Machine kullan ve arşiv kopyasının tarihini belirt.
 - **Demo internetsiz de çalışmalı.** Her canlı API için yerel önbellek tutulur (`data/cache/`, yedek yollar DESIGN.md §5'te).
 - **Wiro MCP** bağlı (kişisel hesap, ~$16 kupon bakiyesi). Görsel, video ya da ses üretimi için kullanılabilir. Ücretli her çalıştırmadan önce kullanıcıya maliyeti söyle. YZ ile üretilen görsellere filigran gerekir.
 
+### 4.1 Taslaktaki hatalı değerler: kodda KULLANMA
+
+İlk taslak spec'teki (9 Kasım) hatalı değerler. Ayrıntı ve kaynaklar ARASTIRMA_RAPORU.md §4'te. Işık gecikmesi satırı yalnızca "future extension" (Ay/Mars) sunumu için geçerlidir.
+
+| Konu | Taslak | Doğrusu |
+|---|---|---|
+| Işık gecikmesi (Mars, future extension) | Sabit "22 MINUTES", "4–24 dk" | JPL Horizons'tan hesapla. Aralık ~3–22 dk (NSSDC mesafeleri). |
+| Glukoz eşiği | <60 | ADA: <70 Seviye 1, <54 Seviye 2 |
+| Uçuş içi BP baseline | 120/80 | ~112/71. Asıl risk ortostatik intolerans (dönüşte). |
+| HRV kritik <20 ms | — | Metriği tanımla (RMSSD), kişisel baseline ve z-skoru kullan |
+| Hidrasyon azalması | saatte %1.5 / EVA'da %8 | Günde 2.5 L (saatte ~%0.13 kütle). EVA'da saatte %0.3–1.2. Kütlenin %2.5'i kaybedilince performans düşer. |
+| Radyasyon arka planı | 0.05 mSv/sa | ISS günde ~0.2–0.5 mSv (Simonsen 2025) |
+| Vücut ısısı | sabit 37.0 | Uzun görevde ~+1 °C kayma (Stahn 2017) |
+| Propranolol | radyasyon krizi | ❌ Kaldır. SPE hipertansiyon yapmaz. ISS'te metoprolol var. |
+| Potasyum iyodür | SPE | ❌ Kaldır. SPE protondur, KI yalnızca radyoiyota karşı korur. |
+| Antioksidan kokteyli | radyoproteksiyon | ❌ İnsanda kanıt yok. 400 IU E vitamini kanser riskini artırdı (SELECT). Yerine barınağa geçiş, dozimetri ve ondansetron (bulantı). |
+| Glukagon | <50 | Önce 15 g ağızdan glukoz, 15 dk sonra tekrar ölç (ADA). ISS'te glukagon yok. |
+| Melatonin | 5 mg | ISS'te 3 mg. Asıl önlem ışık ve uyku planlaması. |
+| Basınç düşüşünde epinefrin | — | ❌ Doğrusu: O2 ve basıncı geri sağlamak. Epinefrin yalnızca anafilaksi veya kalp durması için. Model zinciri: basınç → PIO2 → SpO2. |
+| Transdermal otomatik dozlama | — | ❌ Böyle bir donanım yok. "Öneri + CMO onayı" olarak yeniden tasarla. |
+| Uçuş içi tansiyon düşüklüğüne tuz | — | ❌ NASA uçuşta sodyumu azaltıyor; tuz + sıvı yüklemesi yalnızca atmosfere girişten önce (OCHMO-TB-027). |
+
+**Kural:** İlaç önerisi yalnızca 2023 ISS formülerisindeki ilaçlarla yapılır (Diaz 2024, doi:10.1038/s41526-024-00414-3; karar #11). Her öneriyle birlikte kanıt düzeyi ve kaynak gösterilir. UI'da "Simulation, not medical advice" uyarısı bulunur.
+
 ## 5. Açık işler
 
 - [ ] 2026 Project Submission ve Judging & Awards rehberlerini tarayıcıyla oku, §2'deki farkları işle.
-- [ ] Kriz senaryolarını doğrulanmış değerler ve ISS formülerisiyle yeniden yaz (DESIGN.md §4).
+- [ ] Kriz senaryolarını doğrulanmış değerler ve ISS formülerisiyle yeniden yaz (§4.1).
 - [ ] Doğrulanamayanları kontrol et (rapor §7): Vol 1 Rev C, Hassler 2014 birincil kaynağı, EMU içme torbası boyutu.
 - [ ] ISS verilerinin önbelleğini `data/cache/` içine oluştur (EDA CO2, RadLab ISS dozu, DONKI). Horizons yalnızca "future extension" sunumu için gerekirse.
 
