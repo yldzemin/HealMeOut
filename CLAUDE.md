@@ -9,7 +9,7 @@ içinde sabitlenmiştir. Bu kurallar hem insanlar hem AI için geçerlidir.
 - **`main`'e direkt push YASAK.** GitHub ruleset'i (`main-koruma`) bunu herkes için,
   repo sahibi dahil, sunucu tarafında engeller. Bypass yetkisi olan kimse yok.
 - **Force push ve `main` silme YASAK.**
-- Her değişiklik şu yoldan geçer: **branch → öz-inceleme → PR → 2 onay → squash merge.**
+- Her değişiklik şu yoldan geçer: **branch → öz-inceleme → PR → squash merge.**
 - Kuralları atlatmaya çalışmak yasak: `gh pr merge --admin`, ruleset'i kapatmak/değiştirmek,
   `--no-verify`. Kural dosyalarındaki (`CLAUDE.md`, `.claude/`, `.github/`) değişiklikler de
   normal PR sürecinden geçer.
@@ -39,19 +39,15 @@ Kısayol: **`/pr-ac`**.
 4. Bulunan sorunlar düzeltilir; düzeltilemeyen varsa PR açılmaz, kullanıcıya bildirilir.
 5. PR açıklamasındaki "Öz-inceleme" bölümü doldurulur (`.github/pull_request_template.md`).
 
-## 2. Onay (diğer iki bilgisayar)
+## 2. İnceleme (isteğe bağlı)
 
-- Ruleset **2 onay** ister: PR'ı açan dışındaki iki bilgisayar. (GitHub, kişinin kendi
-  PR'ını onaylamasına izin vermez; bu yüzden 3. kontrol yukarıdaki öz-incelemedir.)
-- Onayı her bilgisayarın Fable'ı verir. Kısayol: **`/pr-incele <PR-numarası>`**.
-- Onaylamadan önce AI: diff'i okur, mümkünse branch'i checkout edip testleri çalıştırır.
-  Engelleyici sorun varsa **Request changes** verir. Emin değilse onaylamaz, kullanıcıya sorar.
-- PR'a yeni commit gelirse eski onaylar düşer; son push'u da başka biri onaylamalıdır.
-- Tüm review yorumları "resolved" olmadan merge edilemez.
+- Ruleset onay şartı koymaz; PR'ı açan kişi öz-incelemeden sonra birleştirebilir.
+- İstenirse başka bir bilgisayarın Fable'ı inceleyebilir: **`/pr-incele <PR-numarası>`**.
+  AI diff'i okur, mümkünse testleri çalıştırır; sorun bulursa **Request changes** verir.
 
 ## 3. Merge
 
-- Sadece **squash merge**. 2 onay + çözülmüş yorumlar sağlanınca PR sahibi birleştirir:
+- Sadece **squash merge**. PR sahibi birleştirir:
   ```sh
   gh pr merge <numara> --squash --delete-branch
   ```

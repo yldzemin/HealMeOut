@@ -13,7 +13,7 @@ else
 fi
 
 engelle() {
-  echo "ENGELLENDİ: $1 Kural (CLAUDE.md): branch aç, öz-inceleme yap, PR aç, 2 onay bekle." >&2
+  echo "ENGELLENDİ: $1 Kural (CLAUDE.md): branch aç, öz-inceleme yap, PR aç." >&2
   exit 2
 }
 

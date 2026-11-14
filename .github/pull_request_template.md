@@ -10,7 +10,6 @@
 - [ ] Test / lint çalıştırıldı (yoksa "yok" yaz)
 - Bulgular ve yapılan düzeltmeler:
 
-## Onay
+## İnceleme (isteğe bağlı)
 
-Bu PR, açan kişi dışındaki **2 bilgisayarın** Fable onayı olmadan birleştirilemez.
-Diğer bilgisayarlarda: `/pr-incele <PR-numarası>`
+Başka bir bilgisayardan Fable incelemesi istenirse: `/pr-incele <PR-numarası>`
