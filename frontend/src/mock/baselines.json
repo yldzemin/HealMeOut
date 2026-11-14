@@ -1,0 +1,927 @@
+{
+  "source": "NASA OSDR OSD-575 (Inspiration4), CMP, TRANSFORMED file",
+  "sourceUrl": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575",
+  "note": "Pre- and post-flight values only. Baseline = mean and SD of L-92, L-44, L-3.",
+  "crew": {
+    "C1": {
+      "glucose": {
+        "label": "Glucose",
+        "unit": "mg/dL",
+        "refLow": 65.0,
+        "refHigh": 99.0,
+        "baselineMean": 77.33,
+        "baselineSd": 7.37,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 83.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 80.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 69.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 90.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 84.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 91.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 87.0
+          }
+        ]
+      },
+      "sodium": {
+        "label": "Sodium",
+        "unit": "mmol/L",
+        "refLow": 135.0,
+        "refHigh": 146.0,
+        "baselineMean": 140.67,
+        "baselineSd": 1.53,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 141.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 139.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 142.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 138.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 138.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 140.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 137.0
+          }
+        ]
+      },
+      "potassium": {
+        "label": "Potassium",
+        "unit": "mmol/L",
+        "refLow": 3.5,
+        "refHigh": 5.3,
+        "baselineMean": 4.23,
+        "baselineSd": 0.35,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 4.6
+          },
+          {
+            "timepoint": "L-44",
+            "value": 4.2
+          },
+          {
+            "timepoint": "L-3",
+            "value": 3.9
+          },
+          {
+            "timepoint": "R+1",
+            "value": 4.4
+          },
+          {
+            "timepoint": "R+45",
+            "value": 4.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 4.3
+          },
+          {
+            "timepoint": "R+194",
+            "value": 4.3
+          }
+        ]
+      },
+      "bun": {
+        "label": "Urea nitrogen (BUN)",
+        "unit": "mg/dL",
+        "refLow": 7.0,
+        "refHigh": 25.0,
+        "baselineMean": 21.33,
+        "baselineSd": 3.21,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 25.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 19.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 20.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 18.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 15.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 22.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 28.0
+          }
+        ]
+      },
+      "creatinine": {
+        "label": "Creatinine",
+        "unit": "mg/dL",
+        "refLow": 0.6,
+        "refHigh": 1.35,
+        "baselineMean": 1.24,
+        "baselineSd": 0.14,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 1.24
+          },
+          {
+            "timepoint": "L-44",
+            "value": 1.1
+          },
+          {
+            "timepoint": "L-3",
+            "value": 1.37
+          },
+          {
+            "timepoint": "R+1",
+            "value": 1.12
+          },
+          {
+            "timepoint": "R+45",
+            "value": 1.11
+          },
+          {
+            "timepoint": "R+82",
+            "value": 1.25
+          },
+          {
+            "timepoint": "R+194",
+            "value": 1.29
+          }
+        ]
+      },
+      "calcium": {
+        "label": "Calcium",
+        "unit": "mg/dL",
+        "refLow": 8.6,
+        "refHigh": 10.3,
+        "baselineMean": 9.77,
+        "baselineSd": 0.21,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 9.7
+          },
+          {
+            "timepoint": "L-44",
+            "value": 10.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 9.6
+          },
+          {
+            "timepoint": "R+1",
+            "value": 9.7
+          },
+          {
+            "timepoint": "R+45",
+            "value": 9.6
+          },
+          {
+            "timepoint": "R+82",
+            "value": 10.1
+          },
+          {
+            "timepoint": "R+194",
+            "value": 9.4
+          }
+        ]
+      }
+    },
+    "C2": {
+      "glucose": {
+        "label": "Glucose",
+        "unit": "mg/dL",
+        "refLow": 65.0,
+        "refHigh": 99.0,
+        "baselineMean": 73.0,
+        "baselineSd": 4.58,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 69.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 72.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 78.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 83.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 44.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 77.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 84.0
+          }
+        ]
+      },
+      "sodium": {
+        "label": "Sodium",
+        "unit": "mmol/L",
+        "refLow": 135.0,
+        "refHigh": 146.0,
+        "baselineMean": 142.0,
+        "baselineSd": 1.0,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 142.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 141.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 143.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 137.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 140.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 141.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 138.0
+          }
+        ]
+      },
+      "potassium": {
+        "label": "Potassium",
+        "unit": "mmol/L",
+        "refLow": 3.5,
+        "refHigh": 5.3,
+        "baselineMean": 3.9,
+        "baselineSd": 0.1,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 3.9
+          },
+          {
+            "timepoint": "L-44",
+            "value": 4.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 3.8
+          },
+          {
+            "timepoint": "R+1",
+            "value": 3.5
+          },
+          {
+            "timepoint": "R+45",
+            "value": 4.1
+          },
+          {
+            "timepoint": "R+82",
+            "value": 3.7
+          },
+          {
+            "timepoint": "R+194",
+            "value": 4.4
+          }
+        ]
+      },
+      "bun": {
+        "label": "Urea nitrogen (BUN)",
+        "unit": "mg/dL",
+        "refLow": 7.0,
+        "refHigh": 25.0,
+        "baselineMean": 15.67,
+        "baselineSd": 1.53,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 14.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 16.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 17.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 20.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 19.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 16.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 18.0
+          }
+        ]
+      },
+      "creatinine": {
+        "label": "Creatinine",
+        "unit": "mg/dL",
+        "refLow": 0.5,
+        "refHigh": 1.05,
+        "baselineMean": 0.89,
+        "baselineSd": 0.07,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 0.83
+          },
+          {
+            "timepoint": "L-44",
+            "value": 0.88
+          },
+          {
+            "timepoint": "L-3",
+            "value": 0.96
+          },
+          {
+            "timepoint": "R+1",
+            "value": 0.95
+          },
+          {
+            "timepoint": "R+45",
+            "value": 1.02
+          },
+          {
+            "timepoint": "R+82",
+            "value": 0.82
+          },
+          {
+            "timepoint": "R+194",
+            "value": 1.02
+          }
+        ]
+      },
+      "calcium": {
+        "label": "Calcium",
+        "unit": "mg/dL",
+        "refLow": 8.6,
+        "refHigh": 10.4,
+        "baselineMean": 9.73,
+        "baselineSd": 0.45,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 10.2
+          },
+          {
+            "timepoint": "L-44",
+            "value": 9.7
+          },
+          {
+            "timepoint": "L-3",
+            "value": 9.3
+          },
+          {
+            "timepoint": "R+1",
+            "value": 9.2
+          },
+          {
+            "timepoint": "R+45",
+            "value": 9.3
+          },
+          {
+            "timepoint": "R+82",
+            "value": 9.7
+          },
+          {
+            "timepoint": "R+194",
+            "value": 9.5
+          }
+        ]
+      }
+    },
+    "C3": {
+      "glucose": {
+        "label": "Glucose",
+        "unit": "mg/dL",
+        "refLow": 65.0,
+        "refHigh": 99.0,
+        "baselineMean": 71.33,
+        "baselineSd": 8.14,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 77.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 62.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 75.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 103.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 36.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 80.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 73.0
+          }
+        ]
+      },
+      "sodium": {
+        "label": "Sodium",
+        "unit": "mmol/L",
+        "refLow": 135.0,
+        "refHigh": 146.0,
+        "baselineMean": 138.67,
+        "baselineSd": 0.58,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 139.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 139.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 138.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 137.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 136.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 138.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 137.0
+          }
+        ]
+      },
+      "potassium": {
+        "label": "Potassium",
+        "unit": "mmol/L",
+        "refLow": 3.5,
+        "refHigh": 5.3,
+        "baselineMean": 3.5,
+        "baselineSd": 0.2,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 3.7
+          },
+          {
+            "timepoint": "L-44",
+            "value": 3.5
+          },
+          {
+            "timepoint": "L-3",
+            "value": 3.3
+          },
+          {
+            "timepoint": "R+1",
+            "value": 3.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 4.4
+          },
+          {
+            "timepoint": "R+82",
+            "value": 3.7
+          },
+          {
+            "timepoint": "R+194",
+            "value": 3.8
+          }
+        ]
+      },
+      "bun": {
+        "label": "Urea nitrogen (BUN)",
+        "unit": "mg/dL",
+        "refLow": 7.0,
+        "refHigh": 25.0,
+        "baselineMean": 20.67,
+        "baselineSd": 4.73,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 17.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 19.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 26.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 21.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 19.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 23.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 28.0
+          }
+        ]
+      },
+      "creatinine": {
+        "label": "Creatinine",
+        "unit": "mg/dL",
+        "refLow": 0.6,
+        "refHigh": 1.35,
+        "baselineMean": 1.04,
+        "baselineSd": 0.04,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 1.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 1.03
+          },
+          {
+            "timepoint": "L-3",
+            "value": 1.08
+          },
+          {
+            "timepoint": "R+1",
+            "value": 0.89
+          },
+          {
+            "timepoint": "R+45",
+            "value": 0.94
+          },
+          {
+            "timepoint": "R+82",
+            "value": 0.89
+          },
+          {
+            "timepoint": "R+194",
+            "value": 1.1
+          }
+        ]
+      },
+      "calcium": {
+        "label": "Calcium",
+        "unit": "mg/dL",
+        "refLow": 8.6,
+        "refHigh": 10.3,
+        "baselineMean": 9.7,
+        "baselineSd": 0.53,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 9.3
+          },
+          {
+            "timepoint": "L-44",
+            "value": 10.3
+          },
+          {
+            "timepoint": "L-3",
+            "value": 9.5
+          },
+          {
+            "timepoint": "R+1",
+            "value": 9.4
+          },
+          {
+            "timepoint": "R+45",
+            "value": 9.6
+          },
+          {
+            "timepoint": "R+82",
+            "value": 10.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 9.6
+          }
+        ]
+      }
+    },
+    "C4": {
+      "glucose": {
+        "label": "Glucose",
+        "unit": "mg/dL",
+        "refLow": 65.0,
+        "refHigh": 99.0,
+        "baselineMean": 79.67,
+        "baselineSd": 22.19,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 100.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 83.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 56.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 97.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 43.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 80.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 84.0
+          }
+        ]
+      },
+      "sodium": {
+        "label": "Sodium",
+        "unit": "mmol/L",
+        "refLow": 135.0,
+        "refHigh": 146.0,
+        "baselineMean": 139.67,
+        "baselineSd": 1.53,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 138.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 140.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 141.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 140.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 139.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 140.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 141.0
+          }
+        ]
+      },
+      "potassium": {
+        "label": "Potassium",
+        "unit": "mmol/L",
+        "refLow": 3.5,
+        "refHigh": 5.3,
+        "baselineMean": 4.03,
+        "baselineSd": 0.29,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 4.2
+          },
+          {
+            "timepoint": "L-44",
+            "value": 4.2
+          },
+          {
+            "timepoint": "L-3",
+            "value": 3.7
+          },
+          {
+            "timepoint": "R+1",
+            "value": 4.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 5.9
+          },
+          {
+            "timepoint": "R+82",
+            "value": 4.2
+          },
+          {
+            "timepoint": "R+194",
+            "value": 3.8
+          }
+        ]
+      },
+      "bun": {
+        "label": "Urea nitrogen (BUN)",
+        "unit": "mg/dL",
+        "refLow": 7.0,
+        "refHigh": 25.0,
+        "baselineMean": 20.0,
+        "baselineSd": 1.73,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 22.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 19.0
+          },
+          {
+            "timepoint": "L-3",
+            "value": 19.0
+          },
+          {
+            "timepoint": "R+1",
+            "value": 26.0
+          },
+          {
+            "timepoint": "R+45",
+            "value": 21.0
+          },
+          {
+            "timepoint": "R+82",
+            "value": 16.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 27.0
+          }
+        ]
+      },
+      "creatinine": {
+        "label": "Creatinine",
+        "unit": "mg/dL",
+        "refLow": 0.6,
+        "refHigh": 1.35,
+        "baselineMean": 1.12,
+        "baselineSd": 0.03,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 1.14
+          },
+          {
+            "timepoint": "L-44",
+            "value": 1.08
+          },
+          {
+            "timepoint": "L-3",
+            "value": 1.13
+          },
+          {
+            "timepoint": "R+1",
+            "value": 1.15
+          },
+          {
+            "timepoint": "R+45",
+            "value": 1.08
+          },
+          {
+            "timepoint": "R+82",
+            "value": 1.11
+          },
+          {
+            "timepoint": "R+194",
+            "value": 1.31
+          }
+        ]
+      },
+      "calcium": {
+        "label": "Calcium",
+        "unit": "mg/dL",
+        "refLow": 8.6,
+        "refHigh": 10.3,
+        "baselineMean": 10.1,
+        "baselineSd": 0.1,
+        "points": [
+          {
+            "timepoint": "L-92",
+            "value": 10.0
+          },
+          {
+            "timepoint": "L-44",
+            "value": 10.1
+          },
+          {
+            "timepoint": "L-3",
+            "value": 10.2
+          },
+          {
+            "timepoint": "R+1",
+            "value": 9.8
+          },
+          {
+            "timepoint": "R+45",
+            "value": 9.8
+          },
+          {
+            "timepoint": "R+82",
+            "value": 10.0
+          },
+          {
+            "timepoint": "R+194",
+            "value": 9.8
+          }
+        ]
+      }
+    }
+  }
+}

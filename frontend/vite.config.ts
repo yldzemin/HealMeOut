@@ -11,6 +11,8 @@ export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
 
   resolve: {
+    // One React copy for react-dom, Recharts and react-three-fiber.
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
     },
