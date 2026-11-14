@@ -8,6 +8,8 @@ import { ScreenPlaceholder } from "@/screens/ScreenPlaceholder";
 import { PersonalScreen } from "@/screens/PersonalScreen";
 import { CrewDeckScreen } from "@/screens/CrewDeckScreen";
 import { EmergencyOverlay } from "@/components/EmergencyOverlay";
+import { CheckInScreen } from "@/screens/CheckInScreen";
+import { INITIAL_ROUTINE, type Routine } from "@/data/personal";
 
 const SCREENS: Record<ScreenId, { title: string; description: string }> = {
   personal: {
@@ -37,6 +39,7 @@ export default function App() {
   const [role, setRole] = useState<ViewerRole>({ kind: "astronaut", crewId: "C3" });
   const [screen, setScreen] = useState<ScreenId>("personal");
   // L4 emergency takes over the full screen from any screen (FRONTEND.md, Crew Deck decision 3).
+  const [routine, setRoutine] = useState<Routine>(INITIAL_ROUTINE);
   const [emergency, setEmergency] = useState<{ patientId: string; startedAt: number } | null>(null);
 
   useEffect(() => {
@@ -65,12 +68,14 @@ export default function App() {
               transition={{ duration: 0.18 }}
             >
               {screen === "personal" ? (
-                <PersonalScreen crew={liveCrew} role={role} />
+                <PersonalScreen crew={liveCrew} role={role} routine={routine} />
               ) : screen === "crew" ? (
                 <CrewDeckScreen
                   crew={liveCrew}
                   onStartEmergency={(patientId) => setEmergency({ patientId, startedAt: Date.now() })}
                 />
+              ) : screen === "checkin" ? (
+                <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} />
               ) : (
                 <ScreenPlaceholder {...SCREENS[screen]} />
               )}
