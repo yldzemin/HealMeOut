@@ -14,6 +14,8 @@ Claude hafızasındadır:
 - **`main`'e direkt push YASAK.** GitHub ruleset'i (`main-koruma`) bunu herkes için,
   repo sahibi dahil, sunucu tarafında engeller. Bypass yetkisi olan kimse yok.
 - **Force push ve `main` silme YASAK.**
+- **Proje dili %100 İngilizce:** kod, yorumlar, dokümanlar, commit, dal adı, issue, PR ve
+  review yorumları İngilizce yazılır. Claude kendi kullanıcısıyla Türkçe konuşur.
 - Her değişiklik şu yoldan geçer: **branch → öz-inceleme → PR → squash merge.**
 - Kuralları atlatmaya çalışmak yasak: `gh pr merge --admin`, ruleset'i kapatmak/değiştirmek,
   `--no-verify`. Kural dosyalarındaki (`CLAUDE.md`, `.claude/`, `.github/`) değişiklikler de
@@ -41,7 +43,7 @@ Kısayol: **`/pr-ac`**.
    yönetimi, gereksiz/ölü kod, eksik test.
 3. Projede test/lint varsa çalıştırılır.
 4. Bulunan sorunlar düzeltilir; düzeltilemeyen varsa PR açılmaz, kullanıcıya bildirilir.
-5. PR açıklamasındaki "Öz-inceleme" bölümü doldurulur (`.github/pull_request_template.md`).
+5. PR açıklamasındaki "Self-review" bölümü İngilizce doldurulur (`.github/pull_request_template.md`).
 
 ## 2. İnceleme
 

@@ -18,5 +18,5 @@ PR #$ARGUMENTS'ı `CLAUDE.md`'deki kurallara göre incele:
    - Küçük, engelleyici olmayan önerileri onay gövdesine yaz.
    - Emin değilsen onaylama; durumu kullanıcıya anlat ve sor.
    - Mimari karar içeren PR'da (bkz. `CLAUDE_HAFIZASI.md` §6) onaylamadan önce kullanıcıya sor.
-   - Her review gövdesi `🤖 Claude (<kullanıcı adı>):` ile başlar.
+   - Her review gövdesi **İngilizce** yazılır ve `🤖 Claude (<kullanıcı adı>):` ile başlar.
 6. Verdiğin kararı ve gerekçesini kullanıcıya özetle.

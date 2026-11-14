@@ -2,7 +2,7 @@
 
 Bu dosya, bu projede çalışan Claude için kuralları ve çalışma metodolojisini tanımlar. Projenin tasarımı (konsept, mimari, arayüz, tıbbi değerler, veri kaynakları) **DESIGN.md**'dedir. Kod yazmadan veya tasarımla ilgili bir karar vermeden önce DESIGN.md'yi oku.
 
-Kullanıcıyla Türkçe konuş. Teslim içeriği (UI metinleri, README, demo altyazısı, commit mesajları) İngilizce olacak, çünkü Space Apps kuralı bunu istiyor.
+Kullanıcıyla Türkçe konuş. **Proje dili %100 İngilizce:** repoya ve GitHub'a yazılan her şey İngilizce olur: kod, kod yorumları, değişken/fonksiyon adları, dokümanlar, README, UI metinleri, demo altyazısı, commit mesajları, dal adları, issue'lar, PR başlık ve açıklamaları, review ve issue yorumları. Space Apps teslimi de İngilizce olmak zorunda.
 
 > **Son güncelleme:** 2026-11-14 (hackathon 1. gün)
 > **Açık doğrulama:** 2026 Project Submission ve Judging & Awards rehberleri 13 Kasım'da yayınlandı, ancak site JavaScript ile oluşturulduğu için okunamadı. §2 şu an **2025 rehberine** dayanıyor. Teslimden önce rehberleri tarayıcıyla aç, farkları buraya işle.

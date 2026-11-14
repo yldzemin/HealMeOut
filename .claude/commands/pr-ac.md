@@ -14,7 +14,8 @@ Mevcut branch için PR açma sürecini `CLAUDE.md`'deki kurallara göre yürüt:
    kullanıcıya bildir ve dur.
 6. `git push -u origin HEAD`
 7. `gh pr create --base main` ile PR aç. Başlık: $ARGUMENTS (boşsa değişiklikten türet).
-   Gövdeyi `.github/pull_request_template.md` şablonuna göre doldur; "Öz-inceleme" bölümüne
-   neyi kontrol ettiğini, ne bulduğunu ve neyi düzelttiğini yaz. İlgili issue varsa `Closes #N` ekle.
+   Başlık ve gövde **İngilizce** yazılır. Gövdeyi `.github/pull_request_template.md` şablonuna göre
+   doldur; "Self-review" bölümüne neyi kontrol ettiğini, ne bulduğunu ve neyi düzelttiğini yaz.
+   İlgili issue varsa `Closes #N` ekle.
 8. PR linkini ver. Birleştirmek için `gh pr merge <numara> --squash --delete-branch` komutunu,
    istenirse diğer bilgisayarlarda `/pr-incele <numara>` ile inceleme alınabileceğini söyle.

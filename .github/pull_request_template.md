@@ -1,15 +1,17 @@
-## Ne değişti?
+Closes #
+
+## What changed?
 
 
-## Neden?
+## Why?
 
 
-## Öz-inceleme (PR'ı açan bilgisayarın Fable 5.2'si)
+## Self-review (Fable 5.2 on the author's machine)
 
-- [ ] `git diff origin/main...HEAD` baştan sona incelendi
-- [ ] Test / lint çalıştırıldı (yoksa "yok" yaz)
-- Bulgular ve yapılan düzeltmeler:
+- [ ] Reviewed `git diff origin/main...HEAD` end to end
+- [ ] Ran tests / lint (write "none" if there are none)
+- Findings and fixes:
 
-## İnceleme (isteğe bağlı)
+## Review
 
-Başka bir bilgisayardan Fable incelemesi istenirse: `/pr-incele <PR-numarası>`
+To request a Fable review from another machine: `/pr-incele <PR-number>`
