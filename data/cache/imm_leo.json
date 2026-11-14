@@ -1,0 +1,21 @@
+{
+  "source": "https://www.nasa.gov/wp-content/uploads/2026/08/ranking-of-medical-conditions-by-probability.pdf",
+  "fetchedAt": "2026-11-14T00:00:00Z",
+  "items": [
+    {"condition":"Late insomnia","probability":0.912},
+    {"condition":"Skin abrasion","probability":0.821},
+    {"condition":"Skin rash","probability":0.821},
+    {"condition":"Space motion sickness","probability":0.73},
+    {"condition":"Eye abrasion (foreign body)","probability":0.722},
+    {"condition":"Late headache","probability":0.592},
+    {"condition":"Nasal congestion","probability":0.586},
+    {"condition":"Back pain (space adaptation)","probability":0.525},
+    {"condition":"UTI (female)","probability":0.49},
+    {"condition":"Respiratory infection","probability":0.453},
+    {"condition":"Barotrauma (ear/sinus)","probability":0.433},
+    {"condition":"VIIP/SANS","probability":0.341},
+    {"condition":"CO2-induced headache","probability":0.306},
+    {"condition":"Hearing loss","probability":0.094},
+    {"condition":"Fingernail delamination","probability":0.065}
+  ]
+}

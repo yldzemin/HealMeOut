@@ -1,0 +1,16 @@
+condition,probability
+Late insomnia,0.912
+Skin abrasion,0.821
+Skin rash,0.821
+Space motion sickness,0.730
+Eye abrasion (foreign body),0.722
+Late headache,0.592
+Nasal congestion,0.586
+Back pain (space adaptation),0.525
+UTI (female),0.490
+Respiratory infection,0.453
+Barotrauma (ear/sinus),0.433
+VIIP/SANS,0.341
+CO2-induced headache,0.306
+Hearing loss,0.094
+Fingernail delamination,0.065
