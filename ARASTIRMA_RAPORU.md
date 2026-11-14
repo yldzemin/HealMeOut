@@ -1,5 +1,7 @@
 # ASTRA-TWIN — Doğrulanmış Araştırma Raporu
 
+> **Update 2026-11-14:** The verified NASA data source inventory is in [`NASA_DATA_SOURCES.md`](NASA_DATA_SOURCES.md). Values listed in its §9 supersede this report: CO2 congestion threshold, light-time, NOAA exclusion, DONKI endpoint, Chang'e-4 in RadLab, compression garments, and the ISS formulary source.
+
 **Tarih:** 2026-11-09
 **Yöntem:** Canlı web sayfaları, NASA teknik dokümanları, PubMed ve canlı API sorguları. Her iddianın yanında kaynağı var.
 
