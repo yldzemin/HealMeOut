@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Check, ExternalLink, RadioTower, Siren, X } from "lucide-react";
+import { Check, ExternalLink, RadioTower, Siren, Volume2, VolumeX, X } from "lucide-react";
 import type { CrewMember } from "@/types";
 import { CPR_SOURCE, CPR_STEPS, EMERGENCY_CARD, proposeRoles, ROLE_LABEL, type RoleId } from "@/data/station";
 import { StationMap } from "@/components/StationMap";
 import { Button } from "@/components/ui/button";
 import { openExternal } from "@/lib/openExternal";
+import { playConfirm, startAlarm } from "@/lib/sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function clock(start: number, now: number) {
@@ -38,10 +39,18 @@ export function EmergencyOverlay({
   const [done, setDone] = useState<Record<string, number>>({});
   const [now, setNow] = useState(() => Date.now());
 
+  const [muted, setMuted] = useState(false);
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Alarm sounds until the CMO confirms the roles, or until muted.
+  useEffect(() => {
+    if (confirmed || muted) return;
+    return startAlarm();
+  }, [confirmed, muted]);
 
   const others = useMemo(() => crew.filter((c) => c.id !== patientId), [crew, patientId]);
   const name = (id: string) => {
@@ -80,10 +89,22 @@ export function EmergencyOverlay({
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={onEnd} className="gap-2">
-          <X className="size-4" aria-hidden />
-          End drill
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setMuted((m) => !m)}
+            className="gap-2"
+            aria-pressed={muted}
+            aria-label={muted ? "Unmute alarm" : "Mute alarm"}
+          >
+            {muted ? <VolumeX className="size-4" aria-hidden /> : <Volume2 className="size-4" aria-hidden />}
+            {confirmed ? "Alarm off (roles confirmed)" : muted ? "Alarm muted" : "Alarm on"}
+          </Button>
+          <Button variant="outline" onClick={onEnd} className="gap-2">
+            <X className="size-4" aria-hidden />
+            End drill
+          </Button>
+        </div>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,4fr)_minmax(0,5fr)] gap-4">
@@ -131,7 +152,13 @@ export function EmergencyOverlay({
             ))}
           </ul>
           {!confirmed && (
-            <Button className="mt-auto" onClick={() => setConfirmed(true)}>
+            <Button
+              className="mt-auto"
+              onClick={() => {
+                setConfirmed(true);
+                if (!muted) playConfirm();
+              }}
+            >
               Confirm roles (CMO)
             </Button>
           )}
