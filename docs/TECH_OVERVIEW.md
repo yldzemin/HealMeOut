@@ -147,7 +147,7 @@ Details: [`BACKEND.md`](BACKEND.md) §5 (logic) and [`FRONTEND.md`](FRONTEND.md)
 
 | # | Decision | Affects |
 |---|---|---|
-| — | Backend language: **Java 17/21 + Spring Boot 3** or **Python + FastAPI** (PROPOSED: whichever the backend developer knows best) | backend |
+| #24 | Backend: **Rust** ingest CLI + **Java 21 / Spring Boot 4.1** API, joined only by `data/cache/*.json` (**DECIDED**, see `BACKEND.md` §1) | backend |
 | — | Frontend: **React + Vite + TypeScript** (PROPOSED) | frontend |
 | — | Exact endpoint paths and JSON shapes | both: agree before wiring |
 | #11 | ISS medication list (Diaz 2024) | recommendation cards |

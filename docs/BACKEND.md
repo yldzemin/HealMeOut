@@ -5,28 +5,53 @@ The backend turns NASA data into clean JSON, runs the twin and rules engines, dr
 
 ---
 
-## 1. Stack (PROPOSED: pick what you know best)
+## 1. Stack (DECIDED, #24)
 
-| Option | Use if | Notes |
-|---|---|---|
-| **Java 17/21 + Spring Boot 3** (Web, Validation) | You know Java well | Apache Commons CSV for OSDR files; `java.net.http.HttpClient` for APIs; Jackson for JSON |
-| **Python 3.11+ + FastAPI** | You know Python | pandas for CSV; httpx for APIs |
+Two parts in two languages. They never call each other: the only contract between them is the JSON files in `data/cache/`.
 
-Either way:
+| Part | Language | Job | Libraries |
+|---|---|---|---|
+| `backend/ingest/` | **Rust** (stable, edition 2024) | Command-line tool. Reads the OSDR CSVs, fetches RadLab and EDA, transcribes the IMM table, writes `data/cache/*.json` | `csv`, `serde`, `serde_json`, `reqwest` (blocking, rustls), `clap`, `anyhow` |
+| `backend/api/` | **Java 21 + Spring Boot 4.1** (Web, Validation) | HTTP API. Loads `data/cache/*.json` at start-up; runs the twin, rules and scenario engines and the privacy filter | Jackson (JSON), JUnit 5 |
 
-- Enable CORS for the frontend dev server and the GitHub Pages origin.
-- Run fully offline from `data/cache/` (flag `OFFLINE=true`).
-- Pin dependency versions.
+Both parts:
+
+- **Only `ingest` goes online.** The API never calls the internet, so the demo always runs offline.
+- Enable CORS (API) for the frontend dev server and the GitHub Pages origin.
+- Pin dependency versions: commit `Cargo.lock`; fix the Spring Boot and plugin versions in the build file.
 
 ```
 backend/
-  src/…/ingest/     ← OSDR, RadLab, EDA, IMM loaders → data/cache/*.json
-  src/…/twin/       ← baselines, z-scores, forecasts
-  src/…/rules/      ← thresholds → status levels and alerts
-  src/…/scenario/   ← scripted scenario timelines
-  src/…/privacy/    ← filters what each role/screen may see
-  src/…/api/        ← controllers
+  ingest/                       ← Rust (cargo)
+    src/osdr.rs                 ← OSD-575, OSD-569 → baselines.json
+    src/radlab.rs               ← ISS dose rate → radlab_iss.json
+    src/eda.rs                  ← cabin CO2, temperature, humidity → eda_iss.json
+    src/imm.rs                  ← IMM table → imm_leo.json
+  api/                          ← Java (Spring Boot)
+    src/main/java/…/cache/      ← loads data/cache/*.json
+    src/main/java/…/twin/       ← baselines, z-scores, forecasts
+    src/main/java/…/rules/      ← thresholds → status levels and alerts
+    src/main/java/…/scenario/   ← scripted scenario timelines
+    src/main/java/…/privacy/    ← filters what each role/screen may see
+    src/main/java/…/web/        ← controllers
 ```
+
+### 1.1 Cache file contract
+
+Every file in `data/cache/` uses the same envelope. `items` use the entity shapes and field names in TECH_OVERVIEW §4.2, so the API can read them without renaming.
+
+```json
+{ "source": "<URL or repo path>", "fetchedAt": "<ISO-8601 UTC>", "items": [ ] }
+```
+
+| File | `items` | Source |
+|---|---|---|
+| `baselines.json` | `Baseline` | `data/osdr/OSD-575_*`, `data/osdr/OSD-569_*` |
+| `radlab_iss.json` | `Environment` (`doseRate_uGy_h`) | OSDR RadLab |
+| `eda_iss.json` | `Environment` (`co2_mmHg`, `temp_C`, `rh_pct`) | OSDR EDA |
+| `imm_leo.json` | condition probabilities | `NASA_DATA_SOURCES.md` §10.1 |
+
+If one side needs a field the other does not write, change this table and TECH_OVERVIEW §4 in the same PR.
 
 ---
 
@@ -42,7 +67,7 @@ backend/
 
 **CSV gotchas:**
 
-- Files start with a UTF-8 BOM. Python: `encoding="utf-8-sig"`. Java: strip `﻿` from the first header.
+- Files start with a UTF-8 BOM. In `ingest`, check that the first header name does not start with `\u{feff}` after parsing, and strip it if it does.
 - OSD-569/575 are **pre- and post-flight only**. They give baselines, not in-flight values.
 - Use only crews C001–C004 and map them to fictional callsigns (TECH_OVERVIEW §4.4).
 
@@ -139,8 +164,9 @@ Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psycholog
 
 ## 7. Cache and offline
 
-- `ingest` writes everything to `data/cache/*.json` with a `fetchedAt` timestamp and the source URL.
-- At start-up, load from cache; try live sources only if `OFFLINE=false`, and fall back to cache on any error.
+- `ingest` (Rust) writes everything to `data/cache/*.json` in the envelope from §1.1.
+- To refresh data, run `ingest` again. On any network error it keeps the existing cache file and reports which source failed.
+- The API (Java) only reads the cache at start-up and never goes online.
 - Commit cache files that the demo needs (small JSON only).
 
 ---
