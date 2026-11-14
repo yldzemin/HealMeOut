@@ -27,6 +27,7 @@ Note: NASA did not disclose the medical details. Never describe it as a heart at
 ## Slide 1 — Title & One-Line Pitch
 
 - **Jury question:** What does this project do?
+- **Headline (under the jury question):** No ISS crew should face a health change alone.
 - **Title:** ASTRA-TWIN
 - **Subtitle:** We help ISS crews spot and act on health changes — for themselves and each other — with a digital twin built on NASA data.
 - **Visual:** one app screen (Crew Deck). No long team intro, no logo wall.
@@ -115,7 +116,8 @@ Note: NASA did not disclose the medical details. Never describe it as a heart at
 ## Slide 7 — Team & Closing
 
 - **Jury question:** Why this team, and what should we remember?
-- **Headline:** No ISS crew should face a health change alone.
+- **Headline:** Let your ASTRA-TWIN heal you out…
+  (The main message "No ISS crew should face a health change alone." opens the deck on slide 1 and is repeated in the closing line below.)
 - **Team:**
 
 | Name | Field |
