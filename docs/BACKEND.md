@@ -205,3 +205,26 @@ Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psycholog
 - JSON field names match TECH_OVERVIEW §4 exactly.
 - Every alert has `evidence` and `source`.
 - Privacy filter has a test for "psych data never reaches the Crew Deck".
+
+---
+
+## 9. Live telemetry stream (CSV, #46)
+
+Flowing data in CSV, in and out. Wearable values are **simulated** in the style of the CSA Bio-Monitor (TECH_OVERVIEW §4.3).
+
+| Part | Class | Job |
+|---|---|---|
+| Source (interface) | `TelemetrySource` | One call = one tick of rows |
+| Simulator | `SimulatedTelemetrySource` | Seeded, mean-reverting random walk of `hr`, `spo2`, `temp_c` around each member's latest reading; scenario and manual readings become the new target, so the stream never overwrites them |
+| Replay | `CsvReplaySource` | Replays any CSV in `data/stream/` with the header below; each distinct timestamp is one tick |
+| Streamer | `TelemetryStreamer` | Pulls a tick at a fixed rate, feeds the station (rules re-run), appends to `data/stream/out/telemetry-<UTC>.csv`, pushes rows to live subscribers |
+
+- **CSV columns** (the `Reading` entity): `timestamp,crewId,metric,value,unit,provenance,measuredHow`.
+- **Routes:**
+  - `GET /api/stream/telemetry.csv` is a live, chunked CSV until the stream stops (`&limit=N` to stop earlier).
+  - `GET /api/stream/recent.csv?n=100` is a snapshot.
+  - `GET /api/stream/status`.
+  - `POST /api/stream/start?source=sim|replay&file=<name>.csv&intervalMs=1000` and `POST /api/stream/stop`.
+- **Privacy:** every row passes the vitals policy (§6). CMO and the emergency view see everyone, SELF only itself, and the Crew Deck gets 403.
+- **Memory:** the reading store keeps the last 20,000 readings plus the latest value of every crew × metric, so slow metrics such as glucose never drop out.
+- **Sample:** `data/stream/sample_telemetry.csv` has 20 minutes × 7 crew. C5's simulated SpO2 drop to 88% fires the SpO2 rule during a replay.

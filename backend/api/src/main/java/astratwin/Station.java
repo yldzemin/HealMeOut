@@ -55,6 +55,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * Composition root and facade: wires repositories, engines and the privacy filter, and offers the
@@ -68,8 +70,12 @@ public final class Station {
     private final CacheData data;
     private final BaselineStatistics baselines;
     private final CrewRoster roster;
+    /** Readings kept in history; the latest value of every metric is kept separately. */
+    static final int READING_HISTORY = 20_000;
+
     private final CrewRepository crew = new InMemoryCrewRepository();
-    private final ReadingRepository readings = new InMemoryReadingRepository();
+    private final ReadingRepository readings = new InMemoryReadingRepository(READING_HISTORY);
+    private final List<Consumer<Reading>> readingListeners = new CopyOnWriteArrayList<>();
     private final EnvironmentRepository environment = new InMemoryEnvironmentRepository();
     private final AlertRepository alerts = new InMemoryAlertRepository();
     private final CheckInRepository checkIns = new InMemoryCheckInRepository();
@@ -108,7 +114,7 @@ public final class Station {
         checkIns.clear();
         roster.members().forEach(crew::save);
         Instant now = Instant.now();
-        roster.nominalReadings(now).forEach(readings::add);
+        roster.nominalReadings(now).forEach(this::record);
         roster.checkIns().forEach(checkIns::add);
         List<Environment> nominal = new ArrayList<>();
         nominal.add(Environment.co2(2.1, now, "simulated"));
@@ -138,9 +144,31 @@ public final class Station {
         if (metric == null || metric.isBlank()) {
             throw new IllegalArgumentException("metric is required");
         }
-        readings.add(new Reading(crewId, metric, value, unit, Instant.now(), "simulated", measuredHow(metric),
+        record(new Reading(crewId, metric, value, unit, Instant.now(), "simulated", measuredHow(metric),
                 "Entered in the demo console"));
         reevaluate();
+    }
+
+    /**
+     * Adds a batch of live telemetry and re-runs the rules once. Telemetry is not sent back to the
+     * reading listeners, so a stream never feeds itself.
+     */
+    public synchronized void ingestTelemetry(List<Reading> batch) {
+        for (Reading r : batch) {
+            member(r.crewId()).orElseThrow(() -> new NoSuchElementException("no crew member " + r.crewId()));
+            readings.add(r);
+        }
+        reevaluate();
+    }
+
+    /** Called for every non-telemetry reading (nominal, scenario, manual); used by the telemetry simulator. */
+    public void addReadingListener(Consumer<Reading> listener) {
+        readingListeners.add(listener);
+    }
+
+    private void record(Reading reading) {
+        readings.add(reading);
+        readingListeners.forEach(l -> l.accept(reading));
     }
 
     public synchronized Alert setAlertStatus(String alertId, AlertStatus status) {
@@ -158,6 +186,15 @@ public final class Station {
                 environment.latest(e -> e.co2_mmHg() != null).orElse(null),
                 environment.latest(e -> e.doseEqRate_uSv_h() != null).orElse(null),
                 scenarios.state().orElse(null), DISCLAIMER);
+    }
+
+    /** Latest reading of every crew member's vital metrics; seeds the telemetry simulator. */
+    public synchronized List<Reading> latestReadings() {
+        List<Reading> out = new ArrayList<>();
+        for (CrewMember m : crew.all()) {
+            out.addAll(vitals(m.id()));
+        }
+        return out;
     }
 
     public boolean allows(DataKind kind, ViewRequest request, String crewId) {
@@ -192,7 +229,7 @@ public final class Station {
     private void apply(ScenarioStep step) {
         Instant now = Instant.now();
         for (Reading r : step.readings()) {
-            readings.add(r.timestamp() != null ? r : new Reading(r.crewId(), r.metric(), r.value(), r.unit(), now,
+            record(r.timestamp() != null ? r : new Reading(r.crewId(), r.metric(), r.value(), r.unit(), now,
                     r.provenance(), r.measuredHow(), r.note()));
         }
         environment.addAll(step.environment().stream()

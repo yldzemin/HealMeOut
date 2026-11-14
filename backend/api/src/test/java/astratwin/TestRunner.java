@@ -19,6 +19,7 @@ public final class TestRunner {
         RulesTest.register(tests);
         PrivacyTest.register(tests, cache);
         ScenarioTest.register(tests, cache);
+        StreamTest.register(tests, cache);
 
         List<String> failed = new ArrayList<>();
         for (Map.Entry<String, Test> t : tests.entrySet()) {

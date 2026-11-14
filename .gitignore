@@ -8,3 +8,6 @@
 backend/ingest/target/
 # Java build output
 backend/api/out/
+
+# Live telemetry logs
+data/stream/out/

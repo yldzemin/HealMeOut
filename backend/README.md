@@ -23,6 +23,7 @@ Open **http://127.0.0.1:8080/demo/**:
   - `spe-iss` — real NASA SRAG ISS TEPC data, Sep 2017: the dose-rate rule fires on Sep 11.
 - **Viewer** (top right): switch between CMO, Crew Deck, Emergency and Self to see the privacy filter. The Crew Deck never sees vitals or psychological check-ins.
 - **Add a reading:** e.g. glucose 52 for C3 → L3 alert; then approve or reject it as the CMO.
+- **Live telemetry (CSV stream):** *Start simulated* streams wearable values (heart rate, SpO2, temperature) for the whole crew every second; *Replay sample CSV* plays `data/stream/sample_telemetry.csv`, where C5's SpO2 drops and the rule fires. The panel reads the live CSV line by line; each run is also logged to `data/stream/out/`.
 - **Personal baseline & twin:** real pre-flight baselines with the commercial-mission tag (SpaceX Inspiration4, NASA OSDR), and the T+6/T+12 dose forecast.
 
 Every value is labelled `real` or `simulated`. *Simulation — not medical advice.*
@@ -57,5 +58,8 @@ All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SE
 | GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy) |
 | GET | `/api/environment/dose` | hourly ISS dose series currently loaded |
 | GET | `/api/imm` | NASA IMM LEO 6-month probabilities |
+| GET | `/api/stream/telemetry.csv` | live CSV stream (chunked; `&limit=N`); vitals policy per row, Crew Deck gets 403 |
+| GET | `/api/stream/recent.csv?n=100` · `/api/stream/status` | recent rows as CSV · stream status |
+| POST | `/api/stream/start?source=sim\|replay&file=<name>.csv&intervalMs=1000` · `/api/stream/stop` | start or stop the stream |
 
-Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache]`.
+Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch).

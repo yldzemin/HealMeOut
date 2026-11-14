@@ -7,6 +7,11 @@ import astratwin.domain.Viewer;
 import astratwin.json.Json;
 import astratwin.json.JsonParser;
 import astratwin.privacy.ViewRequest;
+import astratwin.stream.CsvReplaySource;
+import astratwin.stream.SimulatedTelemetrySource;
+import astratwin.stream.TelemetryRow;
+import astratwin.stream.TelemetrySource;
+import astratwin.stream.TelemetryStreamer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -15,25 +20,40 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 
 /**
  * HTTP API on the JDK's built-in server (no dependencies, #33). Routes:
  * GET /api/health, /api/station, /api/scenarios, /api/crew/{id}/baselines, /api/crew/{id}/forecasts,
  * /api/environment/dose, /api/imm; POST /api/scenarios/{id}/start, /api/scenario/step,
  * /api/scenario/stop, /api/readings, /api/alerts/{id}/approve|reject.
+ * Telemetry: GET /api/stream/status, /api/stream/telemetry.csv (live, chunked), /api/stream/recent.csv;
+ * POST /api/stream/start?source=sim|replay&file=sample_telemetry.csv&intervalMs=1000, /api/stream/stop.
  * Viewer: ?viewer=CMO|CREW_DECK|EMERGENCY|SELF&crewId=C1; the default is CREW_DECK (most restricted).
  * The demo console is served at /demo/.
  */
 public final class ApiServer {
     private final Station station;
+    private final TelemetryStreamer streamer;
+    private final Path streamDir;
     private final HttpServer server;
 
-    public ApiServer(Station station, String host, int port) throws IOException {
+    public ApiServer(Station station, TelemetryStreamer streamer, Path streamDir, String host, int port)
+            throws IOException {
         this.station = station;
+        this.streamer = streamer;
+        this.streamDir = streamDir;
         this.server = HttpServer.create(new InetSocketAddress(host, port), 0);
+        // One virtual thread per request, so long-lived CSV streams never block other requests.
+        server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.createContext("/api/", this::handleApi);
         server.createContext("/demo", this::handleDemo);
         server.createContext("/", this::handleRoot);
@@ -97,6 +117,15 @@ public final class ApiServer {
             return;
         }
         try {
+            String path = ex.getRequestURI().getPath();
+            if (ex.getRequestMethod().equals("GET") && path.equals("/api/stream/telemetry.csv")) {
+                streamCsv(ex);
+                return;
+            }
+            if (ex.getRequestMethod().equals("GET") && path.equals("/api/stream/recent.csv")) {
+                recentCsv(ex);
+                return;
+            }
             send(ex, 200, route(ex));
         } catch (NoSuchElementException e) {
             send(ex, 404, Map.of("error", String.valueOf(e.getMessage())));
@@ -171,8 +200,98 @@ public final class ApiServer {
                 yield station.doseSeries();
             }
             case "GET imm" -> station.imm();
+            case "GET stream" -> {
+                require(p.length == 2 && p[1].equals("status"), "use GET /api/stream/status, /telemetry.csv or /recent.csv");
+                yield streamer.status();
+            }
+            case "POST stream" -> {
+                require(p.length == 2, "use POST /api/stream/start or /api/stream/stop");
+                if (p[1].equals("stop")) {
+                    yield streamer.stop();
+                }
+                require(p[1].equals("start"), "use POST /api/stream/start or /api/stream/stop");
+                long interval = Long.parseLong(query.getOrDefault("intervalMs", "1000"));
+                yield streamer.start(source(query), interval);
+            }
             default -> throw new NoSuchElementException("no route " + method + " " + ex.getRequestURI().getPath());
         };
+    }
+
+    /** {@code source=sim} (default) or {@code source=replay&file=<name in data/stream/>}. */
+    private TelemetrySource source(Map<String, String> query) throws IOException {
+        String kind = query.getOrDefault("source", "sim");
+        if (kind.equals("sim")) {
+            return new SimulatedTelemetrySource(Long.parseLong(query.getOrDefault("seed", "20261115")));
+        }
+        require(kind.equals("replay"), "source must be sim or replay");
+        String file = query.getOrDefault("file", "sample_telemetry.csv");
+        require(file.matches("[A-Za-z0-9._-]+\\.csv"), "file must be a .csv name inside data/stream/");
+        Path path = streamDir.resolve(file);
+        if (!Files.isRegularFile(path)) {
+            throw new NoSuchElementException("no file data/stream/" + file);
+        }
+        return new CsvReplaySource(path);
+    }
+
+    /** Vitals policy per row: CMO and emergency see every crew member, SELF only itself, Crew Deck nothing. */
+    private Predicate<TelemetryRow> telemetryFilter(ViewRequest request) {
+        if (request.viewer() == Viewer.CREW_DECK) {
+            throw new SecurityException("the Crew Deck gets no vitals stream");
+        }
+        return row -> station.allows(DataKind.VITALS, request, row.crewId());
+    }
+
+    private ViewRequest viewRequest(HttpExchange ex) {
+        Map<String, String> query = query(ex.getRequestURI().getRawQuery());
+        return new ViewRequest(Viewer.parse(query.getOrDefault("viewer", "CREW_DECK")), query.get("crewId"));
+    }
+
+    /** Live CSV: header, then one line per row as it arrives, until the stream stops or {@code limit} rows. */
+    private void streamCsv(HttpExchange ex) throws IOException {
+        Map<String, String> query = query(ex.getRequestURI().getRawQuery());
+        Predicate<TelemetryRow> filter = telemetryFilter(viewRequest(ex));
+        long limit = Long.parseLong(query.getOrDefault("limit", String.valueOf(Long.MAX_VALUE)));
+        ex.getResponseHeaders().set("Content-Type", "text/csv; charset=utf-8");
+        ex.getResponseHeaders().set("Cache-Control", "no-cache");
+        ex.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        ex.sendResponseHeaders(200, 0);
+        try (TelemetryStreamer.Subscription sub = streamer.subscribe(filter); OutputStream out = ex.getResponseBody()) {
+            out.write((TelemetryRow.HEADER + "\n").getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            long sent = 0;
+            while (sent < limit) {
+                Optional<TelemetryRow> next = sub.poll(Duration.ofSeconds(30));
+                if (next == null) {
+                    continue;
+                }
+                if (next.isEmpty()) {
+                    break;
+                }
+                out.write((next.get().toCsv() + "\n").getBytes(StandardCharsets.UTF_8));
+                out.flush();
+                sent++;
+            }
+        } catch (IOException e) {
+            // The client went away; nothing to do.
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /** Snapshot CSV of the last {@code n} rows (default 100) this viewer may see. */
+    private void recentCsv(HttpExchange ex) throws IOException {
+        Map<String, String> query = query(ex.getRequestURI().getRawQuery());
+        int n = Math.max(1, Math.min(500, Integer.parseInt(query.getOrDefault("n", "100"))));
+        StringBuilder csv = new StringBuilder(TelemetryRow.HEADER).append('\n');
+        for (TelemetryRow row : streamer.recent(n, telemetryFilter(viewRequest(ex)))) {
+            csv.append(row.toCsv()).append('\n');
+        }
+        byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
+        ex.getResponseHeaders().set("Content-Type", "text/csv; charset=utf-8");
+        ex.sendResponseHeaders(200, bytes.length);
+        try (OutputStream out = ex.getResponseBody()) {
+            out.write(bytes);
+        }
     }
 
     private static void require(boolean condition, String message) {
