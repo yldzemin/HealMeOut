@@ -37,7 +37,6 @@ ARASTIRMA_RAPORU.md                           ← doğrulanmış araştırmanın
 (çevrimiçi) Proje Kapsam Dokümanı             ← ilk kapsam (Mars odaklı, 9 Kasım; ISS kapsamı için #16): https://claude.ai/artifact/V9p1PiJczNXqhjp5WoEpUT
 NASA_DATA_SOURCES.md                          ← doğrulanmış NASA veri envanteri, ISS gerçekleri (§11)
 PSYCHOLOGY_AND_LONG_DURATION.md               ← psikoloji araştırması ve modül önerisi, uzun görev arka planı
-Seminer Raporu -space app.docx                ← seminer raporu
 57110f2f9bef1ff11b47b3e897d3eee2.jpg          ← UI estetik referansı
 data/osdr/                                    ← NASA OSDR'den indirilmiş gerçek Inspiration4 verisi
 data/cache/                                   ← API önbelleği (internetsiz demo için): EDA, RadLab ISS, DONKI
