@@ -2,7 +2,7 @@
 
 **Checked on:** 2026-11-14 (hackathon day 1).
 **Scope:** ISS (see #16). Moon and Mars items are background for the "future extension" part of the presentation.
-**Method:** Web research done with Claude (SI). Quotes were read in the linked source unless marked **(snippet)**, which means the fact comes only from a search-result summary. Snippet facts must be checked in the full text before they go into the submission.
+**Method:** Web research done with SI assistance. Quotes were read in the linked source unless marked **(snippet)**, which means the fact comes only from a search-result summary. Snippet facts must be checked in the full text before they go into the submission.
 
 **Labels:**
 - **(snippet)**: from a search summary, not the full source.

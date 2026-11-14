@@ -1,11 +1,11 @@
 # healmeout — Ekip Kuralları
 
-Bu repoda 3 geliştirici, 3 ayrı bilgisayardan çalışır. Her bilgisayardaki ana AI
-Claude Code + **Fable 5.2** (`claude-fable-5-2`) modelidir; model `.claude/settings.json`
+Bu repoda 3 geliştirici, 3 ayrı bilgisayardan çalışır. Her bilgisayardaki ana AI asistanı
+**Fable 5.2** modelidir; model `.claude/settings.json`
 içinde sabitlenmiştir. Bu kurallar hem insanlar hem AI için geçerlidir.
 
 Proje kuralları, hackathon kuralları ve GitHub çalışma düzeni (issue, PR onayı, yorumlar)
-Claude hafızasındadır:
+proje hafızasındadır:
 
 @CLAUDE_HAFIZASI.md
 
@@ -15,7 +15,9 @@ Claude hafızasındadır:
   repo sahibi dahil, sunucu tarafında engeller. Bypass yetkisi olan kimse yok.
 - **Force push ve `main` silme YASAK.**
 - **Proje dili %100 İngilizce:** kod, yorumlar, dokümanlar, commit, dal adı, issue, PR ve
-  review yorumları İngilizce yazılır. Claude kendi kullanıcısıyla Türkçe konuşur.
+  review yorumları İngilizce yazılır. AI asistanı kendi kullanıcısıyla Türkçe konuşur.
+- **AI aracının adı GitHub'a yazılmaz (#44):** commit, PR, issue ve yorumlarda araç adı, imza,
+  co-author satırı veya "Generated with …" satırı olmaz. YZ kullanımı teslim formunda beyan edilir.
 - Her değişiklik şu yoldan geçer: **branch → öz-inceleme → PR → squash merge.**
 - Kuralları atlatmaya çalışmak yasak: `gh pr merge --admin`, ruleset'i kapatmak/değiştirmek,
   `--no-verify`. Kural dosyalarındaki (`CLAUDE.md`, `.claude/`, `.github/`) değişiklikler de
@@ -62,7 +64,7 @@ Kısayol: **`/pr-ac`**.
 ## Kurulum (her bilgisayarda bir kez)
 
 1. `gh auth login` — her kişi kendi GitHub hesabıyla.
-2. Repoyu klonla, Claude Code'u repo kökünde başlat. Model `claude-fable-5-2` olarak gelir;
+2. Repoyu klonla, AI asistanını repo kökünde başlat. Model `.claude/settings.json`'dan gelir;
    `/model` ile değiştirme.
 3. `.claude/hooks/main-push-engeli.sh` AI'ın `main`'e push denemesini yerelde durdurur;
    asıl koruma GitHub ruleset'idir.

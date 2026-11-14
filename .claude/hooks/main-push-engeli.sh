@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code PreToolUse hook'u: AI'ın main'e direkt push, force push ve
+# AI asistanı PreToolUse hook'u: AI'ın main'e direkt push, force push ve
 # kuralları atlayan merge denemelerini yerelde durdurur.
 # Asıl koruma GitHub'daki "main-koruma" ruleset'idir; bu hook sadece erken uyarıdır.
 

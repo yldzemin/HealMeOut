@@ -2,7 +2,7 @@
 
 **Checked on:** 2026-11-14 (hackathon day 1), between about 09:30 and 10:10 UTC.
 **Method:** Every page was opened and every API was called live with curl or the browser. Nothing was signed into and no forms were submitted.
-**Research:** Done with Claude (SI); see "Use of SI" in the submission.
+**Research:** Done with SI assistance; see "Use of SI" in the submission.
 
 **Labels:**
 - **VERIFIED**: opened or tested on 2026-11-14.

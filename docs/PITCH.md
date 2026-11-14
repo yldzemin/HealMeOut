@@ -147,4 +147,4 @@ Note: NASA did not disclose the medical details. Never describe it as a heart at
 
 - Screenshots for slides 1, 3 and 4 depend on the frontend.
 - If an AI-generated image is used anywhere, it needs a visible watermark and no NASA logo.
-- "Use of SI" must be disclosed in the submission (code and research done with Claude).
+- "Use of SI" must be disclosed in the submission (code and research done with SI assistance).

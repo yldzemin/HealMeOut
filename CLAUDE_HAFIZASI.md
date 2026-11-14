@@ -1,6 +1,6 @@
-# CLAUDE.md — ASTRA-TWIN (NASA Space Apps Challenge 2026)
+# Proje hafızası — ASTRA-TWIN (NASA Space Apps Challenge 2026)
 
-Bu dosya, bu projede çalışan Claude için kuralları ve çalışma metodolojisini tanımlar. Projenin tasarımı (konsept, mimari, arayüz, tıbbi değerler, veri kaynakları) **DESIGN.md**'dedir. Kod yazmadan veya tasarımla ilgili bir karar vermeden önce DESIGN.md'yi oku.
+Bu dosya, bu projede çalışan AI asistanı için kuralları ve çalışma metodolojisini tanımlar. Projenin tasarımı (konsept, mimari, arayüz, tıbbi değerler, veri kaynakları) **DESIGN.md**'dedir. Kod yazmadan veya tasarımla ilgili bir karar vermeden önce DESIGN.md'yi oku.
 
 Kullanıcıyla Türkçe konuş. **Proje dili %100 İngilizce:** repoya ve GitHub'a yazılan her şey İngilizce olur: kod, kod yorumları, değişken/fonksiyon adları, dokümanlar, README, UI metinleri, demo altyazısı, commit mesajları, dal adları, issue'lar, PR başlık ve açıklamaları, review ve issue yorumları. Space Apps teslimi de İngilizce olmak zorunda.
 
@@ -24,7 +24,7 @@ Kaynak: 2025 Project Submission Guide (3 Ekim 2025). 2026 sürümüyle karşıla
   - Üretilen içerik NASA logosu veya NASA tasarım öğesi içeremez ve onları değiştiremez.
   - YZ ile üretilen görsel ve videolarda görünür filigran olmalı.
   - YZ ile üretilen ses, kod ve veri; açıklama metninde ve metadata'da belirtilmeli.
-  - Bu projede kodu Claude yazıyor; teslimde bunu belirt.
+  - Bu projede kod ve araştırma YZ desteğiyle yapılıyor; teslimdeki "Use of SI" alanında bunu belirt.
 - **Teslim formu alanları:** Project Name, High-Level Project Summary, Link to Project Demo, Link to Final Project, Detailed Project Description, NASA Data, Space Agency Partner & Other Data, Use of Artificial Intelligence, Project Submission Verification. Tüm alanlar İngilizce olmalı.
 - **Jüri kriterleri** (2025): Impact, Creativity, Validity, Relevance, Presentation. Presentation diğerleriyle eşit ağırlıkta düşünülmeli.
 
@@ -88,7 +88,7 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 
 **Repo:** `git@github.com:yldzemin/healmeout.git` (https://github.com/yldzemin/healmeout)
 
-**Ortak çalışma yaptığının farkında ol.** Proje 3 bilgisayarda paralel geliştiriliyor. Her bilgisayarda bir Claude çalışıyor ve her biri kendi kullanıcısının GitHub hesabını kullanıyor.
+**Ortak çalışma yaptığının farkında ol.** Proje 3 bilgisayarda paralel geliştiriliyor. Her bilgisayarda bir AI asistanı çalışıyor ve her biri kendi kullanıcısının GitHub hesabını kullanıyor.
 
 ### Senkronizasyon
 - Çalışmaya başlamadan önce ve her push'tan önce `git pull --rebase` yap.
@@ -97,19 +97,19 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 - Commit mesajları İngilizce.
 
 ### PR onayı
-- Her bilgisayardaki Claude, **kendi kullanıcısına ait olmayan** PR'ları inceler ve onaylar ya da değişiklik ister (GitHub kişinin kendi PR'ını onaylamasına izin vermez).
+- Her bilgisayardaki AI asistanı, **kendi kullanıcısına ait olmayan** PR'ları inceler ve onaylar ya da değişiklik ister (GitHub kişinin kendi PR'ını onaylamasına izin vermez).
 - **Mimari karar** içeren bir PR'da (stack, klasör yapısı, veri modeli, yeni bağımlılık, senaryo motorunun yapısı) onaylamadan önce kullanıcısına sor.
 - Gerçekten kritik bir onay veya red durumunda (veri kaybı, güvenlik, DESIGN.md §4'teki hatalı bir değerin geri gelmesi, NASA dışı veri, teslim kurallarına aykırılık) kullanıcısına bildir.
 - DESIGN.md'yi değiştiren her PR mimari karar sayılır.
 - PR takibi için PR bildirimlerine abone olunur. Sürekli sorgulama (polling) yapılmaz.
 
 ### Issue ve PR yorumları
-Yorumlar, üç bilgisayardaki Claude'ların **ortak hafızasıdır**. Bir Claude diğerinin konuşmasını göremez; yalnızca repoyu, issue'ları ve yorumları görür.
+Yorumlar, üç bilgisayardaki AI asistanlarının **ortak hafızasıdır**. Bir asistan diğerinin konuşmasını göremez; yalnızca repoyu, issue'ları ve yorumları görür.
 
 - **Her iş bir issue ile başlar.** Issue'da: amaç, kabul ölçütü, hangi dosyalara dokunulacağı. PR açıklamasında `Closes #N` yaz.
 - **Çakışmayı önle:** Bir işe başlarken issue'ya "Şu dosyalarda çalışıyorum: …" yorumu bırak ve issue'yu kendine ata. Başkasının atandığı dosyalara dokunmadan önce o issue'ya yorum yaz.
 - **İnceleme yorumları satır bazında olur** (`gh pr review` veya inline yorum). Her yorumda: ne yanlış, neden, önerilen düzeltme. Genel "LGTM" tek başına yeterli değildir; neyi kontrol ettiğini yaz.
 - **Kararları yaz:** Bir tartışma sonuca bağlanınca kararı ve gerekçesini issue'ya ayrı bir yorum olarak yaz ve `decision` etiketi ekle. Tasarım kararları ayrıca DESIGN.md'ye, çalışma kuralı kararları bu dosyaya işlenir.
-- **Soruları yorumda sor:** Başka bir bilgisayardaki Claude'a veya kişiye soru, ilgili issue/PR yorumu olarak sorulur. `@` ile yalnızca gerçek GitHub kullanıcı adları etiketlenir.
-- **YZ imzası:** Claude'un yazdığı her yorum `🤖 Claude (<kullanıcı adı>):` ile başlar. Bu hem kimin makinesinden geldiğini gösterir hem de teslimdeki YZ açıklamasına kanıt olur.
+- **Soruları yorumda sor:** Başka bir bilgisayardaki AI asistanına veya kişiye soru, ilgili issue/PR yorumu olarak sorulur. `@` ile yalnızca gerçek GitHub kullanıcı adları etiketlenir.
+- **AI aracının adı yazılmaz (karar #44):** Commit, PR, issue ve yorumlarda AI aracının adı, imzası, co-author satırı veya "Generated with …" satırı olmaz. YZ kullanımı yalnızca teslim formundaki "Use of SI" alanında beyan edilir.
 - **Etiketler:** `scenario`, `ui`, `data`, `docs`, `decision`, `blocked`, `needs-human`. İnsan kararı gereken her şey `needs-human` alır.
