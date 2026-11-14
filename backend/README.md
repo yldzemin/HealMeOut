@@ -1,0 +1,61 @@
+# ASTRA-TWIN backend
+
+Two parts that never call each other; the JSON files in `data/cache/` are the only contract (`docs/BACKEND.md` §1).
+
+| Part | What | Needs |
+|---|---|---|
+| `ingest/` | Rust tool: raw NASA files → `data/cache/*.json` | Rust (only to rebuild the cache) |
+| `api/` | Java API, rules, scenarios, privacy filter, demo console | Java 21 only — no Maven, no downloads |
+
+The cache files are committed, so **to run the demo you only need Java 21**.
+
+## Run the demo
+
+```sh
+backend/api/run.sh            # builds if needed, then serves http://127.0.0.1:8080
+```
+
+Open **http://127.0.0.1:8080/demo/**:
+
+- **Scenarios:** *Start* a scenario, then *Next step ▶*; *Stop and reset* returns to the nominal station.
+  - `chest-pain` — a crewmate collapses: L4 broadcast, roles, microgravity CPR checklist, emergency card.
+  - `co2` — synthetic CO2 ramp through the NASA limits: L1 → L2 (headache) → L3 → recovered.
+  - `spe-iss` — real NASA SRAG ISS TEPC data, Sep 2017: the dose-rate rule fires on Sep 11.
+- **Viewer** (top right): switch between CMO, Crew Deck, Emergency and Self to see the privacy filter. The Crew Deck never sees vitals or psychological check-ins.
+- **Add a reading:** e.g. glucose 52 for C3 → L3 alert; then approve or reject it as the CMO.
+- **Personal baseline & twin:** real pre-flight baselines with the commercial-mission tag (SpaceX Inspiration4, NASA OSDR), and the T+6/T+12 dose forecast.
+
+Every value is labelled `real` or `simulated`. *Simulation — not medical advice.*
+
+## Tests
+
+```sh
+backend/api/test.sh           # 13 tests, including "psych data never reaches the Crew Deck"
+```
+
+## Rebuild the cache (optional, needs Rust)
+
+```sh
+cargo run --release --manifest-path backend/ingest/Cargo.toml -- all
+```
+
+It reads the raw files listed in `data/raw/README.md` and does not use the network.
+
+## API
+
+All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SELF`). Without a viewer the most restricted view, `CREW_DECK`, applies.
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/api/health` | status and disclaimer |
+| GET | `/api/station` | crew tiles, alerts, cabin and dose, scenario state (filtered for the viewer) |
+| GET | `/api/scenarios` | scenario list |
+| POST | `/api/scenarios/{id}/start` | scenario state after step 1 |
+| POST | `/api/scenario/step` · `/api/scenario/stop` | next step · reset |
+| POST | `/api/readings` | body `{"crewId","metric","value","unit"}`; returns the station view |
+| POST | `/api/alerts/{id}/approve` · `/reject` | CMO view only |
+| GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy) |
+| GET | `/api/environment/dose` | hourly ISS dose series currently loaded |
+| GET | `/api/imm` | NASA IMM LEO 6-month probabilities |
+
+Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache]`.

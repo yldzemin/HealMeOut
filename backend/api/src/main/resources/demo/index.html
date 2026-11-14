@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASTRA-TWIN Demo Console</title>
+<style>
+  :root {
+    --bg: #0a0a0c; --panel: #12141a; --line: #23262f; --text: #e6e8ee; --muted: #9aa0ad;
+    --info: #00d2ff; --ok: #00ff66; --self: #ffd400; --cmo: #ff8a00; --ground: #ff0055; --emergency: #ff0055;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 18px; margin: 0; color: var(--info); letter-spacing: .04em; }
+  .disclaimer { color: var(--self); font-weight: 600; }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+  button, select, input { background: #1b1e26; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: inherit; }
+  button { cursor: pointer; } button:hover, button:focus-visible { border-color: var(--info); outline: none; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .muted { color: var(--muted); } .small { font-size: 12px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 1px 6px; font-size: 12px; font-weight: 700; color: #000; }
+  .L0 { background: var(--ok); } .L1 { background: var(--self); } .L2 { background: var(--cmo); } .L3 { background: var(--ground); color: #fff; } .L4 { background: var(--emergency); color: #fff; }
+  .tag { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 11px; color: var(--muted); }
+  .tag.real { border-color: var(--ok); color: var(--ok); } .tag.sim { border-color: var(--info); color: var(--info); } .tag.private { border-color: var(--self); color: var(--self); }
+  .mission { font-size: 11px; color: var(--ok); margin: 4px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .tile { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+  .tile.lvl-L3, .tile.lvl-L4 { border-color: var(--emergency); }
+  .tile.lvl-L2 { border-color: var(--cmo); } .tile.lvl-L1 { border-color: var(--self); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  td, th { text-align: left; padding: 2px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .banner { border: 2px solid var(--emergency); color: #fff; background: #3a0013; padding: 8px; border-radius: 6px; font-weight: 700; margin-bottom: 8px; }
+  .alert { border-left: 4px solid var(--line); padding: 6px 8px; margin-bottom: 8px; background: #0f1116; }
+  .alert.inactive { opacity: .55; }
+  .alert.L1 { border-left-color: var(--self); } .alert.L2 { border-left-color: var(--cmo); } .alert.L3, .alert.L4 { border-left-color: var(--emergency); }
+  .alert.L1, .alert.L2, .alert.L3, .alert.L4 { background: #0f1116; color: var(--text); }
+  details summary { cursor: pointer; color: var(--info); font-size: 12px; }
+  ol, ul { margin: 4px 0; padding-left: 18px; }
+  svg { width: 100%; height: 140px; background: #0d0f14; border-radius: 6px; }
+  .error { color: var(--ground); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ASTRA-TWIN · Demo Console</h1>
+  <span id="stationLevel"></span>
+  <span class="disclaimer" id="disclaimer">Simulation — not medical advice.</span>
+  <span class="row" style="margin:0 0 0 auto">
+    <label for="viewer">Viewer</label>
+    <select id="viewer">
+      <option value="CMO">CMO</option>
+      <option value="CREW_DECK">Crew Deck</option>
+      <option value="EMERGENCY">Emergency</option>
+      <option value="SELF">Self</option>
+    </select>
+    <select id="selfCrew" aria-label="Self crew member" hidden></select>
+  </span>
+</header>
+<main>
+  <div>
+    <section>
+      <h2>Scenarios</h2>
+      <div id="scenarioList"></div>
+      <div class="row">
+        <button id="stepBtn">Next step ▶</button>
+        <button id="stopBtn">Stop and reset</button>
+      </div>
+      <div id="scenarioState" class="small muted">No scenario running.</div>
+    </section>
+    <section>
+      <h2>Add a reading</h2>
+      <form id="readingForm" class="row">
+        <select id="rCrew" aria-label="Crew member"></select>
+        <select id="rMetric" aria-label="Metric">
+          <option value="glucose|mg/dL">glucose (mg/dL)</option>
+          <option value="spo2|%">SpO2 (%)</option>
+          <option value="hr|bpm">heart rate (bpm)</option>
+          <option value="temp_c|°C">temperature (°C)</option>
+          <option value="symptom_headache|flag">headache (1/0)</option>
+          <option value="symptom_confusion|flag">confusion (1/0)</option>
+        </select>
+        <input id="rValue" type="number" step="any" required aria-label="Value" placeholder="value" style="width:90px">
+        <button type="submit">Add</button>
+      </form>
+      <div class="small muted">Readings entered here are labelled <span class="tag sim">simulated</span>.</div>
+    </section>
+    <section>
+      <h2>Environment</h2>
+      <div id="envNow" class="small"></div>
+      <svg id="doseChart" role="img" aria-label="ISS dose-equivalent rate"></svg>
+      <div class="small muted">ISS TEPC (NASA SRAG), hourly μSv/h — instrument dose equivalent, not effective dose.</div>
+    </section>
+    <section>
+      <h2>Personal baseline &amp; twin</h2>
+      <div class="row"><select id="bCrew" aria-label="Crew member for baselines"></select></div>
+      <div id="baselines" class="small"></div>
+    </section>
+  </div>
+  <div>
+    <div id="banner"></div>
+    <section>
+      <h2>Crew</h2>
+      <div id="crew" class="grid"></div>
+    </section>
+    <section>
+      <h2>Alerts</h2>
+      <div id="alerts"></div>
+    </section>
+  </div>
+</main>
+<script>
+const CREW_IDS = ["C1", "C2", "C3", "C4", "C5", "C6", "C7"];
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ICON = { L0: "✓", L1: "•", L2: "▲", L3: "◆", L4: "✚" };
+const badge = (l) => `<span class="badge ${l}" title="Level ${l}">${ICON[l] || ""} ${l}</span>`;
+
+function viewerQuery() {
+  const v = $("viewer").value;
+  return v === "SELF" ? `viewer=SELF&crewId=${$("selfCrew").value}` : `viewer=${v}`;
+}
+
+async function api(method, path, body) {
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`/api/${path}${sep}${viewerQuery()}`, {
+    method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function renderScenarioState(s) {
+  if (!s) { $("scenarioState").innerHTML = "No scenario running."; $("banner").innerHTML = ""; return; }
+  $("banner").innerHTML = s.banner ? `<div class="banner" role="alert">${esc(s.banner)}</div>` : "";
+  const roles = Object.entries(s.roles || {}).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  const checks = (s.checklist || []).map((c) => `<li>${esc(c)}</li>`).join("");
+  $("scenarioState").innerHTML = `
+    <div><b>${esc(s.title)}</b> — step ${s.step}/${s.total}${s.finished ? " (finished)" : ""}</div>
+    <div><span class="tag">${esc(s.at)}</span> <b>${esc(s.stepTitle)}</b></div>
+    <div>${esc(s.detail)}</div>
+    ${s.evidence ? `<div class="muted">Evidence: ${esc(s.evidence)}</div>` : ""}
+    ${roles ? `<table><tr><th>Task</th><th>Who</th></tr>${roles}</table>` : ""}
+    ${checks ? `<ol>${checks}</ol>` : ""}
+    <details><summary>Log</summary><ul>${(s.log || []).map((l) => `<li>${esc(l)}</li>`).join("")}</ul></details>`;
+}
+
+function renderCrew(crew) {
+  $("crew").innerHTML = crew.map((m) => {
+    const vitals = m.vitals ? `<table>${m.vitals.map((r) => `<tr title="${esc(r.note)}"><td>${esc(r.metric)}</td><td>${esc(r.value)} ${esc(r.unit)}</td><td><span class="tag sim">${esc(r.provenance)}</span> <span class="tag">${esc(r.measuredHow)}</span></td></tr>`).join("")}</table>` : `<div class="small muted">Vitals hidden for this viewer.</div>`;
+    const med = m.medical ? `<div class="small">Allergies: ${esc(m.medical.allergies.join(", ") || "none recorded")} · Medication: ${esc(m.medical.currentMedication.join(", ") || "none")} <span class="tag sim">${esc(m.medical.provenance)}</span></div>` : "";
+    const ci = m.checkIns ? `<div class="small"><span class="tag private">private</span> Check-in ${m.checkIns.map((c) => `${esc(c.date)}: mood ${c.mood}, stress ${c.stress}, sleep ${c.sleepHours} h`).join("; ")}</div>` : "";
+    const mission = m.baselineMission ? `<div class="mission">Commercial mission · ${esc(m.baselineMission.name)} · ${esc(m.baselineMission.start)} to ${esc(m.baselineMission.end)} · ${esc(m.baselineMission.orbit)} · data hosted by ${esc(m.baselineMission.hostedBy)}</div>` : "";
+    return `<div class="tile lvl-${m.level}">
+      <div class="row" style="margin:0">${badge(m.level)} <b>${esc(m.callsign)}</b> <span class="muted">${esc(m.id)} · ${esc(m.role)}</span></div>
+      <div class="small muted">${esc(m.module)} · <span class="tag ${m.provenance.startsWith("real") ? "real" : "sim"}">${esc(m.provenance)}</span></div>
+      ${mission}${vitals}${med}${ci}</div>`;
+  }).join("");
+}
+
+function renderAlerts(alerts) {
+  const cmo = $("viewer").value === "CMO";
+  if (!alerts.length) { $("alerts").innerHTML = `<div class="muted">No alerts visible to this viewer.</div>`; return; }
+  $("alerts").innerHTML = alerts.slice().reverse().map((a) => `
+    <div class="alert ${a.level} ${a.active ? "" : "inactive"}">
+      <div class="row" style="margin:0">${badge(a.level)} <b>${esc(a.title)}</b>
+        <span class="tag">${esc(a.crewId)}</span><span class="tag">${esc(a.category)}</span>
+        <span class="tag">${esc(a.status)}</span>${a.active ? "" : `<span class="tag">inactive</span>`}</div>
+      <div>${esc(a.explanation)}</div>
+      <div><b>Next step:</b> ${esc(a.recommendation)}</div>
+      <details><summary>Evidence and source</summary><div class="small">${esc(a.evidence)}</div><div class="small muted">${esc(a.source)}</div></details>
+      ${cmo && a.status === "open" ? `<div class="row"><button data-approve="${esc(a.id)}">Approve</button><button data-reject="${esc(a.id)}">Reject</button></div>` : ""}
+    </div>`).join("");
+}
+
+function renderEnvironment(view) {
+  const c = view.cabin, d = view.dose;
+  $("envNow").innerHTML = [
+    c ? `Cabin CO2: <b>${esc(c.co2_mmHg)} mmHg</b> <span class="tag sim">${esc(c.provenance)}</span>` : "",
+    d ? `Dose: <b>${esc(d.doseEqRate_uSv_h)} μSv/h</b> (${esc(d.doseRate_uGy_h)} μGy/h) at ${esc(d.timestamp)} <span class="tag real">${esc(d.provenance)}</span>` : "",
+  ].filter(Boolean).join("<br>");
+}
+
+async function renderDoseChart() {
+  const series = await api("GET", "environment/dose");
+  const svg = $("doseChart");
+  if (!series.length) { svg.innerHTML = ""; return; }
+  const w = 600, h = 140, max = Math.max(...series.map((e) => e.doseEqRate_uSv_h)) * 1.05;
+  const pts = series.map((e, i) => `${(i / Math.max(series.length - 1, 1)) * w},${h - (e.doseEqRate_uSv_h / max) * h}`).join(" ");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#00d2ff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+    <text x="4" y="12" fill="#9aa0ad" font-size="11">${esc(series[0].timestamp.slice(0, 10))} → ${esc(series[series.length - 1].timestamp.slice(0, 10))} · max ${Math.round(max / 1.05)} μSv/h</text>`;
+}
+
+async function renderBaselines() {
+  const id = $("bCrew").value;
+  try {
+    const [stats, forecasts] = await Promise.all([api("GET", `crew/${id}/baselines`), api("GET", `crew/${id}/forecasts`)]);
+    const fc = forecasts.map((f) => `<div>T+${f.horizonHours} h ${esc(f.metric)}: <b>${f.points.map((p) => `${esc(p.at)} ${p.value} ${esc(f.unit)}`).join(" → ")}</b> <span class="tag">${esc(f.label)}</span></div>`).join("");
+    const rows = stats.map((s) => `<tr><td>${esc(s.analyte)}</td><td>${s.mean}</td><td>${s.sd ?? "—"}</td><td>${s.refLow ?? ""}–${s.refHigh ?? ""}</td><td>${esc(s.unit)}</td></tr>`).join("");
+    const m = stats.length ? stats[0].mission : null;
+    $("baselines").innerHTML = `${fc}
+      ${m ? `<div class="mission">Commercial mission · ${esc(m.name)} · ${esc(m.start)} to ${esc(m.end)} · ${esc(m.orbit)} · ${esc(m.crew)} · data hosted by ${esc(m.hostedBy)} (${esc(m.studyId)})</div>` : ""}
+      ${rows ? `<table><tr><th>Analyte</th><th>Pre-flight mean</th><th>SD</th><th>Reference</th><th>Unit</th></tr>${rows}</table>` : `<div class="muted">No real baseline: this crew member is simulated.</div>`}`;
+  } catch (e) {
+    $("baselines").innerHTML = `<div class="error">${esc(e.message)}</div>`;
+  }
+}
+
+async function refresh() {
+  try {
+    const view = await api("GET", "station");
+    $("stationLevel").innerHTML = `Station ${badge(view.stationLevel)}`;
+    $("disclaimer").textContent = view.disclaimer;
+    renderScenarioState(view.scenario);
+    renderCrew(view.crew);
+    renderAlerts(view.alerts);
+    renderEnvironment(view);
+    await Promise.all([renderDoseChart(), renderBaselines()]);
+  } catch (e) {
+    $("alerts").innerHTML = `<div class="error">${esc(e.message)}</div>`;
+  }
+}
+
+async function run(action) {
+  try { await action(); } catch (e) { alert(e.message); }
+  await refresh();
+}
+
+async function init() {
+  for (const sel of ["selfCrew", "rCrew", "bCrew"]) {
+    $(sel).innerHTML = CREW_IDS.map((id) => `<option>${id}</option>`).join("");
+  }
+  const scenarios = await api("GET", "scenarios");
+  $("scenarioList").innerHTML = scenarios.map((s) => `
+    <div class="row"><button data-start="${esc(s.id)}">Start</button>
+      <div><b>${esc(s.title)}</b> <span class="tag">${esc(s.priority)}</span><div class="small muted">${s.steps} steps · ${esc(s.source)}</div></div></div>`).join("");
+  document.body.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if (t.dataset.start) run(() => api("POST", `scenarios/${encodeURIComponent(t.dataset.start)}/start`));
+    if (t.dataset.approve) run(() => api("POST", `alerts/${encodeURIComponent(t.dataset.approve)}/approve`));
+    if (t.dataset.reject) run(() => api("POST", `alerts/${encodeURIComponent(t.dataset.reject)}/reject`));
+  });
+  $("stepBtn").onclick = () => run(() => api("POST", "scenario/step"));
+  $("stopBtn").onclick = () => run(() => api("POST", "scenario/stop"));
+  $("viewer").onchange = () => { $("selfCrew").hidden = $("viewer").value !== "SELF"; refresh(); };
+  $("selfCrew").onchange = refresh;
+  $("bCrew").onchange = renderBaselines;
+  $("readingForm").onsubmit = (ev) => {
+    ev.preventDefault();
+    const [metric, unit] = $("rMetric").value.split("|");
+    run(() => api("POST", "readings", { crewId: $("rCrew").value, metric, unit, value: Number($("rValue").value) }));
+  };
+  await refresh();
+}
+init();
+</script>
+</body>
+</html>

@@ -6,3 +6,5 @@
 
 # Rust build output
 backend/ingest/target/
+# Java build output
+backend/api/out/
