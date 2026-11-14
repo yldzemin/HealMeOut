@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, ExternalLink, Siren } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternal } from "@/lib/openExternal";
 import type { Indicator, MeasuredHow, Region } from "@/data/personal";
 import { LEVEL_RANK } from "@/data/personal";
 import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
@@ -15,11 +15,6 @@ const HOW_LABEL: Record<MeasuredHow, string> = {
   "sample-return": "Sample sent to Earth",
   "research-only": "Research only",
 };
-
-function open(url: string) {
-  // In Tauri, open in the system browser; in a plain browser (plan B), a new tab.
-  openUrl(url).catch(() => window.open(url, "_blank", "noopener"));
-}
 
 function IndicatorRow({ ind }: { ind: Indicator }) {
   return (
@@ -122,7 +117,7 @@ export function DetailPanel({ region }: { region: Region }) {
               <li key={s.url}>
                 <button
                   type="button"
-                  onClick={() => open(s.url)}
+                  onClick={() => openExternal(s.url)}
                   className="inline-flex items-center gap-1 text-left text-xs text-primary hover:underline"
                 >
                   {s.label}
