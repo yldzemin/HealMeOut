@@ -67,6 +67,6 @@ final class RulesTest {
         for (Reading reading : readings) {
             repo.add(reading);
         }
-        return new RuleContext(List.of(C1), repo, environment, new BaselineStatistics(List.of()), Instant.now());
+        return new RuleContext(List.of(C1), repo, environment, new BaselineStatistics(List.of()), Map.of(), Instant.now());
     }
 }

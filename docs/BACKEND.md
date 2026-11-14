@@ -12,12 +12,13 @@ Two parts in two languages. They never call each other: the only contract betwee
 | Part | Language | Job | Libraries |
 |---|---|---|---|
 | `backend/ingest/` | **Rust** (stable, edition 2024) | Command-line tool. Reads the OSDR CSVs and study metadata, fetches the ISS dose (CDAWeb) and EDA, transcribes the IMM table, writes `data/cache/*.json` | `csv`, `serde`, `serde_json`, `reqwest` (blocking, rustls), `clap`, `anyhow` |
-| `backend/api/` | **Java 21 + Spring Boot 4.1** (Web, Validation) | HTTP API. Loads `data/cache/*.json` at start-up; runs the twin, rules and scenario engines and the privacy filter | Jackson (JSON), JUnit 5 |
+| `backend/api/` | **Java 21, JDK only** (#33): the JDK HTTP server and an in-project JSON reader and writer. Spring Boot 4.1 (#24) is deferred until the API moves to a server | HTTP API. Loads `data/cache/*.json` at start-up; runs the twin, rules and scenario engines and the privacy filter | none (`javac`, `jar`; tests with a small in-project runner) |
 
 Both parts:
 
 - **Only `ingest` goes online.** The API never calls the internet, so the demo always runs offline.
-- Enable CORS (API) for the frontend dev server and the GitHub Pages origin.
+- CORS: the API sends `Access-Control-Allow-Origin: *`, so the Vite dev server and the Tauri webview can call it; with `--ui frontend/dist` the API serves the built frontend itself (same origin).
+- Routes and JSON shapes: `backend/README.md` (the agreed contract, #56).
 - Pin dependency versions: commit `Cargo.lock`; fix the Spring Boot and plugin versions in the build file.
 
 ```
@@ -143,7 +144,7 @@ Input: readings, check-ins, environment. Output: `Alert` objects with level L0�
 | SpO2 | <90% → L4 | <90% = hypoxaemia (ARASTIRMA_RAPORU §4, SpO2 row). NASA's own limit is PIO2 ≥122 mmHg (OCHMO-TB-003) |
 | Dose rate | 24-h rolling mean of `doseEqRate_uSv_h` > 1.5× the preceding 7-day median → L2 (shelter advice, ground informed). Never alert on single hours: South Atlantic Anomaly passes reach 183 μSv/h on normal days | our design (#30). Calibration from Sep 2017 TEPC data: normal days 0.86–1.04×, Sep 11 1.90× |
 | Lab analytes, HR, BP | |z| ≥ 2 vs personal baseline → L1; persists or combined with symptoms → L2 | our design (no universal in-flight threshold) |
-| Psych check-in trend | persistent decline over N days → private prompt "discuss at next PPC" | our design; never on Crew Deck |
+| Psych check-in trend | 3 check-ins in a row with mood ≤ 40/100 or stress ≥ 70/100 → private L1 prompt "discuss it at your next PPC, or contact your flight surgeon now" (`PsychTrendRule`) | our design; SELF only; never changes the crew level |
 
 Each alert carries `evidence` and `source` strings for the frontend "?" card. Thresholds marked "our design" must say so in `evidence`.
 
@@ -178,14 +179,16 @@ Inject a family-event flag; personal support plan; Earth Twin 24–72 h plan for
 
 Enforce here, not only in the UI:
 
-| Data | Self | CMO | Other crew (Crew Deck) | Emergency |
-|---|---|---|---|---|
-| Status level, module | ✔ | ✔ | ✔ | ✔ |
-| Vitals detail | ✔ | ✔ | — | ✔ |
-| Medication | ✔ | ✔ | only if opted in | allergies + current meds |
-| Psych check-in | ✔ | — (shared to BHP by the astronaut) | **never** | **never** |
-| Support companion conversation (§10) | ✔ | **never** | **never** | **never** |
-| Crew climate | own answers | aggregate | aggregate, min. response threshold | — |
+| Data | Self | CMO | Ground (flight surgeon)* | Other crew (Crew Deck) | Emergency |
+|---|---|---|---|---|---|
+| Status level, module | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Vitals detail | ✔ | ✔ | ✔ | — | ✔ |
+| Medication | ✔ | ✔ | ✔ | only if opted in | allergies + current meds |
+| Psych check-in, psych alerts | ✔ | — (shared to BHP by the astronaut) | — | **never** | **never** |
+| Support companion conversation (§10) | ✔ | **never** | **never** | **never** | **never** |
+| Crew climate | own answers | aggregate | aggregate | aggregate, min. response threshold | — |
+
+\* **Provisional (#56):** the frontend has a "Ground (flight surgeon)" role; the backend gives it the CMO tier without psychological data until the team decides. Psych alerts never change the crew level, because the level is visible on the Crew Deck. CMO and ground may approve or reject alerts.
 
 Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psychological communications); AMIS 2024 (NTRS 20240004505); IOM *Safe Passage*.
 

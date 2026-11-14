@@ -1,6 +1,6 @@
 # Proje hafızası — ASTRA-TWIN (NASA Space Apps Challenge 2026)
 
-Bu dosya, bu projede çalışan AI asistanı için kuralları ve çalışma metodolojisini tanımlar. Projenin tasarımı (konsept, mimari, arayüz, tıbbi değerler, veri kaynakları) **DESIGN.md**'dedir. Kod yazmadan veya tasarımla ilgili bir karar vermeden önce DESIGN.md'yi oku.
+Bu dosya, bu projede çalışan AI asistanı için kuralları ve çalışma metodolojisini tanımlar. Projenin tasarımı (konsept, mimari, arayüz, tıbbi değerler, veri kaynakları) `docs/` altındadır (`TECH_OVERVIEW.md` ortak, `BACKEND.md`, `FRONTEND.md`). Kod yazmadan veya tasarımla ilgili bir karar vermeden önce bunları oku.
 
 Kullanıcıyla Türkçe konuş. **Proje dili %100 İngilizce:** repoya ve GitHub'a yazılan her şey İngilizce olur: kod, kod yorumları, değişken/fonksiyon adları, dokümanlar, README, UI metinleri, demo altyazısı, commit mesajları, dal adları, issue'lar, PR başlık ve açıklamaları, review ve issue yorumları. Space Apps teslimi de İngilizce olmak zorunda.
 
@@ -9,7 +9,7 @@ Kullanıcıyla Türkçe konuş. **Proje dili %100 İngilizce:** repoya ve GitHub
 
 ## 1. Proje
 
-**ASTRA-TWIN:** Uluslararası Uzay İstasyonu (ISS) mürettebatı için sağlık izleme ve dijital ikiz aracı. Karar vermez, ekip doktoruna (CMO) karar desteği sunar. Ayrıntılar DESIGN.md §1–2'de.
+**ASTRA-TWIN:** Uluslararası Uzay İstasyonu (ISS) mürettebatı için sağlık izleme ve dijital ikiz aracı. Karar vermez, ekip doktoruna (CMO) karar desteği sunar. Ayrıntılar `docs/TECH_OVERVIEW.md` §1–2'de.
 
 **Kapsam kararı (2026-11-14, #16):** Uygulama yalnızca **ISS** için geliştirilir. Ay ve Mars görevleri **gelecek genişleme** olarak yalnızca sunumda anlatılır ("the same system scales to Moon and Mars"). Mars'a özgü özellikler (dakikalarca ışık gecikmesi, güneş kavuşumu kesintisi, Mars SPE verisi) koda girmez; veri envanterinde "future extension" etiketiyle durur.
 
@@ -32,7 +32,8 @@ Kaynak: 2025 Project Submission Guide (3 Ekim 2025). 2026 sürümüyle karşıla
 
 ```
 CLAUDE.md                                     ← bu dosya: kurallar ve çalışma metodolojisi
-DESIGN.md                                     ← proje tasarımı: konsept, mimari, UI, tıbbi değerler, veri
+docs/                                         ← proje tasarımı: TECH_OVERVIEW.md (ortak), BACKEND.md, FRONTEND.md, PITCH.md
+backend/, frontend/                           ← kod (backend/README.md: çalıştırma ve API)
 ARASTIRMA_RAPORU.md                           ← doğrulanmış araştırmanın tamamı (kaynaklarıyla)
 (çevrimiçi) Proje Kapsam Dokümanı             ← ilk kapsam (Mars odaklı, 9 Kasım; ISS kapsamı için #16): https://claude.ai/artifact/V9p1PiJczNXqhjp5WoEpUT
 NASA_DATA_SOURCES.md                          ← doğrulanmış NASA veri envanteri, ISS gerçekleri (§11)
@@ -48,9 +49,9 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 ## 4. Çalışma kuralları
 
 - **Varsayım yapma.** Her sayısal eşik ve tıbbi iddia için bir kaynak göster. Kaynak yoksa "doğrulanamadı" de. Yeni bilgi ARASTIRMA_RAPORU.md'ye kaynağıyla eklenir.
-- **Tasarım değişiklikleri DESIGN.md'ye işlenir.** Kodda DESIGN.md ile çelişen bir değer veya davranış olamaz. §4.1'deki "kodda KULLANMA" tablosundaki değerler hiçbir koda girmez.
+- **Tasarım değişiklikleri `docs/`'a işlenir.** Kodda `docs/` ile çelişen bir değer veya davranış olamaz. §4.1'deki "kodda KULLANMA" tablosundaki değerler hiçbir koda girmez.
 - spaceappschallenge.org sayfaları JavaScript ile oluşturulur; WebFetch boş veya eski sürüm döner. Tarayıcı ya da Wayback Machine kullan ve arşiv kopyasının tarihini belirt.
-- **Demo internetsiz de çalışmalı.** Her canlı API için yerel önbellek tutulur (`data/cache/`, yedek yollar DESIGN.md §5'te).
+- **Demo internetsiz de çalışmalı.** Her canlı API için yerel önbellek tutulur (`data/cache/`, kaynaklar `docs/BACKEND.md` §2'de).
 - **Wiro MCP** bağlı (kişisel hesap, ~$16 kupon bakiyesi). Görsel, video ya da ses üretimi için kullanılabilir. Ücretli her çalıştırmadan önce kullanıcıya maliyeti söyle. YZ ile üretilen görsellere filigran gerekir.
 
 ### 4.1 Taslaktaki hatalı değerler: kodda KULLANMA
@@ -99,8 +100,8 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 ### PR onayı
 - Her bilgisayardaki AI asistanı, **kendi kullanıcısına ait olmayan** PR'ları inceler ve onaylar ya da değişiklik ister (GitHub kişinin kendi PR'ını onaylamasına izin vermez).
 - **Mimari karar** içeren bir PR'da (stack, klasör yapısı, veri modeli, yeni bağımlılık, senaryo motorunun yapısı) onaylamadan önce kullanıcısına sor.
-- Gerçekten kritik bir onay veya red durumunda (veri kaybı, güvenlik, DESIGN.md §4'teki hatalı bir değerin geri gelmesi, NASA dışı veri, teslim kurallarına aykırılık) kullanıcısına bildir.
-- DESIGN.md'yi değiştiren her PR mimari karar sayılır.
+- Gerçekten kritik bir onay veya red durumunda (veri kaybı, güvenlik, §4.1'deki hatalı bir değerin geri gelmesi, NASA dışı veri, teslim kurallarına aykırılık) kullanıcısına bildir.
+- `docs/TECH_OVERVIEW.md` §4 veri modelini değiştiren her PR mimari karar sayılır.
 - PR takibi için PR bildirimlerine abone olunur. Sürekli sorgulama (polling) yapılmaz.
 
 ### Issue ve PR yorumları
@@ -109,7 +110,7 @@ Yorumlar, üç bilgisayardaki AI asistanlarının **ortak hafızasıdır**. Bir 
 - **Her iş bir issue ile başlar.** Issue'da: amaç, kabul ölçütü, hangi dosyalara dokunulacağı. PR açıklamasında `Closes #N` yaz.
 - **Çakışmayı önle:** Bir işe başlarken issue'ya "Şu dosyalarda çalışıyorum: …" yorumu bırak ve issue'yu kendine ata. Başkasının atandığı dosyalara dokunmadan önce o issue'ya yorum yaz.
 - **İnceleme yorumları satır bazında olur** (`gh pr review` veya inline yorum). Her yorumda: ne yanlış, neden, önerilen düzeltme. Genel "LGTM" tek başına yeterli değildir; neyi kontrol ettiğini yaz.
-- **Kararları yaz:** Bir tartışma sonuca bağlanınca kararı ve gerekçesini issue'ya ayrı bir yorum olarak yaz ve `decision` etiketi ekle. Tasarım kararları ayrıca DESIGN.md'ye, çalışma kuralı kararları bu dosyaya işlenir.
+- **Kararları yaz:** Bir tartışma sonuca bağlanınca kararı ve gerekçesini issue'ya ayrı bir yorum olarak yaz ve `decision` etiketi ekle. Tasarım kararları ayrıca `docs/`'a, çalışma kuralı kararları bu dosyaya işlenir.
 - **Soruları yorumda sor:** Başka bir bilgisayardaki AI asistanına veya kişiye soru, ilgili issue/PR yorumu olarak sorulur. `@` ile yalnızca gerçek GitHub kullanıcı adları etiketlenir.
 - **AI aracının adı yazılmaz (karar #44):** Commit, PR, issue ve yorumlarda AI aracının adı, imzası, co-author satırı veya "Generated with …" satırı olmaz. YZ kullanımı yalnızca teslim formundaki "Use of SI" alanında beyan edilir.
 - **Etiketler:** `scenario`, `ui`, `data`, `docs`, `decision`, `blocked`, `needs-human`. İnsan kararı gereken her şey `needs-human` alır.

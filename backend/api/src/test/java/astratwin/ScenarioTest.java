@@ -43,7 +43,7 @@ final class ScenarioTest {
             Check.isTrue(s.finished(), "finished after 6 steps");
             Check.equal(4, s.roles().size(), "roles");
             Check.equal(3, s.checklist().size(), "checklist");
-            Check.equal(Level.L4, station.member("C4").orElseThrow().level(), "patient level");
+            Check.equal(Level.L4, station.member("C2").orElseThrow().level(), "patient level (C2, as in the frontend)");
         });
         tests.put("co2: L1 → L2 (headache) → L3 → inactive", () -> {
             Station station = Station.load(cache);

@@ -81,12 +81,12 @@ Both sides use these names and values. If one changes, update this section in th
 
 | Entity | Key fields |
 |---|---|
-| `CrewMember` | `id` (C1–C7), `callsign` (fictional), `role` (`CMO1`, `CMO2`, `CREW`), `module`, `level` |
+| `CrewMember` | `id` (C1–C7), `callsign` (fictional), `role` (`CMO1`, `CMO2`, `CREW`), `module` (ids as in `frontend/src/data/station.ts`), `level`, `baselineProvenance` (`real`/`simulated`) |
 | `Baseline` | `crewId`, `source` (`OSD-575`/`OSD-569`), `analyte`, `timepoint` (`L-92` … `R+194`), `value`, `unit`, `refLow`, `refHigh`, `mission` (`MissionTag`) |
 | `MissionTag` | `name`, `kind` (`commercial`/`nasa`), `start`, `end` (ISO dates), `orbit`, `crew`, `hostedBy`, `studyId`, `link` |
 | `Reading` | `crewId`, `metric`, `value`, `unit`, `timestamp`, `provenance`, `measuredHow` |
 | `CheckIn` | `crewId`, `date`, mood/fatigue/stress/conflict (0–100), sleep hours and quality, workload, crew climate, MCC frustration, family, restorative activities, food |
-| `Alert` | `id`, `crewId`, `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`) |
+| `Alert` | `id`, `crewId` (or `STATION`), `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`), `category` (`VITALS`, `MEDICATION`, `PSYCH`, `ENVIRONMENT`, `EMERGENCY`; drives the privacy filter), `active` (false once the rule stops firing), `createdAt` |
 | `Forecast` | `crewId`, `horizonHours` (6/12), `metric`, `points[]`, `label: "modelled"` |
 | `Environment` | `co2_mmHg`, `temp_C`, `rh_pct`, `doseRate_uGy_h` (absorbed), `doseEqRate_uSv_h` (dose equivalent, ICRP-60; empty if the source has none), `instrument`, `timestamp`, `provenance` |
 | `Scenario` | `id`, `title`, `steps[]` |
@@ -152,7 +152,8 @@ Details: [`BACKEND.md`](BACKEND.md) §5 (logic) and [`FRONTEND.md`](FRONTEND.md)
 |---|---|---|
 | #24 | Backend: **Rust** ingest CLI + **Java 21 / Spring Boot 4.1** API, joined only by `data/cache/*.json` (**DECIDED**, see `BACKEND.md` §1) | backend |
 | #35 | Frontend: **Tauri v2** desktop app with **React 19 + TypeScript + Vite**, Tailwind + shadcn/ui + Motion, Recharts (**DECIDED**, see `FRONTEND.md` §1) | frontend |
-| — | Exact endpoint paths and JSON shapes | both: agree before wiring |
+| #56 | Endpoint paths and JSON shapes: **DECIDED**, see `backend/README.md`; the frontend client is `frontend/src/api/client.ts` | both |
+| #56 | "Ground (flight surgeon)" privacy tier: **PROVISIONAL**, CMO tier without psych data (`BACKEND.md` §6) | both |
 | #11 | ISS medication list (Diaz 2024) | recommendation cards |
 | #12 | NOAA-derived DONKI fields | space-weather panel |
 | #13 | Partner and commercial data | radiation, baselines |

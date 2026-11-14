@@ -45,7 +45,7 @@ It reads the raw files listed in `data/raw/README.md` and does not use the netwo
 
 ## API
 
-All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SELF`). Without a viewer the most restricted view, `CREW_DECK`, applies.
+All routes take `?viewer=CMO|GROUND|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SELF`). Without a viewer the most restricted view, `CREW_DECK`, applies. `GROUND` (flight surgeon) is provisionally the CMO tier without psychological data.
 
 | Method | Path | Returns |
 |---|---|---|
@@ -55,7 +55,8 @@ All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SE
 | POST | `/api/scenarios/{id}/start` | scenario state after step 1 |
 | POST | `/api/scenario/step` · `/api/scenario/stop` | next step · reset |
 | POST | `/api/readings` | body `{"crewId","metric","value","unit"}`; returns the station view |
-| POST | `/api/alerts/{id}/approve` · `/reject` | CMO view only |
+| POST | `/api/alerts/{id}/approve` · `/reject` | CMO or GROUND view only |
+| GET · POST | `/api/checkins` (body `{"mood","fatigue","stress","conflict","sleepHours"}`) | **SELF only**; low trend → private PPC prompt |
 | GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy) |
 | GET | `/api/environment/dose` | hourly ISS dose series currently loaded |
 | GET | `/api/imm` | NASA IMM LEO 6-month probabilities |
@@ -65,4 +66,4 @@ All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SE
 | GET | `/api/support/status` | companion engine and availability (public) |
 | GET · POST | `/api/support/conversation` · `/api/support/message` (body `{"text"}`) · `/api/support/clear` | **SELF only** (`viewer=SELF&crewId=Cx`); others get 403 |
 
-Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch) [--llm-url http://127.0.0.1:11434] [--llm-model phi3.5] [--llm off].
+Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch) [--llm-url http://127.0.0.1:11434] [--llm-model phi3.5] [--llm off] [--ui frontend/dist] (`--ui` also serves the built frontend at `/`).

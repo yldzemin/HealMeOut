@@ -21,6 +21,7 @@ import astratwin.rules.CollapseRule;
 import astratwin.rules.Co2Rule;
 import astratwin.rules.DoseRateRule;
 import astratwin.rules.GlucoseRule;
+import astratwin.rules.PsychTrendRule;
 import astratwin.rules.RuleContext;
 import astratwin.rules.RulesEngine;
 import astratwin.rules.SpO2Rule;
@@ -53,7 +54,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -91,12 +94,14 @@ public final class Station {
         this.baselines = new BaselineStatistics(data.baselines());
         this.roster = new CrewRoster(baselines);
         this.rules = new RulesEngine(List.of(new CollapseRule(), new GlucoseRule(), new SpO2Rule(), new Co2Rule(),
-                new DoseRateRule(), new ZScoreRule()));
+                new DoseRateRule(), new ZScoreRule(), new PsychTrendRule()));
         this.twin = new TwinEngine(List.of(new CumulativeDoseModel()));
         this.privacy = PrivacyFilter.standard();
         this.scenarios = new ScenarioEngine(List.of(
-                new ChestPainScenario(roster.member("C4"), roster.member("C1"), roster.member("C2"),
-                        roster.member("C3"), roster.member("C5")),
+                // Same patient and roles as the frontend's proposeRoles(): CMOs lead and assist, then the
+                // nearest crew members by hatches fetch the equipment and run comms.
+                new ChestPainScenario(roster.member("C2"), roster.member("C1"), roster.member("C4"),
+                        roster.member("C3"), roster.member("C6")),
                 new Co2Scenario("C6"),
                 new SpeIssScenario(data.issDose())));
         roster.cards().forEach(cards::save);
@@ -182,11 +187,24 @@ public final class Station {
                         checkIns.forCrew(m.id())))
                 .toList();
         List<Alert> visible = privacy.alerts(request, alerts.all(), cards::find);
-        Level stationLevel = alerts.all().stream().filter(Alert::active).map(Alert::level).reduce(Level.L0, Level::max);
+        Level stationLevel = alerts.all().stream().filter(a -> a.active() && a.category() != DataKind.PSYCH)
+                .map(Alert::level).reduce(Level.L0, Level::max);
         return new StationView(request.viewer(), request.viewerCrewId(), stationLevel, crewCards, visible,
                 environment.latest(e -> e.co2_mmHg() != null).orElse(null),
                 environment.latest(e -> e.doseEqRate_uSv_h() != null).orElse(null),
                 scenarios.state().orElse(null), DISCLAIMER);
+    }
+
+    /** Stores a check-in from the astronaut (SELF only at the web layer) and re-runs the rules. */
+    public synchronized List<CheckIn> addCheckIn(CheckIn checkIn) {
+        member(checkIn.crewId()).orElseThrow(() -> new NoSuchElementException("no crew member " + checkIn.crewId()));
+        checkIns.add(checkIn);
+        reevaluate();
+        return checkIns.forCrew(checkIn.crewId());
+    }
+
+    public synchronized List<CheckIn> checkIns(String crewId) {
+        return checkIns.forCrew(crewId);
     }
 
     /** The member's own latest check-in; private context for the support companion. */
@@ -247,11 +265,17 @@ public final class Station {
     }
 
     private void reevaluate() {
-        RuleContext context = new RuleContext(crew.all(), readings, environment.all(), baselines, Instant.now());
+        Map<String, List<CheckIn>> byCrew = new HashMap<>();
+        for (CrewMember m : crew.all()) {
+            byCrew.put(m.id(), checkIns.forCrew(m.id()));
+        }
+        RuleContext context = new RuleContext(crew.all(), readings, environment.all(), baselines, byCrew, Instant.now());
         List<Alert> firing = rules.evaluate(context);
         alerts.sync(firing);
         for (CrewMember m : crew.all()) {
-            Level level = firing.stream().filter(a -> a.crewId().equals(m.id())).map(Alert::level)
+            // Psych alerts never change the level: the level is shown on the Crew Deck.
+            Level level = firing.stream().filter(a -> a.crewId().equals(m.id()) && a.category() != DataKind.PSYCH)
+                    .map(Alert::level)
                     .reduce(Level.L0, Level::max);
             crew.save(m.withLevel(level));
         }

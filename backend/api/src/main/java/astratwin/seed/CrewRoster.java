@@ -16,18 +16,19 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
- * The 7-person crew (TECH_OVERVIEW §4.4). Callsigns are fictional. C1–C4 use the real Inspiration4
+ * The 7-person crew (TECH_OVERVIEW §4.4), the same as {@code frontend/src/mock/crew.json}; module ids
+ * match {@code frontend/src/data/station.ts}. Callsigns are fictional. C1–C4 use the real Inspiration4
  * baselines (C001–C004); C5–C7 and every in-flight value here are simulated.
  */
 public final class CrewRoster {
     private static final List<CrewMember> MEMBERS = List.of(
-            member("C1", "Alpha", Role.CMO1, "Destiny (U.S. Lab)", true),
-            member("C2", "Bravo", Role.CMO2, "Columbus", true),
-            member("C3", "Charlie", Role.CREW, "Kibo", true),
-            member("C4", "Delta", Role.CREW, "Node 2 (Harmony)", true),
-            member("C5", "Echo", Role.CREW, "Node 1 (Unity)", false),
-            member("C6", "Foxtrot", Role.CREW, "Node 3 (Tranquility)", false),
-            member("C7", "Golf", Role.CREW, "Zvezda", false));
+            member("C1", "ORION", Role.CMO1, "Destiny", true),
+            member("C2", "VEGA", Role.CREW, "Harmony (Node 2)", true),
+            member("C3", "LYRA", Role.CREW, "Columbus", true),
+            member("C4", "ALTAIR", Role.CMO2, "Kibo", true),
+            member("C5", "RIGEL", Role.CREW, "Tranquility (Node 3)", false),
+            member("C6", "NOVA", Role.CREW, "Unity (Node 1)", false),
+            member("C7", "ATLAS", Role.CREW, "Zvezda", false));
 
     private final BaselineStatistics baselines;
 
@@ -37,7 +38,7 @@ public final class CrewRoster {
 
     private static CrewMember member(String id, String callsign, Role role, String module, boolean realBaseline) {
         return new CrewMember(id, callsign, role, module, Level.L0,
-                realBaseline ? "real baseline (NASA OSDR)" : "simulated");
+                realBaseline ? "real" : "simulated");
     }
 
     public List<CrewMember> members() {
@@ -59,7 +60,7 @@ public final class CrewRoster {
         String p = "simulated (fictional)";
         return List.of(
                 new MedicalCard("C1", List.of(), List.of(), false, p),
-                new MedicalCard("C2", List.of("Sulfonamide antibiotics"), List.of(), false, p),
+                new MedicalCard("C2", List.of(), List.of(), false, p),
                 new MedicalCard("C3", List.of(), List.of("Melatonin 3 mg at bedtime"), true, p),
                 new MedicalCard("C4", List.of(), List.of(), false, p),
                 new MedicalCard("C5", List.of("Latex"), List.of(), false, p),
@@ -71,7 +72,7 @@ public final class CrewRoster {
     public List<CheckIn> checkIns() {
         String p = "simulated (fictional)";
         return List.of(
-                new CheckIn("C3", "2026-11-13", 42, 61, 66, 18, 5.9, p),
+                new CheckIn("C3", "2026-11-13", 42, 61, 66, 18, 5.6, p),
                 new CheckIn("C6", "2026-11-13", 70, 35, 30, 10, 6.8, p));
     }
 

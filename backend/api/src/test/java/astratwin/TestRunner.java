@@ -21,6 +21,7 @@ public final class TestRunner {
         ScenarioTest.register(tests, cache);
         StreamTest.register(tests, cache);
         SupportTest.register(tests, cache);
+        IntegrationTest.register(tests, cache);
 
         List<String> failed = new ArrayList<>();
         for (Map.Entry<String, Test> t : tests.entrySet()) {
