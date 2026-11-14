@@ -4,6 +4,11 @@ Bu repoda 3 geliştirici, 3 ayrı bilgisayardan çalışır. Her bilgisayardaki 
 Claude Code + **Fable 5.2** (`claude-fable-5-2`) modelidir; model `.claude/settings.json`
 içinde sabitlenmiştir. Bu kurallar hem insanlar hem AI için geçerlidir.
 
+Proje kuralları, hackathon kuralları ve GitHub çalışma düzeni (issue, PR onayı, yorumlar)
+Claude hafızasındadır:
+
+@CLAUDE_HAFIZASI.md
+
 ## Değişmez kurallar
 
 - **`main`'e direkt push YASAK.** GitHub ruleset'i (`main-koruma`) bunu herkes için,
@@ -18,14 +23,13 @@ içinde sabitlenmiştir. Bu kurallar hem insanlar hem AI için geçerlidir.
 
 - Her iş için güncel `main`'den yeni branch aç:
   ```sh
-  git switch main && git pull --ff-only
-  git switch -c <github-kullanıcı-adı>/<tür>/<kısa-açıklama>
+  git switch main && git pull --rebase
+  git switch -c <tür>/<konu>
   ```
-- `tür`: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
-- Örnek: `sener00/feat/giris-ekrani`, `yldzemin/fix/token-suresi`
+- Dal adları: `feat/<modül>`, `fix/<konu>`, `docs/<konu>` (örn. `feat/scenario-simulator`).
 - Bir branch = bir konu. PR'ları küçük tut.
 - Başkasının branch'ine sahibine sormadan push etme.
-- Commit mesajı: `tür: kısa açıklama` (örn. `fix: boş e-posta kontrolü`).
+- Commit mesajı İngilizce: `tür: kısa açıklama` (örn. `fix: reject empty email`).
 
 ## 1. Öz-inceleme (PR açmadan önce, zorunlu)
 
@@ -39,11 +43,11 @@ Kısayol: **`/pr-ac`**.
 4. Bulunan sorunlar düzeltilir; düzeltilemeyen varsa PR açılmaz, kullanıcıya bildirilir.
 5. PR açıklamasındaki "Öz-inceleme" bölümü doldurulur (`.github/pull_request_template.md`).
 
-## 2. İnceleme (isteğe bağlı)
+## 2. İnceleme
 
-- Ruleset onay şartı koymaz; PR'ı açan kişi öz-incelemeden sonra birleştirebilir.
-- İstenirse başka bir bilgisayarın Fable'ı inceleyebilir: **`/pr-incele <PR-numarası>`**.
-  AI diff'i okur, mümkünse testleri çalıştırır; sorun bulursa **Request changes** verir.
+- Ruleset onay şartı koymaz; onay ve inceleme kuralları `CLAUDE_HAFIZASI.md` §6'dadır.
+- Kısayol: **`/pr-incele <PR-numarası>`**. AI diff'i okur, mümkünse testleri çalıştırır;
+  sorun bulursa **Request changes** verir.
 
 ## 3. Merge
 

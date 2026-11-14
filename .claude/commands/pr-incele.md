@@ -17,4 +17,6 @@ PR #$ARGUMENTS'ı `CLAUDE.md`'deki kurallara göre incele:
    - Engelleyici sorun varsa: `gh pr review $ARGUMENTS --request-changes --body "<sorunlar, dosya:satır ile>"`
    - Küçük, engelleyici olmayan önerileri onay gövdesine yaz.
    - Emin değilsen onaylama; durumu kullanıcıya anlat ve sor.
+   - Mimari karar içeren PR'da (bkz. `CLAUDE_HAFIZASI.md` §6) onaylamadan önce kullanıcıya sor.
+   - Her review gövdesi `🤖 Claude (<kullanıcı adı>):` ile başlar.
 6. Verdiğin kararı ve gerekçesini kullanıcıya özetle.
