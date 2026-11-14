@@ -5,28 +5,57 @@ The demo video (≤30 s) and slides (≤7) are recorded from this UI, so polish 
 
 ---
 
-## 1. Stack (PROPOSED)
+## 1. Stack (DECIDED 2026-11-14, #35)
 
-| Need | Choice | Why |
+Decided question by question with the frontend owner.
+
+| # | Need | Decision | Why |
+|---|---|---|---|
+| 1 | Platform | **Tauri v2 desktop app** (Ubuntu 24, Windows, macOS) | Runs locally in its own window, no browser and no internet; Tauri's shell is Rust, which the team already uses in the backend |
+| 1 | UI framework | **React 19 + TypeScript + Vite** inside Tauri | Same code runs in Tauri and, as plan B, in a browser |
+| 2 | Visual language | **Hybrid "calm mission control"** | Dark base and cyan accents (reference image, deck); data areas plain with large numbers; glow and motion only on the body figure and on alerts |
+| 3 | Components and styling | **Tailwind CSS 4 + shadcn/ui (Radix) + Motion** | shadcn copies component code into the repo, so every detail is ours; Radix gives keyboard and screen-reader support; Motion for alert and transition animation |
+| 4 | Body figure | **2.5D SVG** | Layered lines, soft glow, light parallax, front/back flip; clickable and keyboard-focusable regions; no 3D model licence or NASA-logo risk |
+| 5 | Charts | **Recharts** via shadcn chart components | Same theme as the rest of the UI; baseline bands, dashed forecasts, real vs simulated line styles |
+| 6 | Navigation | **Personal screen first** | Matches the challenge goal ("assess their own health"); see §1.2 |
+| — | State | React context (Zustand if it grows) | Few global objects: crew, alerts, environment, role |
+| — | Sound | Web Audio API | No audio files; mute switch |
+
+**Backend link:** the Java API runs on `localhost` (see `BACKEND.md`); the UI calls it over HTTP. Until it is ready, mock JSON (§7).
+
+**Plan B (demo safety):** if a Tauri build fails on a machine, the Java API serves the same `vite build` output on `localhost` and the UI runs in a browser tab. No code change.
+
+**Versions:** pin exact versions in `frontend/package.json` when the project is created (no `^`/`latest`). Latest on 2026-11-14 for reference: `@tauri-apps/cli` 2.12.4, `react` 19.3.1, `vite` 8.3.8, `tailwindcss` 4.3.5, `shadcn` 4.23.0, `motion` 14.14.0, `recharts` 3.10.1. Rust stable 1.100.0.
+
+### 1.1 Build prerequisites per OS
+
+| OS | Install once | Source |
 |---|---|---|
-| Framework | **React 18 + Vite + TypeScript** | Fast dev server, static build, works offline |
-| Charts | **Recharts** | Simple time-series and reference bands |
-| Body figure | **Inline SVG** with one `<path>` per region | Each region clickable, colourable, accessible |
-| State | React context (or Zustand if it grows) | Few global objects: crew, alerts, environment |
-| Styling | CSS variables (design tokens §3) + CSS modules | Theme in one place |
-| Sound | Web Audio API | No audio files; mute switch |
-| Hosting | Static build (`vite build`) → GitHub Pages; `npm run preview` offline | "Link to Final Project" and offline demo |
+| **Ubuntu 24** | `sudo apt update && sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev`, then Rust (rustup) and Node.js | https://v2.tauri.app/start/prerequisites/ |
+| **macOS** | Xcode Command Line Tools, Rust (rustup), Node.js | same |
+| **Windows** | Microsoft C++ Build Tools and WebView2 (preinstalled on Windows 10 1803+ and 11), Rust (rustup), Node.js | same |
 
-Pin exact versions in `package.json` (no `^latest`).
+Each OS builds its own installer (`npm run tauri build` on that OS). Commit no build output.
+
+### 1.2 App shell and navigation
+
+- **Top status bar:** station time · Earth link status · open alert count · **role switcher** (Astronaut C1–C7 / CMO / Ground).
+  - The role switcher is a **simulation** (no real login); the UI says so.
+  - Switching role changes what is visible, enforcing `TECH_OVERVIEW.md` §5 rule 4 on screen: the astronaut sees their own psych check-in; the CMO sees medication and detailed values; psych data never appears on the Crew Deck for any role.
+- **Left rail:** Personal · Crew Deck · Environment · Twin · Check-in.
+- **Start screen:** the selected astronaut's Personal screen (body figure, indicators, next measurement reminder).
+- **L4 emergency:** takes over the full screen from any screen.
 
 ```
 frontend/
+  src-tauri/     ← Tauri (Rust) shell and config
   src/
     api/         ← client; switches between mock and backend (one flag)
     mock/        ← JSON matching TECH_OVERVIEW §4
-    components/  ← BodyFigure, IndicatorCard, StatusBadge, AlertCard, …
+    components/  ← BodyFigure, IndicatorCard, StatusBadge, AlertCard, RoleSwitcher, …
+    components/ui/ ← shadcn/ui components (copied in, owned by us)
     screens/     ← Personal, CrewDeck, Emergency, Environment, Twin, CheckIn, ReactionTest
-    theme/       ← tokens.css
+    theme/       ← Tailwind theme tokens (§3)
 ```
 
 ---
@@ -142,6 +171,7 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
 
 ## 9. Definition of done (frontend)
 
-- `npm run build` succeeds; `npm run preview` works with Wi-Fi off.
+- `npm run tauri build` succeeds on Ubuntu 24 (and on each OS we ship); the app runs with Wi-Fi off.
+- Plan B works: `npm run build` output opens from the Java API on `localhost`.
 - MVP screens work on mock data.
 - Every number on screen has a `real`/`simulated` badge and a source link in its "?" card.

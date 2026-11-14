@@ -29,7 +29,7 @@ A health-monitoring and decision-support tool for a 7-person ISS crew. It does n
 ## 2. Architecture
 
 ```
-┌──────────────── frontend/ (React) ────────────────┐        ┌──────────── backend/ ────────────┐
+┌───────── frontend/ (Tauri + React) ───────────────┐        ┌──────────── backend/ ────────────┐
 │ Personal screen · Crew Deck · Emergency view      │  JSON  │ Data ingestion (OSDR, RadLab, …) │
 │ Check-in · Reaction test · Environment · Twin     │ <────> │ Twin engine · Rules engine       │
 │ mock/*.json until the backend is ready            │        │ Scenario engine · Privacy filter │
@@ -148,7 +148,7 @@ Details: [`BACKEND.md`](BACKEND.md) §5 (logic) and [`FRONTEND.md`](FRONTEND.md)
 | # | Decision | Affects |
 |---|---|---|
 | #24 | Backend: **Rust** ingest CLI + **Java 21 / Spring Boot 4.1** API, joined only by `data/cache/*.json` (**DECIDED**, see `BACKEND.md` §1) | backend |
-| — | Frontend: **React + Vite + TypeScript** (PROPOSED) | frontend |
+| #35 | Frontend: **Tauri v2** desktop app with **React 19 + TypeScript + Vite**, Tailwind + shadcn/ui + Motion, Recharts (**DECIDED**, see `FRONTEND.md` §1) | frontend |
 | — | Exact endpoint paths and JSON shapes | both: agree before wiring |
 | #11 | ISS medication list (Diaz 2024) | recommendation cards |
 | #12 | NOAA-derived DONKI fields | space-weather panel |
