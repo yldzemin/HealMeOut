@@ -10,6 +10,10 @@ public enum Viewer {
     SELF, CMO, GROUND, CREW_DECK, EMERGENCY;
 
     public static Viewer parse(String text) {
-        return valueOf(text.trim().toUpperCase(Locale.ROOT).replace('-', '_'));
+        try {
+            return valueOf(text.trim().toUpperCase(Locale.ROOT).replace('-', '_'));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("viewer must be SELF, CMO, GROUND, CREW_DECK or EMERGENCY");
+        }
     }
 }

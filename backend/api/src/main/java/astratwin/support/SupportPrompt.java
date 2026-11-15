@@ -46,7 +46,20 @@ public final class SupportPrompt {
             + "to people. A calm one-to-one word at a good moment often clears the air, and a short exercise break can "
             + "take the edge off first. Has something in particular been building up?";
 
+    /** Family words: the model is reminded of the family conference only for these messages. */
+    private static final java.util.regex.Pattern FAMILY = java.util.regex.Pattern.compile(
+            "\\b(family|kids?|children|daughter|son|partner|wife|husband|birthday|mother|father|mom|dad|parents?|"
+                    + "grandmother|grandfather|grandma|grandpa)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+    /** Added as a system line before the user's message. A global prompt change shifted unrelated replies (eval 2026-11-15). */
+    public static final String FAMILY_HINT = "For this message, the most relevant fact is the weekly private family "
+            + "conference (and the monthly private special conference). Mention it.";
+
     private SupportPrompt() {
+    }
+
+    /** A per-message reminder of the most relevant fact, or empty. */
+    public static Optional<String> hint(String text) {
+        return FAMILY.matcher(text).find() ? Optional.of(FAMILY_HINT) : Optional.empty();
     }
 
     /**

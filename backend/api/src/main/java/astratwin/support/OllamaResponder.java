@@ -75,6 +75,7 @@ public final class OllamaResponder implements SupportResponder {
         for (SupportMessage m : history.subList(Math.max(0, history.size() - HISTORY), history.size())) {
             messages.add(Map.of("role", m.author().equals("crew") ? "user" : "assistant", "content", m.text()));
         }
+        SupportPrompt.hint(request.text()).ifPresent(h -> messages.add(Map.of("role", "system", "content", h)));
         messages.add(Map.of("role", "user", "content", request.text()));
 
         Map<String, Object> body = new LinkedHashMap<>();

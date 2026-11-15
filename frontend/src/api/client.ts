@@ -7,13 +7,22 @@ import crewMock from "@/mock/crew.json";
  *
  * - The backend is used automatically when it answers; otherwise the UI falls back to mock JSON
  *   (docs/FRONTEND.md §7). Set VITE_USE_MOCK=true to force mock data.
- * - Base URL: same origin when the API serves the built UI (`run.sh --ui`), otherwise
- *   http://127.0.0.1:8080 (Vite dev server and the Tauri webview). VITE_API_BASE_URL overrides it.
+ * - Base URL: same origin when the API serves the built UI (`run.sh`, on any port), otherwise
+ *   http://127.0.0.1:8080 (Vite dev 1420, Vite preview 4173 and the Tauri webview). VITE_API_BASE_URL overrides it.
  */
 const env = import.meta.env as Record<string, string | undefined>;
 export const USE_MOCK = env.VITE_USE_MOCK === "true";
-export const API_BASE_URL: string =
-  env.VITE_API_BASE_URL ?? (typeof window !== "undefined" && window.location.port === "8080" ? "" : "http://127.0.0.1:8080");
+/** Ports of the Vite dev server (Tauri's fixed 1420), `vite preview` and Vite's default. */
+const DEV_PORTS = new Set(["1420", "4173", "5173"]);
+
+function defaultBaseUrl(): string {
+  if (typeof window === "undefined") return "http://127.0.0.1:8080";
+  const { protocol, hostname, port } = window.location;
+  const servedByApi = protocol.startsWith("http") && (hostname === "127.0.0.1" || hostname === "localhost") && !DEV_PORTS.has(port);
+  return servedByApi ? "" : "http://127.0.0.1:8080";
+}
+
+export const API_BASE_URL: string = env.VITE_API_BASE_URL ?? defaultBaseUrl();
 
 // ---------- Shapes returned by the API (TECH_OVERVIEW §4.2). Absent fields are left out. ----------
 

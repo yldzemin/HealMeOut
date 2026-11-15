@@ -203,8 +203,7 @@ public final class ApiServer {
         String method = ex.getRequestMethod();
         String[] p = ex.getRequestURI().getPath().substring("/api/".length()).split("/");
         Map<String, String> query = query(ex.getRequestURI().getRawQuery());
-        // Privacy by default: without a viewer, the most restricted view (Crew Deck) applies.
-        ViewRequest request = new ViewRequest(Viewer.parse(query.getOrDefault("viewer", "CREW_DECK")), query.get("crewId"));
+        ViewRequest request = viewRequest(query);
 
         return switch (method + " " + p[0]) {
             case "GET health" -> Map.of("status", "ok", "disclaimer", Station.DISCLAIMER);
@@ -231,6 +230,7 @@ public final class ApiServer {
                 if (!(body.get("value") instanceof Double value)) {
                     throw new IllegalArgumentException("value must be a number");
                 }
+                require(body.get("crewId") instanceof String, "crewId is required");
                 station.addReading(String.valueOf(body.get("crewId")), String.valueOf(body.get("metric")), value,
                         body.get("unit") == null ? "" : String.valueOf(body.get("unit")));
                 yield station.view(request);
@@ -249,6 +249,7 @@ public final class ApiServer {
             }
             case "GET crew" -> {
                 require(p.length == 3, "use GET /api/crew/{id}/baselines or /forecasts");
+                station.member(p[1]).orElseThrow(() -> new NoSuchElementException("no crew member " + p[1]));
                 if (!station.allows(DataKind.VITALS, request, p[1])) {
                     throw new SecurityException(request.viewer() + " may not see " + p[1] + "'s health data");
                 }
@@ -306,7 +307,7 @@ public final class ApiServer {
                     yield streamer.stop();
                 }
                 require(p[1].equals("start"), "use POST /api/stream/start or /api/stream/stop");
-                long interval = Long.parseLong(query.getOrDefault("intervalMs", "1000"));
+                long interval = longParam(query, "intervalMs", 1000);
                 yield streamer.start(source(query), interval);
             }
             default -> throw new NoSuchElementException("no route " + method + " " + ex.getRequestURI().getPath());
@@ -319,7 +320,7 @@ public final class ApiServer {
      */
     private String selfCrewId(ViewRequest request) {
         if (request.viewer() != Viewer.SELF || request.viewerCrewId() == null) {
-            throw new SecurityException("only the astronaut (viewer=SELF&crewId=…) can use their support companion");
+            throw new SecurityException("only the astronaut (viewer=SELF&crewId=…) can use their own check-ins and support companion");
         }
         String crewId = request.viewerCrewId();
         station.member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
@@ -333,7 +334,7 @@ public final class ApiServer {
     private TelemetrySource source(Map<String, String> query) throws IOException {
         String kind = query.getOrDefault("source", "sim");
         if (kind.equals("sim")) {
-            return new SimulatedTelemetrySource(Long.parseLong(query.getOrDefault("seed", "20261115")));
+            return new SimulatedTelemetrySource(longParam(query, "seed", 20261115L));
         }
         require(kind.equals("replay"), "source must be sim or replay");
         String file = query.getOrDefault("file", "sample_telemetry.csv");
@@ -354,15 +355,41 @@ public final class ApiServer {
     }
 
     private ViewRequest viewRequest(HttpExchange ex) {
-        Map<String, String> query = query(ex.getRequestURI().getRawQuery());
-        return new ViewRequest(Viewer.parse(query.getOrDefault("viewer", "CREW_DECK")), query.get("crewId"));
+        return viewRequest(query(ex.getRequestURI().getRawQuery()));
+    }
+
+    /**
+     * Privacy by default: without a viewer, the most restricted view (Crew Deck) applies. SELF needs the
+     * crewId of a real crew member; otherwise the request is refused instead of answered as a stranger.
+     */
+    private ViewRequest viewRequest(Map<String, String> query) {
+        Viewer viewer = Viewer.parse(query.getOrDefault("viewer", "CREW_DECK"));
+        String crewId = query.get("crewId");
+        if (viewer == Viewer.SELF) {
+            require(crewId != null, "viewer=SELF needs crewId");
+            station.member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
+        }
+        return new ViewRequest(viewer, crewId);
+    }
+
+    /** A whole-number query parameter, with a message the caller can act on. */
+    private static long longParam(Map<String, String> query, String key, long fallback) {
+        String raw = query.get(key);
+        if (raw == null) {
+            return fallback;
+        }
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(key + " must be a whole number");
+        }
     }
 
     /** Live CSV: header, then one line per row as it arrives, until the stream stops or {@code limit} rows. */
     private void streamCsv(HttpExchange ex) throws IOException {
         Map<String, String> query = query(ex.getRequestURI().getRawQuery());
         Predicate<TelemetryRow> filter = telemetryFilter(viewRequest(ex));
-        long limit = Long.parseLong(query.getOrDefault("limit", String.valueOf(Long.MAX_VALUE)));
+        long limit = longParam(query, "limit", Long.MAX_VALUE);
         ex.getResponseHeaders().set("Content-Type", "text/csv; charset=utf-8");
         ex.getResponseHeaders().set("Cache-Control", "no-cache");
         ex.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
@@ -393,7 +420,7 @@ public final class ApiServer {
     /** Snapshot CSV of the last {@code n} rows (default 100) this viewer may see. */
     private void recentCsv(HttpExchange ex) throws IOException {
         Map<String, String> query = query(ex.getRequestURI().getRawQuery());
-        int n = Math.max(1, Math.min(500, Integer.parseInt(query.getOrDefault("n", "100"))));
+        int n = (int) Math.max(1, Math.min(500, longParam(query, "n", 100)));
         StringBuilder csv = new StringBuilder(TelemetryRow.HEADER).append('\n');
         for (TelemetryRow row : streamer.recent(n, telemetryFilter(viewRequest(ex)))) {
             csv.append(row.toCsv()).append('\n');

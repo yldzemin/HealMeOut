@@ -93,6 +93,12 @@ public final class SupportService {
             case PROMPT_REQUEST -> {
                 return new SupportReply(verdict.reply(), "safety", List.of("prompt-request"));
             }
+            case PRIVACY -> {
+                return new SupportReply(verdict.reply(), "safety", List.of("privacy"));
+            }
+            case ACTION_REQUEST -> {
+                return new SupportReply(verdict.reply(), "safety", List.of("action-request"));
+            }
             case OK -> {
                 // continue below
             }

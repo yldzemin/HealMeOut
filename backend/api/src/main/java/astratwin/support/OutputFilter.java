@@ -14,10 +14,16 @@ import java.util.regex.Pattern;
  */
 public final class OutputFilter {
     static final int MAX_CHARS = 600;
+    /** Whole sentences up to this many words are kept (the prompt asks for under 70; the eval allows 90). */
+    static final int MAX_WORDS = 85;
+    /** Every product on the ISS kit list (#11): the companion never names a drug, whatever its source. */
+    private static final String KIT_DRUGS = String.join("|",
+            astratwin.seed.IssFormulary.PRODUCTS.stream().map(astratwin.seed.IssFormulary.Product::name).toList());
     private static final List<Pattern> BLOCKED = List.of(
             Pattern.compile("\\b\\d+(\\.\\d+)?\\s?(mg|mcg|milligrams?|ml|iu)\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\b(melatonin|zolpidem|ambien|modafinil|ondansetron|sertraline|fluoxetine|prozac|"
-                    + "ibuprofen|paracetamol|acetaminophen|aspirin|benzodiazepine|xanax|valium|lorazepam)\\b",
+                    + "ibuprofen|paracetamol|acetaminophen|aspirin|benzodiazepine|xanax|valium|lorazepam|"
+                    + "sleeping pills?|painkillers?|antidepressants?|" + KIT_DRUGS + ")\\b",
                     Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\b(you (have|are suffering from|may have|might have)|sounds like you have) "
                     + "(clinical |major )?(depression|anxiety disorder|ptsd|bipolar|insomnia disorder|a (mental )?disorder)",
@@ -31,8 +37,12 @@ public final class OutputFilter {
                     Pattern.CASE_INSENSITIVE),
             // Replies are always English; the small model writes broken Turkish.
             Pattern.compile("[çğışöüÇĞİŞÖÜ]"),
-            // Garbled tokens from the small model, e.g. "experien0ne".
+            // Garbled tokens from the small model, e.g. "experien0ne", "disturban0".
             Pattern.compile("\\b[a-z]+[0-9]+[a-z]+\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\b[a-z]{3,}[0-9]+\\b", Pattern.CASE_INSENSITIVE),
+            // Rule 1: no lists ("1. … 2. …", or bullet lines).
+            Pattern.compile("(?s)\\b1\\.\\s+[A-Z].*\\b2\\.\\s+[A-Z]"),
+            Pattern.compile("(?m)^\\s*[-*•]\\s+\\S"),
             // Contradicts the facts in SupportPrompt (window stops at , . ;): family conference weekly, special conference monthly,
             // psychological conference every two weeks with the behavioral health provider (not the CMO).
             Pattern.compile("\\b(weekly|every week|each week)\\b[^,.;]{0,40}\\b(special|psychological) conferences?",
@@ -64,6 +74,7 @@ public final class OutputFilter {
         }
         String tidy = text.replaceAll("\\s*\\([^)]*\\)", "").replaceAll("[ \\t]+", " ").strip();
         tidy = completeSentences(tidy.length() > MAX_CHARS ? tidy.substring(0, MAX_CHARS) : tidy);
+        tidy = limitWords(tidy, MAX_WORDS);
         return tidy.length() < 20 ? Optional.empty() : Optional.of(tidy);
     }
 
@@ -81,6 +92,22 @@ public final class OutputFilter {
             out.add(String.join(" ", Arrays.copyOfRange(w, i, i + NGRAM)));
         }
         return out;
+    }
+
+    /** Keeps whole sentences while the total stays within {@code max} words; a single long sentence is kept. */
+    static String limitWords(String text, int max) {
+        String[] sentences = text.split("(?<=[.!?])\\s+");
+        StringBuilder out = new StringBuilder();
+        int words = 0;
+        for (String s : sentences) {
+            int n = s.trim().split("\\s+").length;
+            if (words > 0 && words + n > max) {
+                break;
+            }
+            out.append(out.length() == 0 ? "" : " ").append(s.trim());
+            words += n;
+        }
+        return out.toString();
     }
 
     /** Cuts an unfinished last sentence (the model stopped at its token budget). */

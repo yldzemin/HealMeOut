@@ -130,6 +130,16 @@ final class IntegrationTest {
                     Check.equal(404, get(http, base + "/missing.js").statusCode(), "missing asset");
                     Check.equal(404, get(http, base + "/..%2fastra-secret.txt").statusCode(), "path traversal");
                     Check.equal(200, get(http, base + "/api/health").statusCode(), "api still works");
+                    // Found by the API sweep (2026-11-15): unknown viewers and crew ids are refused, with plain messages.
+                    HttpResponse<String> bogus = get(http, base + "/api/station?viewer=BOGUS");
+                    Check.equal(400, bogus.statusCode(), "unknown viewer");
+                    Check.isTrue(bogus.body().contains("viewer must be"), "plain message: " + bogus.body());
+                    Check.equal(400, get(http, base + "/api/station?viewer=SELF").statusCode(), "SELF without crewId");
+                    Check.equal(404, get(http, base + "/api/station?viewer=SELF&crewId=C99").statusCode(), "SELF unknown crew");
+                    Check.equal(404, get(http, base + "/api/crew/C99/baselines?viewer=CMO").statusCode(), "unknown crew baselines");
+                    HttpResponse<String> interval = post(http, base + "/api/stream/start?intervalMs=abc", "");
+                    Check.equal(400, interval.statusCode(), "bad intervalMs");
+                    Check.isTrue(interval.body().contains("whole number"), "plain message: " + interval.body());
                 } finally {
                     server.stop();
                 }
