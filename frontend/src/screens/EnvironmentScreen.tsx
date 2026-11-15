@@ -17,6 +17,7 @@ import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Co2Gauge } from "@/components/Co2Gauge";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 /** Median daily ISS TEPC dose equivalent, Sep 4–9 2017 (NASA_DATA_SOURCES.md §4.3); the dose rule fires at 1.5×. */
@@ -132,11 +133,10 @@ export function EnvironmentScreen({
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Wind className="size-4" aria-hidden /> Cabin CO2 (1-hour average)
             </p>
-            <p className="flex items-baseline gap-1.5">
-              <span className="font-heading text-4xl font-semibold tabular-nums">{cabin?.co2_mmHg ?? "—"}</span>
-              <span className="text-sm text-muted-foreground">mmHg</span>
+            <Co2Gauge value={cabin?.co2_mmHg} timestamp={cabin?.timestamp} />
+            <p className="text-xs text-muted-foreground">
+              Limits: 3 mmHg 1-hour average (NASA-STD-3001 V2 6004); 7-day average under 2.5 mmHg (OCHMO-TB-004). Typical ISS 1.9–2.3 mmHg (OSDR EDA).
             </p>
-            <p className="text-xs text-muted-foreground">Limit 3 mmHg (NASA-STD-3001 V2 6004). Typical ISS 1.9–2.3 mmHg (OSDR EDA).</p>
             <Badge variant="outline" className="w-fit">Simulated</Badge>
           </CardContent>
         </Card>
