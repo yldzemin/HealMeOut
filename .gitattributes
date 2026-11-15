@@ -1,3 +1,4 @@
 # Shell scripts keep LF line endings on every system, so they also run in Git Bash on Windows
 # (with CRLF, bash fails with "$'\r': command not found").
 *.sh text eol=lf
+*.bat text eol=crlf
