@@ -6,7 +6,7 @@ Closes #
 ## Why?
 
 
-## Self-review (Fable 5.2 on the author's machine)
+## Self-review
 
 - [ ] Reviewed `git diff origin/main...HEAD` end to end
 - [ ] Ran tests / lint (write "none" if there are none)
@@ -14,4 +14,4 @@ Closes #
 
 ## Review
 
-To request a Fable review from another machine: `/pr-review <PR-number>`
+A teammate reviews the PR on GitHub: approve, or request changes with line-level comments.
