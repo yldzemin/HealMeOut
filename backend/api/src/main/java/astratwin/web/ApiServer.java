@@ -252,7 +252,7 @@ public final class ApiServer {
                 }
                 yield switch (p[2]) {
                     case "baselines" -> station.baselines(p[1]);
-                    case "forecasts" -> station.forecasts(p[1]);
+                    case "forecasts" -> station.forecasts(p[1], request);
                     default -> throw new NoSuchElementException("no route " + ex.getRequestURI().getPath());
                 };
             }

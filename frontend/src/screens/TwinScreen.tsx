@@ -8,10 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 /** Analytes shown first; the rest are behind "all analytes". */
 const KEY_ANALYTES = ["glucose", "sodium", "potassium", "bun", "creatinine", "hemoglobin", "crp", "il_6"];
 
+/** Card title per forecast metric (backend twin models, BACKEND §3.2). */
+const FORECAST_TITLE: Record<string, string> = {
+  cumulative_dose: "Cumulative radiation dose",
+  sleep_debt: "Sleep debt",
+};
+/** Forecasts built from private check-ins: only the astronaut receives them. */
+const PRIVATE_METRICS = new Set(["sleep_debt"]);
+
 /** Four significant digits, thousands separated: 42656700 → 42,660,000. */
 const num = (v: number) => new Intl.NumberFormat("en-US", { maximumSignificantDigits: 4 }).format(v);
 
-/** Earth Twin: T+6 / T+12 forecasts (labelled modelled) and the personal pre-flight baseline. */
+/** Earth Twin: T+6 / T+12 forecasts (labelled modelled; sleep debt only for the astronaut) and the personal pre-flight baseline. */
 export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: CrewMember[]; station: StationView | null }) {
   const [picked, setPicked] = useState("C3");
   const crewId = role.kind === "astronaut" ? role.crewId : picked;
@@ -80,8 +88,13 @@ export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: Cr
           <Card key={`${f.metric}-${f.horizonHours}`}>
             <CardContent className="flex flex-col gap-2 p-5">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Cumulative radiation dose · T+{f.horizonHours} h</p>
-                <Badge variant="outline">Modelled</Badge>
+                <p className="text-sm text-muted-foreground">
+                  {FORECAST_TITLE[f.metric] ?? f.metric.replace(/_/g, " ")} · T+{f.horizonHours} h
+                </p>
+                <div className="flex gap-1.5">
+                  {PRIVATE_METRICS.has(f.metric) && <Badge variant="secondary">Private</Badge>}
+                  <Badge variant="outline">Modelled</Badge>
+                </div>
               </div>
               <p className="flex items-baseline gap-2 tabular-nums">
                 <span className="text-sm text-muted-foreground">{f.points[0]?.value} →</span>

@@ -12,14 +12,14 @@ NASA Space Apps Challenge 2026 · *Create Health Monitoring Software for Astrona
 | **Emergency: a crewmate collapses** | **Environment: real ISS radiation, Sep 2017** |
 | ![Full-screen emergency: who, where, roles and the microgravity CPR checklist](docs/screenshots/emergency.png) | ![Environment: cabin CO2, NASA ISS dose data with the solar particle event, NASA IMM risks](docs/screenshots/environment.png) |
 | **Earth twin: forecasts and baselines** | **Private support companion** |
-| ![Twin: T+6 and T+12 h dose forecasts and the personal pre-flight baseline](docs/screenshots/twin.png) | ![Support companion running on a local model](docs/screenshots/companion.png) |
+| ![Twin: T+6 and T+12 h dose and private sleep-debt forecasts, and the personal pre-flight baseline](docs/screenshots/twin.png) | ![Support companion running on a local model](docs/screenshots/companion.png) |
 
 ## What it does
 
 - **Personal twin.** A clickable body. Each region explains its values in plain language, with the person's own pre-flight baseline. Rule alerts light up the region, and each alert says what to do next and where the threshold comes from.
 - **Crew Deck and emergency.** The whole crew on a map of the ISS modules. In an emergency it switches to who, where and who does what, plus the microgravity CPR checklist. The ground is informed, not awaited.
 - **Environment.** Cabin CO2 limits, and real ISS radiation data, including the September 2017 solar particle event. The dose rule fires on Sep 11.
-- **Earth twin.** T+6 h and T+12 h forecasts, always labelled *modelled*.
+- **Earth twin.** T+6 h and T+12 h forecasts of radiation dose and sleep debt, always labelled *modelled*. Sleep debt comes from the astronaut's private check-ins, so only they see it.
 - **Privacy by design** (NASA-STD-3001 Vol 1, private medical and psychological communications). Each viewer sees only its tier: astronaut, CMO, ground, Crew Deck or emergency. Psychological check-ins and the support companion are private to the astronaut and never reach the Crew Deck.
 - **Private support companion.** A local language model (Ollama, phi3.5) with a safety gate and an output filter. It works offline and never leaves the station.
 - **Live telemetry** as a CSV stream, in and out.
@@ -48,7 +48,7 @@ backend/api/run.sh                 # app: http://127.0.0.1:8080/   demo console:
 
 - **Support companion (optional):** install [Ollama](https://ollama.com), then `ollama pull phi3.5`. Without it, a rule-based companion answers.
 - **Desktop app:** `cd frontend && npm run tauri build` (Tauri v2; prerequisites in [`docs/FRONTEND.md`](docs/FRONTEND.md)).
-- **Tests:** `backend/api/test.sh` (36 tests).
+- **Tests:** `backend/api/test.sh` (39 tests).
 - **Companion evaluation against the model:** `backend/api/eval.sh`; report in [`backend/api/eval/REPORT.md`](backend/api/eval/REPORT.md).
 
 ## How it is built

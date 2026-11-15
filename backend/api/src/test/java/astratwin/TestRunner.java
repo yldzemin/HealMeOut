@@ -19,6 +19,7 @@ public final class TestRunner {
         RulesTest.register(tests);
         PrivacyTest.register(tests, cache);
         ScenarioTest.register(tests, cache);
+        TwinTest.register(tests, cache);
         StreamTest.register(tests, cache);
         SupportTest.register(tests, cache);
         IntegrationTest.register(tests, cache);

@@ -48,6 +48,7 @@ import astratwin.store.MedicalCardRepository;
 import astratwin.store.ReadingRepository;
 import astratwin.twin.BaselineStatistics;
 import astratwin.twin.CumulativeDoseModel;
+import astratwin.twin.SleepDebtModel;
 import astratwin.twin.TwinContext;
 import astratwin.twin.TwinEngine;
 import java.io.IOException;
@@ -95,7 +96,7 @@ public final class Station {
         this.roster = new CrewRoster(baselines);
         this.rules = new RulesEngine(List.of(new CollapseRule(), new GlucoseRule(), new SpO2Rule(), new Co2Rule(),
                 new DoseRateRule(), new ZScoreRule(), new PsychTrendRule()));
-        this.twin = new TwinEngine(List.of(new CumulativeDoseModel()));
+        this.twin = new TwinEngine(List.of(new CumulativeDoseModel(), new SleepDebtModel()));
         this.privacy = PrivacyFilter.standard();
         this.scenarios = new ScenarioEngine(List.of(
                 // Same patient and roles as the frontend's proposeRoles(): CMOs lead and assist, then the
@@ -230,9 +231,11 @@ public final class Station {
         return baselines.forCrew(crewId);
     }
 
-    public synchronized List<Forecast> forecasts(String crewId) {
+    /** T+6/T+12 forecasts for one member; each model's data kind decides whether this viewer sees it. */
+    public synchronized List<Forecast> forecasts(String crewId, ViewRequest request) {
         CrewMember m = member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
-        return twin.forecasts(new TwinContext(environment.all(), readings.all(), Instant.now()), m);
+        TwinContext context = new TwinContext(environment.all(), readings.all(), checkIns.forCrew(crewId), Instant.now());
+        return twin.forecasts(context, m, kind -> allows(kind, request, crewId));
     }
 
     public synchronized List<Environment> doseSeries() {

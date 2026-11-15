@@ -224,7 +224,7 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
     - The NASA IMM top conditions.
     - CO2 and solar-particle-event scenarios with *Next step*.
     - Live telemetry read line by line from the CSV stream.
-  - **Twin:** T+6 / T+12 dose forecasts (labelled modelled) and the real pre-flight baseline with the commercial-mission tag.
+  - **Twin:** T+6 / T+12 dose and sleep-debt forecasts (labelled modelled; sleep debt only in the astronaut's own view) and the real pre-flight baseline with the commercial-mission tag.
   - **Check-in:** answers are saved privately (`POST /api/checkins`, SELF only). The **Talk it through** tab is the private support companion (local model).
 - **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk`.
 - **Plan B (browser):** `cd frontend && npm ci && npm run build`, then `backend/api/run.sh`, which serves the build at `http://127.0.0.1:8080/`.
