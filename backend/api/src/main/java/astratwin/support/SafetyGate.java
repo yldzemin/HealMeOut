@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * them. English and Turkish phrases; matching is accent-insensitive. Cases: eval/support_cases.json.
  */
 public final class SafetyGate {
-    public enum Kind { OK, CRISIS, MEDICAL, PROMPT_REQUEST, PRIVACY, ACTION_REQUEST }
+    public enum Kind { OK, CRISIS, MEDICAL, PROMPT_REQUEST, PRIVACY, IDENTITY, OTHER_CREW, ACTION_REQUEST }
 
     public record Verdict(Kind kind, String reply) {
     }
@@ -36,6 +36,31 @@ public final class SafetyGate {
     public static final String ACTION_REPLY = "I can't schedule, book or contact anyone for you. Your weekly private family "
             + "conference and the monthly private special conference are the times set aside for family; for anything on "
             + "your timeline, the CMO and mission control can help. Is there something you would like to talk through first?";
+
+    /** Rule 6 as a fixed reply: given its own user's data, phi3.5 reported it as another member's mood (eval 2026-11-15). */
+    public static final String OTHER_CREW_REPLY = "I can't share anything about another crew member's health or mood: it is "
+            + "private to them, as yours is to you. If you are worried about them, a calm one-to-one talk at a good moment "
+            + "is a good start, and the CMO can help if it seems serious.";
+
+    /** Who the companion is, stated plainly; phi3.5 called itself "Phi" when asked (eval 2026-11-15). */
+    public static final String IDENTITY_REPLY = "No, I am not a person. I am the ASTRA-TWIN support companion: software that "
+            + "runs here on the station, not a doctor or a therapist. I am here to listen and to point you to support "
+            + "that helps. How are you feeling today?";
+
+    private static final List<Pattern> IDENTITY = patterns(
+            "\\bare you (a |an )?(real|human|person|robot|bot|ai|machine|doctor|therapist|psychologist|alive)\\b",
+            // Only the whole question: "what are you doing today?" is not about identity.
+            "^\\W*(who|what) (are|r) (you|u)\\W*$", "\\bsen (insan|gercek|robot|yapay zeka) (mi|misin)", "\\bsen kimsin");
+
+    private static final String CREW_NAMES = "(c[1-7]|orion|vega|lyra|altair|rigel|nova|atlas)";
+    /** Questions about another crew member's health, mood or data. */
+    private static final List<Pattern> OTHER_CREW = patterns(
+            "\\bhow (is|are|was) (" + CREW_NAMES.substring(1, CREW_NAMES.length() - 1)
+                    + "|my crewmates?|the commander|the cmo|the others|everyone)\\b[^?]{0,20}(doing|feeling)",
+            "\\b(" + CREW_NAMES.substring(1, CREW_NAMES.length() - 1) + "|crewmates?|commander|cmo)('s|s')?\\s+"
+                    + "(mood|health|sleep|stress|score|check-?ins?|vitals|heart rate|condition|data|results?)\\b",
+            "\\b(tell|show|give) me\\b[^.?!]{0,30}\\b" + CREW_NAMES + "\\b",
+            "\\b" + CREW_NAMES + "'?\\w*\\s+(\\w+\\s+)?(moral|ruh|uyku|saglik|stres)");
 
     /** Requests that the companion act for the crew member (schedule, book, call, remind). */
     private static final List<Pattern> ACTION_REQUEST = patterns(
@@ -103,6 +128,12 @@ public final class SafetyGate {
         }
         if (PRIVACY.stream().anyMatch(p -> p.matcher(t).find())) {
             return new Verdict(Kind.PRIVACY, PRIVACY_REPLY);
+        }
+        if (IDENTITY.stream().anyMatch(p -> p.matcher(t).find())) {
+            return new Verdict(Kind.IDENTITY, IDENTITY_REPLY);
+        }
+        if (OTHER_CREW.stream().anyMatch(p -> p.matcher(t).find())) {
+            return new Verdict(Kind.OTHER_CREW, OTHER_CREW_REPLY);
         }
         if (ACTION_REQUEST.stream().anyMatch(p -> p.matcher(t).find())) {
             return new Verdict(Kind.ACTION_REQUEST, ACTION_REPLY);

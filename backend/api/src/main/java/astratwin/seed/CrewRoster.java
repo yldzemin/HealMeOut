@@ -4,6 +4,7 @@ import astratwin.domain.BaselineStats;
 import astratwin.domain.CheckIn;
 import astratwin.domain.ConditionReport;
 import astratwin.domain.CrewMember;
+import astratwin.domain.CrewPersona;
 import astratwin.domain.Level;
 import astratwin.domain.MedicalCard;
 import astratwin.domain.MissionTag;
@@ -108,6 +109,51 @@ public final class CrewRoster {
             }
         }
         return out;
+    }
+
+    /**
+     * Fictional companion profiles, one per crew member, "set by the astronaut before flight". Diverse on
+     * purpose (two not religious); the companion adapts to them and never assumes beyond them.
+     */
+    public List<CrewPersona> personas() {
+        String p = "simulated (fictional)";
+        return List.of(
+                new CrewPersona("C1", List.of("calm", "methodical", "a dry sense of humour"),
+                        List.of("chess", "amateur astronomy", "cooking for friends"),
+                        List.of("a run on the treadmill", "a short to-do list", "a call with your partner"), null,
+                        List.of("letting the crew down in an emergency"), "brief and practical",
+                        "a partner and two teenagers", p),
+                new CrewPersona("C2", List.of("energetic", "sociable", "a bit of a perfectionist"),
+                        List.of("guitar", "football", "Earth photography"),
+                        List.of("music", "joking with the crew", "photographing Earth", "prayer"),
+                        "Catholic; prays the rosary on Sundays", List.of("missing their daughter's milestones"),
+                        "warm, with some humour", "a husband and a six-year-old daughter", p),
+                new CrewPersona("C3", List.of("introverted", "reflective", "detail-oriented"),
+                        List.of("reading", "sketching", "journaling"),
+                        List.of("a 10-minute meditation", "journaling", "quiet time at the Cupola", "prayer"),
+                        "practising Muslim; prays daily", List.of("feeling closed in inside the sleep station"),
+                        "gentle, with few questions", "parents and a grandmother they are close to", p),
+                new CrewPersona("C4", List.of("optimistic", "curious", "on their first flight"),
+                        List.of("rock climbing", "podcasts", "video games"),
+                        List.of("talking things through", "a bit of humour", "exercise"), null,
+                        List.of("not doing well enough as a rookie"), "casual and upbeat",
+                        "single; close to two siblings", p),
+                new CrewPersona("C5", List.of("stoic", "private", "practical"),
+                        List.of("crosswords", "classical music", "woodworking at home"),
+                        List.of("meditation", "classical music", "a crossword"),
+                        "Buddhist; meditates every morning", List.of("crowded, noisy spaces"), "calm and short",
+                        "a partner", p),
+                new CrewPersona("C6", List.of("outgoing", "competitive", "impatient"),
+                        List.of("running", "yoga", "cooking"),
+                        List.of("stretching or yoga", "a call with friends", "cooking with the crew"),
+                        "Orthodox Christian; prays now and then", List.of("blood draws and needles"),
+                        "direct and motivating", "a spouse and a baby son", p),
+                new CrewPersona("C7", List.of("a veteran", "a mentor to newer crew", "nostalgic"),
+                        List.of("ham radio contacts with schools", "Earth photography", "history books"),
+                        List.of("a ham radio contact with a school", "photographing Earth", "mentoring the newer crew"),
+                        "Jewish; keeps Shabbat when the schedule allows",
+                        List.of("readjusting to gravity and to family life after return"), "reflective; likes stories",
+                        "a spouse and two adult children", p));
     }
 
     /** Simulated reported conditions: the stories of the frontend profiles that need attention (L1+). */

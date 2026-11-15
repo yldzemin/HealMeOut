@@ -15,6 +15,11 @@ public final class GuidedResponder implements SupportResponder {
     private static final String PPC = " If this lasts several days, it is worth raising at your next Private Psychological "
             + "Conference or with your flight surgeon.";
     private static final List<Topic> TOPICS = List.of(
+            // Good news first: the default reply asks "what feels heaviest", which is wrong for a happy message.
+            new Topic(Pattern.compile("\\b(great day|good day|happy|amazing|wonderful|beautiful|so cool|saw an? (aurora|storm)|best day)\\b"
+                    + "|harika|mutluyum|cok guzel"),
+                    "That sounds like a great moment. Moments like that are worth keeping: a photo of Earth or a few lines "
+                            + "in a journal help many crew members hold on to them."),
             new Topic(Pattern.compile("\\b(sleep|tired|insomnia|awake|exhaust\\w*)|uyku|yorgun|uyuyam"),
                     "Poor sleep up here is common, and it makes everything feel heavier. Two things that can help: keep "
                             + "the same sleep window each night and plan your light before sleep; noise, CO2 and a busy "
@@ -52,6 +57,14 @@ public final class GuidedResponder implements SupportResponder {
         String text = SafetyGate.normalize(request.text());
         String reply = TOPICS.stream().filter(t -> t.pattern().matcher(text).find()).map(Topic::reply).findFirst()
                 .orElse(DEFAULT);
-        return Optional.of(new SupportReply(reply, name(), List.of()));
+        return Optional.of(new SupportReply(reply + personal(request), name(), List.of()));
+    }
+
+    /** One line from the person's own profile: the first thing that helps them (the guided reply adapts too). */
+    static String personal(SupportRequest request) {
+        return request.context().map(c -> c.persona().helps()).filter(h -> !h.isEmpty())
+                .map(h -> " " + Character.toUpperCase(h.get(0).charAt(0)) + h.get(0).substring(1)
+                        + " helps you, so it may be worth a few minutes today.")
+                .orElse("");
     }
 }

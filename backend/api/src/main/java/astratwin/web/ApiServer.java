@@ -275,11 +275,19 @@ public final class ApiServer {
                         hours(body, "sleepHours"), "entered by the astronaut"));
             }
             case "GET support" -> {
-                require(p.length == 2, "use GET /api/support/status or /api/support/conversation");
+                require(p.length == 2, "use GET /api/support/status, /conversation or /profile");
                 if (p[1].equals("status")) {
                     yield support.status();
                 }
-                require(p[1].equals("conversation"), "use GET /api/support/status or /api/support/conversation");
+                if (p[1].equals("profile")) {
+                    // The astronaut's own profile and last 3 days, exactly as the companion gets them.
+                    String crewId = selfCrewId(request);
+                    var context = station.companionContext(crewId)
+                            .orElseThrow(() -> new NoSuchElementException("no companion profile for " + crewId));
+                    yield Map.of("persona", context.persona(), "recent", context.recent(),
+                            "sentToCompanion", astratwin.support.SupportPrompt.context(context));
+                }
+                require(p[1].equals("conversation"), "use GET /api/support/status, /conversation or /profile");
                 yield support.conversation(selfCrewId(request));
             }
             case "POST support" -> {

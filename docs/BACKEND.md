@@ -210,6 +210,7 @@ Enforce here, not only in the UI:
 | Psych check-in, psych alerts | ✔ | — (shared to BHP by the astronaut) | — | **never** | **never** |
 | Support companion conversation (§10) | ✔ | **never** | **never** | **never** | **never** |
 | "Needs support now" alert (§10, #51): who and when, never the message | ✔ | ✔ | — | **never** | — |
+| Companion profile (personality, hobbies, what helps, faith, worries, style, family) and the 3-day summary it gets (§10) | ✔ | **never** | **never** | **never** | **never** |
 | Support or schedule plan (`PLAN`, e.g. the Earth Twin's 24–72 h plan in `bad-news`) | ✔ | ✔ | ✔ (approves) | **never** | — |
 | Status notice (`STATUS`, e.g. "requested reduced tasking"), never a reason | ✔ | ✔ | ✔ | ✔ | ✔ |
 | A private scenario's story (`bad-news`) | ✔ | public view only | public view only | public view only | public view only |
@@ -281,7 +282,7 @@ Every message goes through these steps in order:
   - Use only the support options sourced in `PSYCHOLOGY_AND_LONG_DURATION.md` §2–§3: PPC with the behavioral health provider every two weeks; family conference weekly and special conference monthly; Cupola, Earth photography and journaling; exercise; sleep window and light; workload with the CMO and mission control; one-to-one talks.
   - The model may never schedule, remind or contact anyone.
 - **Privacy:** conversations are psychological data. Only `viewer=SELF&crewId=<own id>` may read or write them; CMO, Crew Deck and emergency get 403. They are kept in memory, never logged, and the astronaut can clear them.
-  - The check-in is not sent to the model: in testing, phi3.5 repeated it back in the third person.
+  - Since the personal companion (below), the model gets the person's profile and last 3 days, written as "you". An earlier third-person version of the check-in made phi3.5 talk about "the crew member", which the filter now rejects.
 - **Routes:**
   - `GET /api/support/status` (public: engine and availability).
   - `GET /api/support/conversation`, `POST /api/support/message` with body `{"text"}`, and `POST /api/support/clear` (all SELF only).
@@ -311,6 +312,22 @@ Every message goes through these steps in order:
     - A per-message family-conference hint: a global prompt change had shifted unrelated replies.
     - A filter for lists, garbled tokens and every kit drug.
     - Replies cut to whole sentences within 85 words.
+- **Personal companion (profile + last 3 days):**
+  - Every crew member has a fictional profile, "set by the astronaut before flight" (`CrewRoster.personas()`): personality, hobbies, what helps them (e.g. meditation, prayer, music, a run), faith (or none), worries, the reply style they like, and family.
+  - `Station.companionContext` adds their last 3 days: sleep, mood and stress from their check-ins, vital ranges, and the open health notes they can see. Support alerts are left out.
+  - The model gets this as a second system message, written as "you". Rule 8 tells it to fit the reply to the person: prefer what helps them, match their style, mention faith only if their profile names one and only as their own practice, refer to recent data in plain words and never list numbers.
+  - Guards:
+    - **Faith:** the output filter rejects faith or prayer words for someone with no faith.
+    - **No reading out:** it rejects "the crew member" (third person), scores read out ("64 out of 100") and a profile read back line by line.
+    - **Unwell:** when the person feels unwell and has an open health note, the reply ends by pointing to the CMO, for model and guided replies alike.
+    - **Guided fallback:** it adds one line from "what helps you".
+  - `GET /api/support/profile` (SELF only) returns the profile, the 3-day lines and the exact text the model gets. The app shows them under *About you* in the chat.
+  - The eval now gives each case its crew member's real context, starts each case with a fresh conversation (before, every case shared C1's history), and adds 11 personal cases: C3 gets meditation or prayer, C5 meditation, C7 ham radio; C1 and C4 never get prayer; C4's nausea is pointed to the CMO; and recent data is never read out as numbers.
+  - **Fixed replies added after evaluation:**
+    - "Are you a real person?" (phi3.5 called itself "Phi").
+    - Questions about another crew member's health: given its own user's data, phi3.5 reported it as C2's mood.
+  - **Filter additions:** web junk ("sessionid=…&pageName=%2F"), invented instructions ("You are now…").
+  - **Last run: 71/71** (36 fixed, 26 model with a mean of 5.9 s, 9 guided). A second run gave all 71 replies word for word (seed 42), so the result is reproducible. The extra context makes model replies slower (4.4 → 5.9 s).
 - **Crisis → CMO alert (team decision, #51):**
   - Crisis wording raises an L2 alert `support:<crewId>`, category `SUPPORT`: "Needs support now", the time, and what to do (check on them in person, stay with them, set up a private conference with the flight surgeon or behavioral health provider). **The message itself is never in the alert.**
   - Visible to the astronaut and the CMO only: not ground, the Crew Deck or the emergency view (§6). It changes neither the crew level nor the station level, so the Crew Deck shows nothing.

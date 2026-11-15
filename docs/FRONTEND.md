@@ -239,6 +239,7 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
     - Partner data (#13): DLR DosTel2 daily absorbed dose in Columbus next to the NASA TEPC, with a partner tag that says why it counts as NASA-hosted data.
   - **Twin:** T+6 / T+12 dose and sleep-debt forecasts (labelled modelled; sleep debt only in the astronaut's own view) and the real pre-flight baseline with the commercial-mission tag.
   - **Check-in:** answers are saved privately (`POST /api/checkins`, SELF only). The **Talk it through** tab is the private support companion (local model).
+  - **About you (companion):** a button in *Talk it through* opens what the companion knows about the astronaut: their profile (personality, hobbies, what helps, faith, worries, style, family), their last 3 days, and the exact text the local model gets. SELF only (`GET /api/support/profile`).
   - **Crisis → CMO (#51):** when crisis wording reaches the companion, the CMO's view shows a "needs support now" band under the status bar on every screen: who, when and what to do, never the message. "I am on it" acknowledges and closes it. The astronaut's chat says that the CMO was told.
 - **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk`.
 - **Plan B (browser):** `cd frontend && npm ci && npm run build`, then `backend/api/run.sh`, which serves the build at `http://127.0.0.1:8080/`.

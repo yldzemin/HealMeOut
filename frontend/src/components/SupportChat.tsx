@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Lock, Send, Trash2 } from "lucide-react";
+import { Lock, Send, Trash2, UserRound } from "lucide-react";
 import {
   clearConversation,
   getConversation,
@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CompanionProfile } from "@/components/CompanionProfile";
 
 /**
  * Private support companion (backend §10): local model through Ollama, with a fixed safety reply for
@@ -23,6 +24,7 @@ export function SupportChat({ view }: { view: ViewKind }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const viewKey = JSON.stringify(view);
 
@@ -64,12 +66,24 @@ export function SupportChat({ view }: { view: ViewKind }) {
               A private companion for the hard days. It runs on the station, never on Earth servers, and nobody else can read it.
             </p>
           </div>
-          {status && (
-            <Badge variant="outline" className="shrink-0 text-[11px]">
-              {status.primaryAvailable ? `Local model · ${status.primary.replace("local-llm:", "")}` : "Guided replies"}
-            </Badge>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              size="sm"
+              variant={showProfile ? "default" : "outline"}
+              className="gap-1.5"
+              aria-expanded={showProfile}
+              onClick={() => setShowProfile((s) => !s)}
+            >
+              <UserRound className="size-3.5" aria-hidden /> About you
+            </Button>
+            {status && (
+              <Badge variant="outline" className="text-[11px]">
+                {status.primaryAvailable ? `Local model · ${status.primary.replace("local-llm:", "")}` : "Guided replies"}
+              </Badge>
+            )}
+          </div>
         </div>
+        {showProfile && <CompanionProfile view={view} refreshKey={messages.length} />}
 
         <div className="flex max-h-[420px] min-h-[160px] flex-col gap-3 overflow-auto rounded-lg border border-border p-3" aria-live="polite">
           {messages.length === 0 && <p className="text-sm text-muted-foreground">How are you feeling today?</p>}

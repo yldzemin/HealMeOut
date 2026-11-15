@@ -18,7 +18,7 @@ Screenshots from the running app with the live backend (2026-11-15).
 | **Bad news from home: what the crew sees** | **Bad news from home: what C3 sees** |
 | ![Crew Deck as C2 during the private bad-news scenario: only "C3 requested reduced tasking", no reason](docs/screenshots/bad-news-crew.png) | ![C3's own Personal screen: private support steps, last night's 4.5 h and mood 28 from their check-in](docs/screenshots/bad-news-self.png) |
 | **Private support companion** | **Crisis → CMO, without the message** |
-| ![Support companion answering on a local model (phi3.5): sourced support options, no diagnosis, no drugs](docs/screenshots/companion.png) | ![CMO view: a "needs support now" band for C6 after crisis wording in the companion; who and when, never what was written](docs/screenshots/support-alert.png) |
+| ![Support companion for C3 with "About you" open: their profile, last 3 days, and a reply on the local model (phi3.5) that suggests their own meditation and journaling](docs/screenshots/companion.png) | ![CMO view: a "needs support now" band for C6 after crisis wording in the companion; who and when, never what was written](docs/screenshots/support-alert.png) |
 
 ## What it does
 
@@ -27,7 +27,7 @@ Screenshots from the running app with the live backend (2026-11-15).
 - **Environment.** Cabin CO2 limits, and real ISS radiation data, including the September 2017 solar particle event. The dose rule fires on Sep 11.
 - **Earth twin.** A look-ahead slider to T+12 h over four forecasts, always labelled *modelled*: radiation dose from the real ISS data, sleep debt from the astronaut's private check-ins (only they see it), and simulated fluids and temperature. Plus the flight surgeon's Earth Twin plan, and forecast vs actual (the dose row is computed from the real data).
 - **Privacy by design** (NASA-STD-3001 Vol 1, private medical and psychological communications). Each viewer sees only its tier: astronaut, CMO, ground, Crew Deck or emergency. Psychological check-ins and the support companion are private to the astronaut and never reach the Crew Deck. Crisis wording in the companion alerts the CMO (who and when, never the message). In the *bad news from home* scenario, the astronaut gets private support steps, the CMO and ground approve a 24–72 h support plan, and the Crew Deck sees only "C3 requested reduced tasking".
-- **Private support companion.** A local language model (Ollama, phi3.5) with a safety gate and an output filter. It works offline and never leaves the station.
+- **Private support companion.** A local language model (Ollama, phi3.5) with a safety gate and an output filter. It works offline and never leaves the station. It knows the astronaut's own profile (personality, hobbies, what helps them, faith or none, worries) and their last 3 days of check-ins and vitals, and adapts: meditation for one, prayer for another, never a faith someone does not have. *About you* shows exactly what it knows.
 - **Live telemetry** as a CSV stream, in and out.
 
 ## NASA data

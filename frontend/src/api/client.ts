@@ -171,6 +171,27 @@ export interface ApiSupportMessage {
   flags: string[];
 }
 
+/** The astronaut's own profile for the support companion (fictional), set before flight. */
+export interface ApiCrewPersona {
+  crewId: string;
+  traits: string[];
+  hobbies: string[];
+  helps: string[];
+  /** Absent when the crew member is not religious. */
+  faith?: string;
+  worries: string[];
+  style: string;
+  family: string;
+  provenance: string;
+}
+
+/** What the companion knows: profile, last 3 days, and the exact text the local model receives. */
+export interface ApiCompanionProfile {
+  persona: ApiCrewPersona;
+  recent: string[];
+  sentToCompanion: string;
+}
+
 export interface ApiSupportStatus {
   primary: string;
   primaryAvailable: boolean;
@@ -276,6 +297,7 @@ export const startStream = (source: "sim" | "replay") =>
 export const stopStream = () => call<ApiStreamStatus>("POST", "stream/stop");
 export const getSupportStatus = () => call<ApiSupportStatus>("GET", "support/status");
 export const getConversation = (view: ViewKind) => call<ApiSupportMessage[]>("GET", "support/conversation", view);
+export const getCompanionProfile = (view: ViewKind) => call<ApiCompanionProfile>("GET", "support/profile", view);
 export const sendSupportMessage = (view: ViewKind, text: string) =>
   call<{ reply: ApiSupportMessage; conversation: ApiSupportMessage[] }>("POST", "support/message", view, { text });
 export const clearConversation = (view: ViewKind) => call<{ cleared: boolean }>("POST", "support/clear", view);

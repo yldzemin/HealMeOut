@@ -9,6 +9,7 @@ import astratwin.domain.CheckIn;
 import astratwin.domain.ConditionReport;
 import astratwin.domain.ConditionProbability;
 import astratwin.domain.CrewMember;
+import astratwin.domain.CrewPersona;
 import astratwin.domain.DataKind;
 import astratwin.domain.Environment;
 import astratwin.domain.Forecast;
@@ -53,6 +54,7 @@ import astratwin.store.InMemoryMedicalCardRepository;
 import astratwin.store.InMemoryReadingRepository;
 import astratwin.store.MedicalCardRepository;
 import astratwin.store.ReadingRepository;
+import astratwin.support.CompanionContext;
 import astratwin.support.SupportAlert;
 import astratwin.twin.BaselineStatistics;
 import astratwin.twin.CumulativeDoseModel;
@@ -61,6 +63,7 @@ import astratwin.twin.TwinContext;
 import astratwin.twin.TwinEngine;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -259,10 +262,75 @@ public final class Station {
         return checkIns.forCrew(crewId);
     }
 
-    /** The member's own latest check-in; private context for the support companion. */
-    public synchronized Optional<CheckIn> latestCheckIn(String crewId) {
-        List<CheckIn> list = checkIns.forCrew(crewId);
-        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(list.size() - 1));
+    /** Days of data the support companion gets. */
+    static final int COMPANION_DAYS = 3;
+
+    /**
+     * What the support companion knows about one crew member: their own profile and a plain summary of
+     * their last {@value #COMPANION_DAYS} days (check-ins, vital ranges, open health notes they can see).
+     * Private to the astronaut: only viewer SELF reads it, and the companion runs on the station.
+     */
+    public synchronized Optional<CompanionContext> companionContext(String crewId) {
+        Optional<CrewPersona> persona = roster.personas().stream().filter(p -> p.crewId().equals(crewId)).findFirst();
+        if (persona.isEmpty()) {
+            return Optional.empty();
+        }
+        Instant now = Instant.now();
+        String since = LocalDate.now(ZoneOffset.UTC).minusDays(COMPANION_DAYS).toString();
+        List<String> recent = new ArrayList<>();
+        List<CheckIn> days = checkIns.forCrew(crewId).stream().filter(c -> c.date().compareTo(since) >= 0).toList();
+        if (days.isEmpty()) {
+            recent.add("No check-ins in the last " + COMPANION_DAYS + " days.");
+        } else {
+            recent.add("Sleep from your check-ins, oldest first: "
+                    + String.join(", ", days.stream().map(c -> c.sleepHours() + " h").toList()) + ".");
+            recent.add("Mood from your check-ins, oldest first: "
+                    + String.join(", ", days.stream().map(c -> c.mood() + "/100").toList())
+                    + "; stress " + String.join(", ", days.stream().map(c -> c.stress() + "/100").toList()) + ".");
+        }
+        List<String> vitals = new ArrayList<>();
+        vitalRange(crewId, "hr", "heart rate", "bpm", now).ifPresent(vitals::add);
+        readings.latest(crewId, "bp_sys").ifPresent(sys -> readings.latest(crewId, "bp_dia").ifPresent(dia ->
+                vitals.add("blood pressure " + Math.round(sys.value()) + "/" + Math.round(dia.value()) + " mmHg")));
+        vitalRange(crewId, "spo2", "SpO2", "%", now).ifPresent(vitals::add);
+        vitalRange(crewId, "temp_c", "temperature", "°C", now).ifPresent(vitals::add);
+        vitalRange(crewId, "glucose", "glucose", "mg/dL", now).ifPresent(vitals::add);
+        if (!vitals.isEmpty()) {
+            recent.add("Vitals over the last " + COMPANION_DAYS + " days (simulated): " + String.join("; ", vitals) + ".");
+        }
+        ViewRequest self = new ViewRequest(astratwin.domain.Viewer.SELF, crewId);
+        List<String> notes = privacy.alerts(self, alerts.all(), cards::find).stream()
+                .filter(a -> a.active() && a.category() != DataKind.SUPPORT)
+                .filter(a -> a.crewId().equals(crewId) || a.crewId().equals(Alert.STATION))
+                .map(a -> (a.crewId().equals(Alert.STATION) ? "station: " : "") + a.title()
+                        + (a.status() == astratwin.domain.AlertStatus.OPEN && a.level().ordinal() >= Level.L2.ordinal()
+                                ? " (waiting for the CMO)" : ""))
+                .toList();
+        recent.add(notes.isEmpty() ? "Open health notes: none." : "Open health notes: " + String.join("; ", notes) + ".");
+        return Optional.of(new CompanionContext(persona.get(), List.copyOf(recent)));
+    }
+
+    /** "heart rate 64 bpm", or "heart rate 58–72 bpm, now 64" when it varied in the window. */
+    private Optional<String> vitalRange(String crewId, String metric, String label, String unit, Instant now) {
+        Optional<Reading> latest = readings.latest(crewId, metric);
+        if (latest.isEmpty()) {
+            return Optional.empty();
+        }
+        Instant from = now.minus(Duration.ofDays(COMPANION_DAYS));
+        java.util.DoubleSummaryStatistics s = readings.all().stream()
+                .filter(r -> r.crewId().equals(crewId) && r.metric().equals(metric) && r.timestamp() != null
+                        && !r.timestamp().isBefore(from))
+                .mapToDouble(Reading::value).summaryStatistics();
+        String now1 = fmt(latest.get().value());
+        String u = unit.equals("%") ? unit : " " + unit;
+        if (s.getCount() < 2 || s.getMin() == s.getMax()) {
+            return Optional.of(label + " " + now1 + u);
+        }
+        return Optional.of(label + " " + fmt(s.getMin()) + "–" + fmt(s.getMax()) + u + ", now " + now1);
+    }
+
+    private static String fmt(double v) {
+        return v == Math.rint(v) ? String.valueOf((long) v) : String.valueOf(Math.round(v * 10) / 10.0);
     }
 
     /** Latest reading of every crew member's vital metrics; seeds the telemetry simulator. */

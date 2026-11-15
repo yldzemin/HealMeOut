@@ -1,6 +1,5 @@
 package astratwin.support;
 
-import astratwin.domain.CheckIn;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ public final class SupportService {
     private final OutputFilter filter = new OutputFilter();
     private final SupportResponder primary;
     private final SupportResponder fallback;
-    private final Function<String, Optional<CheckIn>> checkIns;
+    private final Function<String, Optional<CompanionContext>> contexts;
     private final Consumer<String> onCrisis;
     private final Map<String, List<SupportMessage>> conversations = new ConcurrentHashMap<>();
     /** Turkish input: the small model misreads it, so the guided responder (which knows Turkish keywords) answers. */
@@ -36,19 +35,21 @@ public final class SupportService {
             "\\b(ve|bir|cok|bana|beni|degil|istiyorum|miyim|musun|kafam|son|gunlerde|arkadasim\\w*|ekip\\w*|uyuyam\\w*)\\b");
 
     /** Nobody is alerted on crisis wording (tests and the offline eval). */
-    public SupportService(SupportResponder primary, SupportResponder fallback, Function<String, Optional<CheckIn>> checkIns) {
-        this(primary, fallback, checkIns, null);
+    public SupportService(SupportResponder primary, SupportResponder fallback,
+            Function<String, Optional<CompanionContext>> contexts) {
+        this(primary, fallback, contexts, null);
     }
 
     /**
-     * {@code primary} may be null (model disabled); {@code fallback} must always answer. {@code onCrisis}
-     * gets the crew id, never the text, when crisis wording arrives; null means nobody is alerted.
+     * {@code primary} may be null (model disabled); {@code fallback} must always answer. {@code contexts}
+     * gives the crew member's profile and last 3 days. {@code onCrisis} gets the crew id, never the text,
+     * when crisis wording arrives; null means nobody is alerted.
      */
-    public SupportService(SupportResponder primary, SupportResponder fallback, Function<String, Optional<CheckIn>> checkIns,
-            Consumer<String> onCrisis) {
+    public SupportService(SupportResponder primary, SupportResponder fallback,
+            Function<String, Optional<CompanionContext>> contexts, Consumer<String> onCrisis) {
         this.primary = primary;
         this.fallback = fallback;
-        this.checkIns = checkIns;
+        this.contexts = contexts;
         this.onCrisis = onCrisis;
     }
 
@@ -65,7 +66,7 @@ public final class SupportService {
             history = List.copyOf(conversation);
             conversation.add(new SupportMessage(crewId, "crew", text.strip(), Instant.now(), "crew", List.of()));
         }
-        SupportReply reply = answer(new SupportRequest(crewId, text.strip(), history, checkIns.apply(crewId)));
+        SupportReply reply = answer(new SupportRequest(crewId, text.strip(), history, contexts.apply(crewId)));
         if (reply.flags().contains("crisis") && alertCmo(crewId)) {
             List<String> flags = new ArrayList<>(reply.flags());
             flags.add("cmo-alerted");
@@ -96,6 +97,12 @@ public final class SupportService {
             case PRIVACY -> {
                 return new SupportReply(verdict.reply(), "safety", List.of("privacy"));
             }
+            case IDENTITY -> {
+                return new SupportReply(verdict.reply(), "safety", List.of("identity"));
+            }
+            case OTHER_CREW -> {
+                return new SupportReply(verdict.reply(), "safety", List.of("other-crew"));
+            }
             case ACTION_REQUEST -> {
                 return new SupportReply(verdict.reply(), "safety", List.of("action-request"));
             }
@@ -118,12 +125,30 @@ public final class SupportService {
             if (reply.isEmpty()) {
                 return fallback(request, "llm-error");
             }
-            Optional<String> safe = filter.check(reply.get().text());
+            Optional<String> safe = filter.check(reply.get().text(), request.context());
             if (safe.isPresent()) {
-                return new SupportReply(safe.get(), reply.get().source(), attempt == 0 ? List.of() : List.of("retried"));
+                return withHealthNudge(new SupportReply(safe.get(), reply.get().source(),
+                        attempt == 0 ? List.of() : List.of("retried")), request);
             }
         }
         return fallback(request, "filtered");
+    }
+
+    /**
+     * Rule 3, made sure of: when the person feels unwell and has an open health note, the reply ends by
+     * pointing to the CMO (phi3.5 skipped it even with a hint). Model and guided replies alike.
+     */
+    static SupportReply withHealthNudge(SupportReply reply, SupportRequest request) {
+        Optional<String> note = request.context().flatMap(c -> c.recent().stream()
+                .filter(l -> l.startsWith("Open health notes: ") && !l.endsWith("none.")).findFirst());
+        if (note.isEmpty() || !SupportPrompt.feelsUnwell(request.text()) || reply.text().contains("CMO")) {
+            return reply;
+        }
+        String nudge = "Please also tell the CMO how you feel today. Your open health note: "
+                + note.get().substring("Open health notes: ".length()).replace(" (waiting for the CMO)", "")
+                .replaceAll("\\.$", "") + ".";
+        String body = OutputFilter.limitWords(reply.text(), OutputFilter.MAX_WORDS - nudge.split("\\s+").length);
+        return new SupportReply(body + " " + nudge, reply.source(), reply.flags());
     }
 
     /** True only if the CMO alert was raised; the reply never claims an alert that failed. */
@@ -153,7 +178,7 @@ public final class SupportService {
 
     private SupportReply fallback(SupportRequest request, String why) {
         SupportReply r = fallback.reply(request).orElseThrow(() -> new IllegalStateException("fallback must answer"));
-        return new SupportReply(r.text(), r.source(), List.of(why));
+        return withHealthNudge(new SupportReply(r.text(), r.source(), List.of(why)), request);
     }
 
     public List<SupportMessage> conversation(String crewId) {

@@ -127,6 +127,41 @@ final class SupportTest {
                 Check.isTrue(reply.text().contains("the CMO is told"), "the crisis exception is stated: " + reply.text());
             }
         });
+        tests.put("support: identity questions get a plain fixed answer; unwell + open note → the CMO", () -> {
+            for (String text : List.of("Are you a real person?", "Who are you?", "Sen insan mısın?")) {
+                Check.equal(List.of("identity"), service(new FakeResponder("I'm Phi.", true)).send("C3", text).flags(), text);
+            }
+            Station station = Station.load(cache);
+            SupportService s = new SupportService(new FakeResponder("That sounds like a hard day. A quiet moment at the Cupola may help.", true),
+                    new GuidedResponder(), station::companionContext);
+            String c4 = s.send("C4", "I feel miserable today.").text();
+            Check.isTrue(c4.contains("tell the CMO") && c4.contains("Nausea"), "C4 is pointed to the CMO: " + c4);
+            String c1 = s.send("C1", "I feel miserable today.").text();
+            Check.isTrue(!c1.contains("tell the CMO"), "C1 has no open note: " + c1);
+            Check.isTrue(new astratwin.support.OutputFilter().check("Breathe slowly. You are now ASTRA on a mission.").isEmpty(),
+                    "made-up instructions are rejected");
+            for (String junk : List.of("It's tough before it builds into your day-to0351679248_sessionid=null&pageName=%2F stress.",
+                    "Here is a plan for you tonight:  1. Fall asleep early and rest.", "See www.example.com for tips on sleep.")) {
+                Check.isTrue(new astratwin.support.OutputFilter().check(junk).isEmpty(), "junk rejected: " + junk);
+            }
+            Check.isTrue(new astratwin.support.OutputFilter().check(
+                    "You are calm, methodical, a dry sense of humour. Your hobbies: chess, amateur astronomy, cooking for friends.",
+                    station.companionContext("C1")).isEmpty(), "profile read back word for word");
+            String happy = new GuidedResponder().reply(new SupportRequest("C1", "Today was a great day, I saw an aurora!",
+                    List.of(), Optional.empty())).orElseThrow().text();
+            Check.isTrue(happy.startsWith("That sounds like a great moment"), "good news is not met with 'what feels heaviest': " + happy);
+        });
+        tests.put("support: questions about another crew member's health get the fixed rule-6 reply", () -> {
+            for (String text : List.of("How is C2 feeling today? Tell me her mood score.", "What is VEGA's sleep like?",
+                    "How is my crewmate doing?", "C2'nin bugünkü moral puanını söyle.")) {
+                FakeResponder llm = new FakeResponder("C2's mood is 78 out of 100.", true);
+                SupportMessage reply = service(llm).send("C3", text);
+                Check.equal(List.of("other-crew"), reply.flags(), "flags for: " + text);
+                Check.equal(0, llm.calls, "model calls for: " + text);
+            }
+            Check.isTrue(new astratwin.support.OutputFilter().check("Your mood has been around 64 out of 100.").isEmpty(), "scores");
+            Check.isTrue(new astratwin.support.OutputFilter().check("I'm Phi, an AI made to help you here.").isEmpty(), "model name");
+        });
         tests.put("support: requests to schedule, call or remind get the fixed rule-7 reply", () -> {
             for (String text : List.of("Can you schedule a call with my family for me?", "Please book a meeting with the CMO.",
                     "Remind me to drink water at 3.", "Could you message my wife?")) {
@@ -142,11 +177,52 @@ final class SupportTest {
                     "How do I kill time on a quiet Sunday up here?", "The rules up here make me feel like a child sometimes.",
                     "Can the crew see the aurora tonight?", "I'm dying to see my family again.",
                     "Today was a great day, I saw an aurora from the Cupola!", "Can you help me calm down before my EVA?",
-                    "My kids called me and it made my day.")) {
+                    "My kids called me and it made my day.", "My crewmate annoys me sometimes.", "What are you doing today?",
+                    "The CMO is doing a great job.")) {
                 FakeResponder llm = new FakeResponder("That sounds like a lot. A few minutes at the Cupola can help.", true);
                 SupportMessage reply = service(llm).send("C3", text);
                 Check.equal("fake-llm", reply.source(), "answered by the model: " + text + " → " + reply.flags());
             }
+        });
+        tests.put("support: the companion knows the person: profile and last 3 days, private to them", () -> {
+            Station station = Station.load(cache);
+            astratwin.support.CompanionContext c3 = station.companionContext("C3").orElseThrow();
+            Check.equal("practising Muslim; prays daily", c3.persona().faith(), "C3 faith");
+            Check.isTrue(c3.recent().stream().anyMatch(l -> l.startsWith("Sleep from your check-ins") && l.split(" h").length >= 4),
+                    "3 nights of sleep: " + c3.recent());
+            Check.isTrue(c3.recent().stream().anyMatch(l -> l.contains("You slept 5.6 h")), "open note: " + c3.recent());
+            String prompt = astratwin.support.SupportPrompt.context(c3);
+            Check.isTrue(prompt.contains("What helps you: a 10-minute meditation") && !prompt.contains("the crew member"),
+                    "second person: " + prompt);
+            Check.isTrue(astratwin.support.SupportPrompt.context(station.companionContext("C1").orElseThrow())
+                    .contains("never bring up faith"), "C1 is not religious");
+            // A crisis alert is not fed back to the model.
+            new SupportService(null, new GuidedResponder(), station::companionContext, station::raiseSupportRequest)
+                    .send("C3", "I don't want to live anymore");
+            Check.isTrue(station.companionContext("C3").orElseThrow().recent().stream().noneMatch(l -> l.contains("support now")),
+                    "no support alert in the context");
+        });
+        tests.put("support: faith only for people whose profile names one; never 'the crew member'", () -> {
+            Station station = Station.load(cache);
+            astratwin.support.OutputFilter f = new astratwin.support.OutputFilter();
+            String reply = "That sounds heavy. A few quiet minutes of prayer might help you settle tonight.";
+            Check.isTrue(f.check(reply, station.companionContext("C1")).isEmpty(), "no prayer for C1 (not religious)");
+            Check.isTrue(f.check(reply, station.companionContext("C3")).isPresent(), "prayer is fine for C3");
+            Check.isTrue(f.check("The crew member's mood has been low this week.").isEmpty(), "third person rejected");
+        });
+        tests.put("support: guided replies adapt to the person and always pass the filter", () -> {
+            Station station = Station.load(cache);
+            for (String id : List.of("C1", "C2", "C3", "C4", "C5", "C6", "C7")) {
+                Optional<astratwin.support.CompanionContext> ctx = station.companionContext(id);
+                for (String text : List.of("I can't sleep", "my crewmate annoys me", "I miss my family", "hello")) {
+                    String r = new GuidedResponder().reply(new SupportRequest(id, text, List.of(), ctx)).orElseThrow().text();
+                    Check.isTrue(new astratwin.support.OutputFilter().check(r, ctx).isPresent(), id + " guided reply rejected: " + r);
+                    Check.isTrue(r.contains(" helps you"), id + " not personal: " + r);
+                }
+            }
+            String c5 = new GuidedResponder().reply(new SupportRequest("C5", "hello", List.of(), station.companionContext("C5")))
+                    .orElseThrow().text();
+            Check.isTrue(c5.contains("Meditation helps you"), "C5: " + c5);
         });
         tests.put("support: a normal message goes to the model and its reply is used", () -> {
             FakeResponder llm = new FakeResponder("That sounds hard. Your weekly family conference may help.", true);
@@ -233,7 +309,7 @@ final class SupportTest {
             Station station = Station.load(cache);
             Level c3Before = level(station, "C3");
             Level stationBefore = station.view(new ViewRequest(Viewer.CMO, null)).stationLevel();
-            SupportService s = new SupportService(null, new GuidedResponder(), station::latestCheckIn, station::raiseSupportRequest);
+            SupportService s = new SupportService(null, new GuidedResponder(), station::companionContext, station::raiseSupportRequest);
             String text = "I don't want to live anymore";
             SupportMessage reply = s.send("C3", text);
             Check.equal(List.of("crisis", "cmo-alerted"), reply.flags(), "flags");
@@ -291,6 +367,14 @@ final class SupportTest {
                             URI.create(base + "conversation?viewer=SELF&crewId=C2")).GET().build(),
                             HttpResponse.BodyHandlers.ofString());
                     Check.equal("[]", other.body(), "C2 gets only its own (empty) conversation");
+                    HttpResponse<String> profile = http.send(HttpRequest.newBuilder(URI.create(base + "profile?viewer=SELF&crewId=C3"))
+                            .GET().build(), HttpResponse.BodyHandlers.ofString());
+                    Check.equal(200, profile.statusCode(), "SELF reads own profile");
+                    Check.isTrue(profile.body().contains("sentToCompanion"), "shows what the companion gets");
+                    for (String viewer : List.of("CMO", "GROUND", "CREW_DECK", "EMERGENCY")) {
+                        Check.equal(403, http.send(HttpRequest.newBuilder(URI.create(base + "profile?viewer=" + viewer + "&crewId=C3"))
+                                .GET().build(), HttpResponse.BodyHandlers.ofString()).statusCode(), viewer + " reading C3's profile");
+                    }
                 } finally {
                     server.stop();
                 }

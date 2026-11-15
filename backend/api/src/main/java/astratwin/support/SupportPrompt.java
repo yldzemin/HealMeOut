@@ -1,6 +1,6 @@
 package astratwin.support;
 
-import astratwin.domain.CheckIn;
+import astratwin.domain.CrewPersona;
 import java.util.Optional;
 
 /**
@@ -23,12 +23,13 @@ public final class SupportPrompt {
             5. If a problem lasts several days or feels heavy, suggest their next Private Psychological Conference or the flight surgeon.
             6. Never discuss other crew members' health. Never invent facts, schedules or rules.
             7. You cannot schedule, book, remind, call or contact anyone. Only suggest what the crew member can do.
+            8. Fit your reply to the person described below: prefer what helps them and their hobbies, and match the style they like. Mention faith or prayer only if their profile names a faith, and only as their own practice. You may refer to their recent sleep, mood or health notes in plain words, never as a list of numbers; for physical symptoms, say to tell the CMO. Always speak to them as "you".
 
             """;
 
     /** The only support options the model may suggest; replies are expected to restate them. */
     public static final String FACTS = """
-            Facts you may use (nothing else):
+            Facts you may use (nothing else, apart from what helps the person in their profile):
             - Private Psychological Conference: with the behavioral health provider, not the CMO; every two weeks; 15 to 20 minutes; confidential.
             - Private family conference: every week, with family. Private special conference: once a month.
             - Outlets crew use: looking at Earth from the Cupola, photographing Earth, journaling.
@@ -57,18 +58,56 @@ public final class SupportPrompt {
     private SupportPrompt() {
     }
 
+    /** Feeling physically unwell, in the person's words. */
+    private static final java.util.regex.Pattern UNWELL = java.util.regex.Pattern.compile(
+            "\\b(miserable|unwell|sick|ill|awful|rough|nause\\w*|pain\\w*|hurts?|dizzy|headache|not (feeling )?well)\\b",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /** The person says they feel physically unwell. */
+    public static boolean feelsUnwell(String text) {
+        return UNWELL.matcher(text).find();
+    }
+
     /** A per-message reminder of the most relevant fact, or empty. */
     public static Optional<String> hint(String text) {
-        return FAMILY.matcher(text).find() ? Optional.of(FAMILY_HINT) : Optional.empty();
+        return hint(text, Optional.empty());
     }
 
     /**
-     * Private context from the member's own latest check-in. Not sent to the model at the moment: in
-     * testing, phi3.5 repeated it back in the third person ("the crew member's mood is low").
+     * As {@link #hint(String)}; also, when the person feels unwell and has an open health note, a
+     * reminder to mention it gently and suggest the CMO (phi3.5 skipped C4's nausea note otherwise).
      */
-    public static Optional<String> context(Optional<CheckIn> checkIn) {
-        return checkIn.map(c -> "Private context for tone only (the crew member's own latest check-in, " + c.date()
-                + ", simulated): mood " + c.mood() + "/100, stress " + c.stress() + "/100, fatigue " + c.fatigue()
-                + "/100, sleep " + c.sleepHours() + " h. Do not quote these numbers unless asked.");
+    public static Optional<String> hint(String text, Optional<CompanionContext> context) {
+        if (FAMILY.matcher(text).find()) {
+            return Optional.of(FAMILY_HINT);
+        }
+        Optional<String> note = context.flatMap(c -> c.recent().stream()
+                .filter(l -> l.startsWith("Open health notes: ") && !l.endsWith("none.")).findFirst());
+        if (UNWELL.matcher(text).find() && note.isPresent()) {
+            return Optional.of("For this message: they feel unwell and have an open health note ("
+                    + note.get().substring("Open health notes: ".length()) + " Mention it gently and suggest they "
+                    + "tell the CMO how they feel.");
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * The person the companion talks to, written as "you" (an earlier third-person version made phi3.5
+     * talk about "the crew member"). The astronaut sees the same facts in the app.
+     */
+    public static String context(CompanionContext context) {
+        CrewPersona p = context.persona();
+        StringBuilder s = new StringBuilder("The person you are talking to (their own profile and data, simulated; they can see it too):\n");
+        s.append("- You are ").append(String.join(", ", p.traits())).append(".\n");
+        s.append("- Your hobbies: ").append(String.join(", ", p.hobbies())).append(".\n");
+        s.append("- What helps you: ").append(String.join(", ", p.helps())).append(".\n");
+        s.append(p.religious() ? "- Your faith: " + p.faith() + ".\n"
+                : "- You are not religious: never bring up faith or prayer.\n");
+        s.append("- What worries you: ").append(String.join(", ", p.worries())).append(".\n");
+        s.append("- You like replies that are ").append(p.style()).append(".\n");
+        s.append("- Family: ").append(p.family()).append(".\n");
+        s.append("Your last 3 days (for relevance only; never list the numbers, never diagnose):\n");
+        context.recent().forEach(line -> s.append("- ").append(line).append("\n"));
+        return s.toString();
     }
 }
