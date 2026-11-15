@@ -97,7 +97,7 @@ function bloodIndicator(crewId: string, id: string): Indicator | undefined {
   const last = a.points.find((p) => p.timepoint === "L-3");
   return {
     id,
-    label: a.label,
+    label: `${a.label} (pre-flight, L-3)`,
     value: last ? String(last.value) : "—",
     unit: a.unit,
     baseline: a.baselineSd === null ? `${a.baselineMean}` : `${a.baselineMean} ± ${a.baselineSd}`,
