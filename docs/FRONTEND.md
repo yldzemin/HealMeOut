@@ -156,6 +156,11 @@ Every status uses **colour + icon + text** (red/green may be confused by colour-
 
 **Motion:** "reduce motion" in the operating system turns screen transitions off (`MotionConfig reducedMotion="user"`).
 
+**Easter egg (#97):** five quick clicks on the ASTRA-TWIN name (within 2.5 s) send a space cat in a helmet across the screen, with a rainbow trail and stars.
+- It plays once per app run; closing and reopening the app, or reloading the page, re-arms it.
+- The drawing is original (`SpaceCat.tsx`), with no third-party art and no sound.
+- With "reduce motion" it shows still and fades out.
+
 ---
 
 ## 4. Body figure regions

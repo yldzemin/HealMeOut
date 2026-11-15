@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BellRing, CalendarClock, ChevronsRight, Database, Moon, RadioTower, Sun, Undo2 } from "lucide-react";
 import type { DataMode } from "@/api/useStation";
 import type { ApiClock } from "@/api/client";
@@ -7,6 +7,38 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useTheme } from "@/lib/theme";
+import { SpaceCat } from "@/components/SpaceCat";
+
+/** Easter egg (#97): plays once per app run; closing and reopening the app (or reloading the page) re-arms it. */
+let spaceCatPlayed = false;
+
+/** The app name; five quick clicks send the space cat across the screen once. */
+function Brand() {
+  const [flying, setFlying] = useState(false);
+  const clicks = useRef<number[]>([]);
+  const onClick = () => {
+    if (spaceCatPlayed) return;
+    const now = Date.now();
+    clicks.current = [...clicks.current.filter((t) => now - t < 2500), now];
+    if (clicks.current.length >= 5) {
+      spaceCatPlayed = true;
+      clicks.current = [];
+      setFlying(true);
+    }
+  };
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onClick}
+        className="cursor-default select-none whitespace-nowrap font-heading text-lg font-semibold tracking-wide text-primary"
+      >
+        ASTRA-TWIN
+      </button>
+      {flying && <SpaceCat onDone={() => setFlying(false)} />}
+    </>
+  );
+}
 
 /** Dark by default; light is optional and remembered on this device (#82). */
 function ThemeToggle() {
@@ -134,7 +166,7 @@ export function StatusBar({
   return (
     <header className="flex h-14 items-center justify-between gap-4 border-b border-border bg-sidebar px-5">
       <div className="flex min-w-0 items-center gap-5">
-        <span className="whitespace-nowrap font-heading text-lg font-semibold tracking-wide text-primary">ASTRA-TWIN</span>
+        <Brand />
         <span className="whitespace-nowrap font-mono text-sm tabular-nums text-muted-foreground" aria-label="Station time UTC">
           GMT {time}
         </span>
