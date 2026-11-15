@@ -7,9 +7,9 @@
 **Labels:**
 - **VERIFIED**: opened or tested on 2026-11-14.
 - **UNVERIFIED**: not confirmed; the reason is given.
-- **⚠️ NASA-only**: conflicts or may conflict with the team rule "use NASA-origin data only" (`CLAUDE_HAFIZASI.md` §2). These need a team decision (issue #9).
+- **⚠️ NASA-only**: conflicts or may conflict with the team rule "use NASA-origin data only" (`PROJECT_MEMORY.md` §2). These need a team decision (issue #9).
 
-This file supersedes some values in `ARASTIRMA_RAPORU.md` (2026-11-09). The list is in §9.
+This file supersedes some values in `RESEARCH_REPORT.md` (2026-11-09). The list is in §9.
 
 > **Scope (2026-11-14, #16):** The app targets the **International Space Station (ISS)** only. Moon and Mars are a **future extension** shown in the presentation, not built.
 > - Sources marked **[future extension]** below (Mars light-time, Mars SPE, Artemis I, Mars IMM tables) stay in this inventory for that slide.
@@ -224,7 +224,7 @@ The peaks occur during the Van Allen belt transit on 2022-11-16.
 | ⚠️ ALTEA-Survey, Lidal | ISS | ASI (Italy) | 2010–2012, 2020–2023 |
 | ⚠️ TriTel-SM | ISS Service Module | Hungary | 2018–2019 |
 
-Chang'e-4 LND is **not** in RadLab (the query returned no rows). This corrects `ARASTIRMA_RAPORU.md`.
+Chang'e-4 LND is **not** in RadLab (the query returned no rows). This corrects `RESEARCH_REPORT.md`.
 
 ### 4.3 Other NASA radiation data
 - **ISS TEPC on CDAWeb (NASA SRAG):** VERIFIED. Coverage 2010-04-29 → 2018-04-11.
@@ -352,7 +352,7 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 
 ---
 
-## 9. Values that supersede `ARASTIRMA_RAPORU.md` (2026-11-09)
+## 9. Values that supersede `RESEARCH_REPORT.md` (2026-11-09)
 
 | Topic | 2026-11-09 | 2026-11-14 | Source |
 |---|---|---|---|
@@ -360,7 +360,7 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 | Light-time "today" | 11.37 min (2026-11-09) | 11.01 min (2026-11-14 00:00 UTC). Range 2026–2035: 3.16–22.25 min | JPL Horizons |
 | Compression garments | Unverified | **Verified** as a NASA orthostatic countermeasure | nasa.gov cardiovascular risk page |
 | Chang'e-4 LND in RadLab | Listed | **Not present** | RadLab query |
-| NOAA SWPC as a live source | Recommended (#2) | **Excluded** by the team NASA-only rule; use the NASA alternatives in §5.3 | `CLAUDE_HAFIZASI.md` §2 |
+| NOAA SWPC as a live source | Recommended (#2) | **Excluded** by the team NASA-only rule; use the NASA alternatives in §5.3 | `PROJECT_MEMORY.md` §2 |
 | DONKI | api.nasa.gov, 503 | api.nasa.gov is unreliable; use `ccmc.gsfc.nasa.gov/DONKI/WS/get/` | §5.2 |
 | ISS formulary (Diaz 2024) | Used as the drug reference | ⚠️ Not NASA-authored; needs a team decision | §3 |
 
@@ -429,7 +429,7 @@ OCHMO published IMM results on nasa.gov in Aug–Sep 2026. This is NASA data tha
 | F | Immune dysregulation and viral reactivation | Herpesvirus shedding in 14 of 23 ISS astronauts (61%) ([Rooney 2019](https://doi.org/10.3389/fmicb.2019.00016), abstract). Herpes zoster is the top evacuation driver on the 426-day mission | Skin checks; saliva sampling is research only | OSD-575 cytokines (IL-6, CRP) | Medium |
 | G | Bone and muscle loss, exercise compliance | Bone density −1 to −1.5% per month ([bone risk](https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/)). Exercise prescription 1.5 h/day, 6–7 days/week; 12–38% of crew lose >20% strength or fitness ([fitness risk](https://www.nasa.gov/reference/risk-of-reduced-cardiorespiratory-and-musculoskeletal-fitness/)) | Daily exercise minutes | Rates only | Medium (cheap) |
 | H | Behavioral health and cognition | Depressive symptoms in 2 of 7 Shuttle-Mir astronauts. Monthly WinSCAT cognitive test against a preflight baseline ([OCHMO-TB-016](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-016-behavioral-health.pdf)) | Mood scale, short cognitive test, private psychological conferences | Spaceflight Standard Measures data is request-only ([NTRS 20230014025](https://ntrs.nasa.gov/citations/20230014025)) | Medium |
-| I | EVA-specific: DCS, fingernail delamination, water in helmet | DCS after EVA is 30.8% of evacuations on the 923-day mission (IMM). EVA 23 (2013-07-16): about 1.5 L of water entered the helmet ([NTRS 20140016950](https://ntrs.nasa.gov/citations/20140016950), abstract) | Joint pain and paresthesia symptoms; existing local file `kaynaklar/OCHMO-TB-037_DCS.pdf` | Briefs only | Medium (extend scenario 4) |
+| I | EVA-specific: DCS, fingernail delamination, water in helmet | DCS after EVA is 30.8% of evacuations on the 923-day mission (IMM). EVA 23 (2013-07-16): about 1.5 L of water entered the helmet ([NTRS 20140016950](https://ntrs.nasa.gov/citations/20140016950), abstract) | Joint pain and paresthesia symptoms; existing local file `references/OCHMO-TB-037_DCS.pdf` | Briefs only | Medium (extend scenario 4) |
 | J | Noise and hearing | Hearing loss probability 0.094 for 6-month LEO (IMM). Hazard limit 85 dBA; sleep areas NC-40 ([OCHMO-TB-035](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-035-acoustics.pdf)) | Noise dosimetry | Limits only | Low |
 
 ### 10.3 Challenge-text gaps

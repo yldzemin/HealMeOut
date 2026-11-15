@@ -1,6 +1,6 @@
 # ASTRA-TWIN — 7-Slide Pitch Script
 
-**Status:** agreed 2026-11-14 (hackathon day 1), built question by question with the team's pitching training (*Sunum ve Pitching Eğitimi*).
+**Status:** agreed 2026-11-14 (hackathon day 1), built question by question with the team's pitching training (*Presentation and Pitching Training*).
 **Format rules:** at most 7 slides (or a video of at most 30 s); everything in English (Space Apps 2026).
 **Slide rules used:** one message per slide; the headline *is* the message; at most 3 short points; one functional visual; technical detail goes to Q&A; every slide answers one jury question.
 

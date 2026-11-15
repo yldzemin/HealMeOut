@@ -12,7 +12,7 @@ import java.util.List;
 public final class Co2Rule implements Rule {
     static final String EVIDENCE = "1-hour average limit 3 mmHg (NASA-STD-3001 V2 6004). Headache is reported at "
             + "2.8–4.5 mmHg. 6.8 mmHg is a NASA contingency proposal (6.8–10 mmHg for ≤4 h), not yet a standard.";
-    static final String SOURCE = "OCHMO-TB-004; ARASTIRMA_RAPORU.md §4; ICES-2025-402";
+    static final String SOURCE = "OCHMO-TB-004; RESEARCH_REPORT.md §4; ICES-2025-402";
 
     @Override
     public String id() {

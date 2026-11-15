@@ -119,8 +119,8 @@ Both sides use these names and values. If one changes, update this section in th
 
 ## 5. Rules that apply to both sides
 
-1. **No unsourced numbers.** Every threshold comes from `CLAUDE_HAFIZASI.md` §4.1, `NASA_DATA_SOURCES.md` or `PSYCHOLOGY_AND_LONG_DURATION.md`. If it is not there, it is not in the code.
-2. **Never use** the values in the "do not use in code" table (`CLAUDE_HAFIZASI.md` §4.1).
+1. **No unsourced numbers.** Every threshold comes from `PROJECT_MEMORY.md` §4.1, `NASA_DATA_SOURCES.md` or `PSYCHOLOGY_AND_LONG_DURATION.md`. If it is not there, it is not in the code.
+2. **Never use** the values in the "do not use in code" table (`PROJECT_MEMORY.md` §4.1).
 3. **Medication** only from the 2023 ISS formulary (Diaz 2024), pending decision #11. Always shown with evidence and source; always needs CMO approval.
 4. **Privacy:**
    - Psychological check-in data is **never** sent to the Crew Deck.
@@ -140,7 +140,7 @@ Both sides use these names and values. If one changes, update this section in th
 | `co2` | Cabin CO2 build-up | MVP | OCHMO-TB-004 |
 | `spe-iss` | Solar particle event on the ISS, Sep 10, 2017 | Target | CDAWeb ISS TEPC (NASA SRAG), 1-minute dose equivalent |
 | `bad-news` | Bad news from home (built; private to C3) | Target | Picano 2024; OCHMO-TB-016 |
-| others | Dehydration/hypoglycemia, sleep disruption, landing orthostatic intolerance | Extra | `ARASTIRMA_RAPORU.md` |
+| others | Dehydration/hypoglycemia, sleep disruption, landing orthostatic intolerance | Extra | `RESEARCH_REPORT.md` |
 
 Details: [`BACKEND.md`](BACKEND.md) §5 (logic) and [`FRONTEND.md`](FRONTEND.md) §6 (screens).
 

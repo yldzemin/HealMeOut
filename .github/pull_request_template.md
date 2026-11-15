@@ -14,4 +14,4 @@ Closes #
 
 ## Review
 
-To request a Fable review from another machine: `/pr-incele <PR-number>`
+To request a Fable review from another machine: `/pr-review <PR-number>`

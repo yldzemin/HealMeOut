@@ -330,7 +330,7 @@ export function recentShortNights(crewId: string): number {
   return head?.trend?.points.filter((p) => p.value < 6).length ?? 0;
 }
 
-/** Simulated daily routine for one crew member. Fluid target 2.5 L/day: CLAUDE_HAFIZASI.md §4.1. */
+/** Simulated daily routine for one crew member. Fluid target 2.5 L/day: PROJECT_MEMORY.md §4.1. */
 export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3") {
   const p = profileFor(crewId);
   const tasks: TodayTask[] = [

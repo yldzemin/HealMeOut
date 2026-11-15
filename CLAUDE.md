@@ -1,77 +1,78 @@
-# healmeout — Ekip Kuralları
+# healmeout — Team rules
 
-Bu repoda 3 geliştirici, 3 ayrı bilgisayardan çalışır. Her bilgisayardaki ana AI asistanı
-**Fable 5.2** modelidir; model `.claude/settings.json`
-içinde sabitlenmiştir. Bu kurallar hem insanlar hem AI için geçerlidir.
+Three developers work in this repo from three computers. The main AI assistant on each computer is
+**Fable 5.2**; the model is pinned in `.claude/settings.json`. These rules apply to people and AI alike.
 
-Proje kuralları, hackathon kuralları ve GitHub çalışma düzeni (issue, PR onayı, yorumlar)
-proje hafızasındadır:
+Project rules, hackathon rules and the GitHub working method (issues, PR approval, comments) are in
+the project memory:
 
-@CLAUDE_HAFIZASI.md
+@PROJECT_MEMORY.md
 
-## Değişmez kurallar
+## Fixed rules
 
-- **`main`'e direkt push YASAK.** GitHub ruleset'i (`main-koruma`) bunu herkes için,
-  repo sahibi dahil, sunucu tarafında engeller. Bypass yetkisi olan kimse yok.
-- **Force push ve `main` silme YASAK.** Hiçbir dalda force push yok (`--force-with-lease` ve `+refspec` dahil).
-  Bu yüzden GitHub'a push edilmiş bir dal rebase edilmez (bkz. §1).
-- **Proje dili %100 İngilizce:** kod, yorumlar, dokümanlar, commit, dal adı, issue, PR ve
-  review yorumları İngilizce yazılır. AI asistanı kendi kullanıcısıyla Türkçe konuşur.
-- **AI aracının adı GitHub'a yazılmaz (#44):** commit, PR, issue ve yorumlarda araç adı, imza,
-  co-author satırı veya "Generated with …" satırı olmaz. YZ kullanımı teslim formunda beyan edilir.
-- Her değişiklik şu yoldan geçer: **branch → öz-inceleme → PR → squash merge.**
-- Kuralları atlatmaya çalışmak yasak: `gh pr merge --admin`, ruleset'i kapatmak/değiştirmek,
-  `--no-verify`. Kural dosyalarındaki (`CLAUDE.md`, `.claude/`, `.github/`) değişiklikler de
-  normal PR sürecinden geçer.
+- **No direct push to `main`.** The GitHub ruleset (`main-koruma`) blocks it on the server for
+  everyone, including the repo owner. Nobody has bypass rights.
+- **No force push and no deleting `main`.** No force push on any branch (including `--force-with-lease`
+  and `+refspec`). So a branch that is already on GitHub is never rebased (see §1).
+- **The project language is 100% English:** code, comments, documents, commits, branch names, issues,
+  PRs and review comments are written in English. No Turkish documents. The AI assistant talks with
+  its own user in Turkish.
+- **The AI tool's name is not written to GitHub (#44):** no tool name, signature, co-author line or
+  "Generated with …" line in commits, PRs, issues or comments. AI use is declared in the submission form.
+- Every change goes this way: **branch → self-review → PR → squash merge.**
+- Working around the rules is forbidden: `gh pr merge --admin`, disabling or changing the ruleset,
+  `--no-verify`. Changes to the rule files (`CLAUDE.md`, `PROJECT_MEMORY.md`, `.claude/`, `.github/`)
+  go through the normal PR process too.
 
-## Branch
+## Branches
 
-- Her iş için güncel `main`'den yeni branch aç:
+- Open a new branch from an up-to-date `main` for every task:
   ```sh
   git switch main && git pull --ff-only
-  git switch -c <tür>/<konu>
+  git switch -c <type>/<topic>
   ```
-- Dal adları: `feat/<modül>`, `fix/<konu>`, `docs/<konu>` (örn. `feat/scenario-simulator`).
-- Bir branch = bir konu. PR'ları küçük tut.
-- Başkasının branch'ine sahibine sormadan push etme.
-- Commit mesajı İngilizce: `tür: kısa açıklama` (örn. `fix: reject empty email`).
+- Branch names: `feat/<module>`, `fix/<topic>`, `docs/<topic>` (e.g. `feat/scenario-simulator`).
+- One branch = one topic. Keep PRs small.
+- Do not push to someone else's branch without asking its owner.
+- Commit messages in English: `type: short description` (e.g. `fix: reject empty email`).
 
-## 1. Öz-inceleme (PR açmadan önce, zorunlu)
+## 1. Self-review (before opening a PR, required)
 
-PR'ı açan bilgisayarın Fable'ı kendi değişikliğini incelemeden PR açmaz.
-Kısayol: **`/pr-ac`**.
+The Fable on the computer that opens the PR does not open it without reviewing its own change.
+Shortcut: **`/pr-open`**.
 
-1. `main`'i dala al: `git fetch origin`, sonra
-   - dal henüz push edilmediyse `git rebase origin/main`,
-   - dal GitHub'daysa `git merge origin/main` (rebase geçmişi değiştirir ve force push ister;
-     squash merge zaten tek commit'e indirir).
-2. `git diff origin/main...HEAD` baştan sona okunur: hata, güvenlik açığı, eksik hata
-   yönetimi, gereksiz/ölü kod, eksik test.
-3. Projede test/lint varsa çalıştırılır.
-4. Bulunan sorunlar düzeltilir; düzeltilemeyen varsa PR açılmaz, kullanıcıya bildirilir.
-5. PR açıklamasındaki "Self-review" bölümü İngilizce doldurulur (`.github/pull_request_template.md`).
+1. Bring `main` into the branch: `git fetch origin`, then
+   - if the branch has not been pushed yet, `git rebase origin/main`;
+   - if the branch is on GitHub, `git merge origin/main` (a rebase rewrites history and needs a force
+     push; the squash merge reduces the branch to one commit anyway).
+2. Read `git diff origin/main...HEAD` from start to end: bugs, security holes, missing error
+   handling, unneeded or dead code, missing tests.
+3. Run the project's tests and lint, if any.
+4. Fix what you find; if something cannot be fixed, do not open the PR and tell the user.
+5. Fill in the PR description's "Self-review" section in English (`.github/pull_request_template.md`).
 
-## 2. İnceleme
+## 2. Review
 
-- Ruleset onay şartı koymaz; onay ve inceleme kuralları `CLAUDE_HAFIZASI.md` §6'dadır.
-- Kısayol: **`/pr-incele <PR-numarası>`**. AI diff'i okur, mümkünse testleri çalıştırır;
-  sorun bulursa **Request changes** verir.
+- The ruleset requires no approval; the approval and review rules are in `PROJECT_MEMORY.md` §6.
+- Shortcut: **`/pr-review <PR number>`**. The AI reads the diff, runs the tests if it can, and gives
+  **Request changes** if it finds a problem.
 
 ## 3. Merge
 
-- Sadece **squash merge**. PR sahibi birleştirir:
+- **Squash merge** only. The PR owner merges:
   ```sh
-  gh pr merge <numara> --squash --delete-branch
+  gh pr merge <number> --squash --delete-branch
   ```
-- Merge sonrası: `git switch main && git pull --ff-only`
+- After merging: `git switch main && git pull --ff-only`
 
-## Kurulum (her bilgisayarda bir kez)
+## Setup (once per computer)
 
-1. `gh auth login` — her kişi kendi GitHub hesabıyla.
-2. Repoyu klonla, AI asistanını repo kökünde başlat. Model `.claude/settings.json`'dan gelir;
-   `/model` ile değiştirme.
-3. `.claude/hooks/main-push-engeli.sh` AI'ın `main`'e push denemesini yerelde durdurur;
-   asıl koruma GitHub ruleset'idir.
+1. `gh auth login`: each person with their own GitHub account.
+2. Clone the repo and start the AI assistant in the repo root. The model comes from
+   `.claude/settings.json`; do not change it with `/model`.
+3. `.claude/hooks/main-push-guard.sh` stops the AI's attempts to push to `main` locally; the real
+   protection is the GitHub ruleset.
 
-Ruleset `.github/rulesets/main-koruma.json` dosyasında tutulur. Değişiklik PR ile birleştikten
-sonra repo admini `scripts/ruleset-uygula.sh` ile GitHub'a uygular.
+The ruleset is kept in `.github/rulesets/main-koruma.json` (the name is the live ruleset's name on
+GitHub). After a change is merged by PR, a repo admin applies it to GitHub with
+`scripts/apply-ruleset.sh`.

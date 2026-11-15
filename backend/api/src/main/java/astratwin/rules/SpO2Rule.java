@@ -11,7 +11,7 @@ import java.util.List;
 public final class SpO2Rule implements Rule {
     static final String EVIDENCE = "SpO2 below 90% is hypoxaemia. Normal on the ISS is 96–99% (cabin 14.7 psia, "
             + "21% O2). NASA's own limit is inspired O2 pressure ≥122 mmHg.";
-    static final String SOURCE = "ARASTIRMA_RAPORU.md §4; OCHMO-TB-003";
+    static final String SOURCE = "RESEARCH_REPORT.md §4; OCHMO-TB-003";
 
     @Override
     public String id() {

@@ -129,7 +129,7 @@ Labelled `"modelled"`. Each uses only sourced rates:
 | Forecast | Model | Source |
 |---|---|---|
 | Sleep debt | Scheduled 8.5 h minus the sleep logged in the astronaut's last 7 check-ins. Projection: the part of the standard ISS sleep period (21:30–06:00 GMT) inside the horizon, slept at the recent average; ISS mean 6.09 h. Built from check-ins, so it uses the **psych** policy (§6): only the astronaut sees it. *Built (#62).* | Jones 2022 (doi:10.1093/sleep/zsac006); Barger 2014 |
-| Hydration | 2.5 L/day intake target; loss ~0.13% body mass/h at rest; ≥2.5% mass loss → performance drop | `CLAUDE_HAFIZASI.md` §4.1 |
+| Hydration | 2.5 L/day intake target; loss ~0.13% body mass/h at rest; ≥2.5% mass loss → performance drop | `PROJECT_MEMORY.md` §4.1 |
 | Cumulative dose | *Built.* Sum of the TEPC dose equivalent (normal days 0.77–0.94 mSv/day in Sep 2017) against the 600 mSv career limit. Label it "instrument dose equivalent (ICRP-60), not effective dose"; show NASA's ISS reference 0.2–0.5 mSv/day effective next to it | CDAWeb `ISS_DOSANL_TEPC` (#30); Simonsen 2025 (NTRS 20250006168) |
 | Temperature drift | +~1 °C over ~2.5 months | Stahn 2017 |
 | Energy intake | ISS crews eat ~74–80% of estimated need | NTRS 20060049121; Smith 2005 |
@@ -149,8 +149,8 @@ Input: readings, check-ins, environment. Output: `Alert` objects with level L0�
 | Indicator | Rule | Source |
 |---|---|---|
 | Glucose | <70 mg/dL → L1; <54 → L3; confusion reported → L4. Action: 15 g fast carbs, re-check in 15 min. `evidence` must say: "Team assumption: in-flight glucose measurement is assumed; not verified for the ISS." | ADA 2025 (doi:10.2337/dc25-S006); assumption #30 |
-| Cabin CO2 | 1-h average >3 mmHg → L1; ≥4.5 mmHg or headache → L2; ≥6.8 mmHg → L3. Also flag 7-day average >2.5 mmHg (headache risk) | 3 mmHg and 2.5 mmHg: OCHMO-TB-004 (NASA-STD-3001 V2 6004); headache at 2.8–4.5 mmHg: ARASTIRMA_RAPORU §4; 6.8 mmHg: NASA contingency proposal "6.8–10 mmHg for ≤4 h", not yet a standard ([ICES-2025-402](https://ntrs.nasa.gov/api/citations/20250006273/downloads/ICES-2025-402.pdf)) |
-| SpO2 | <90% → L4 | <90% = hypoxaemia (ARASTIRMA_RAPORU §4, SpO2 row). NASA's own limit is PIO2 ≥122 mmHg (OCHMO-TB-003) |
+| Cabin CO2 | 1-h average >3 mmHg → L1; ≥4.5 mmHg or headache → L2; ≥6.8 mmHg → L3. Also flag 7-day average >2.5 mmHg (headache risk) | 3 mmHg and 2.5 mmHg: OCHMO-TB-004 (NASA-STD-3001 V2 6004); headache at 2.8–4.5 mmHg: RESEARCH_REPORT §4; 6.8 mmHg: NASA contingency proposal "6.8–10 mmHg for ≤4 h", not yet a standard ([ICES-2025-402](https://ntrs.nasa.gov/api/citations/20250006273/downloads/ICES-2025-402.pdf)) |
+| SpO2 | <90% → L4 | <90% = hypoxaemia (RESEARCH_REPORT §4, SpO2 row). NASA's own limit is PIO2 ≥122 mmHg (OCHMO-TB-003) |
 | Dose rate | 24-h rolling mean of `doseEqRate_uSv_h` > 1.5× the preceding 7-day median → L2 (shelter advice, ground informed). Never alert on single hours: South Atlantic Anomaly passes reach 183 μSv/h on normal days | our design (#30). Calibration from Sep 2017 TEPC data: normal days 0.86–1.04×, Sep 11 1.90× |
 | Lab analytes, HR, BP | |z| ≥ 2 vs personal baseline → L1; persists or combined with symptoms → L2 | our design (no universal in-flight threshold) |
 | Reported condition | Each simulated story of the crew profiles (#71) → alert `condition:<crewId>:<region>` at its level, category vitals (`ConditionReportRule`): C2 headache L1, C3 short sleep L1, C4 space motion sickness L2 (CMO card), C5 skin rash L1, C6 back pain L1. C1 and C7 have nothing to report. The nominal station is therefore L2. No drug is named until #11 is decided. | NASA IMM ranking (probability in each `evidence`); levels are our design |

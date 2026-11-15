@@ -69,6 +69,15 @@ data/raw, data/osdr ──► backend/ingest (Rust) ──► data/cache/*.json 
                                                                          support companion (local LLM)
 ```
 
+**How the frontend and backend connect**
+
+- The UI asks the API for one viewer at a time and polls `GET /api/station?viewer=…` every 2 s. Viewers: `SELF&crewId=C3`, `CMO`, `GROUND`, `CREW_DECK`. The server filters every answer by that viewer's privacy tier, so the UI never receives data it may not show.
+- Without the API, the UI switches to its mock data automatically and keeps retrying. The status bar says *Live station data* or *Mock data*. `VITE_USE_MOCK=true` forces mock data.
+- Mock and live tell the same story. The backend seeds each crew member's vitals, check-ins and reported conditions from the same profiles as the mock data (`frontend/src/data/crewProfiles.ts`).
+- The base URL is the same origin when the API serves the build (`run.sh`), otherwise `http://127.0.0.1:8080`.
+- During development, run `backend/api/run.sh` and `cd frontend && npm run dev` side by side.
+- Routes: [`backend/README.md`](backend/README.md). Screen-by-screen wiring: [`docs/FRONTEND.md`](docs/FRONTEND.md) §10.
+
 | Doc | What |
 |---|---|
 | [`docs/TECH_OVERVIEW.md`](docs/TECH_OVERVIEW.md) | Shared architecture and data model |
