@@ -7,7 +7,9 @@ Mevcut branch için PR açma sürecini `CLAUDE.md`'deki kurallara göre yürüt:
 
 1. Mevcut branch `main` ise dur: önce `feat/<modül>`, `fix/<konu>` veya `docs/<konu>` biçiminde branch açılmalı.
 2. Commitlenmemiş değişiklik varsa ne yapılacağını kullanıcıya sor.
-3. `git fetch origin` ve `git rebase origin/main`. Çakışma çıkarsa kullanıcıyla birlikte çöz.
+3. `git fetch origin`. Dal henüz push edilmediyse `git rebase origin/main`; GitHub'daysa
+   `git merge origin/main` (force push yasak, push edilmiş dal rebase edilmez). Çakışma çıkarsa
+   kullanıcıyla birlikte çöz.
 4. Öz-inceleme: `git diff origin/main...HEAD` çıktısını baştan sona oku. Hata, güvenlik açığı,
    eksik hata yönetimi, gereksiz/ölü kod ve eksik test ara. Projede test/lint varsa çalıştır.
 5. Bulduğun sorunları düzeltip commitle. Düzeltemediğin engelleyici bir sorun varsa PR açma,

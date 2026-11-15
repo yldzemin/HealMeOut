@@ -92,7 +92,8 @@ Kod 14 Kasım'da sıfırdan yazılır. Repo bilgisi §6'da.
 **Ortak çalışma yaptığının farkında ol.** Proje 3 bilgisayarda paralel geliştiriliyor. Her bilgisayarda bir AI asistanı çalışıyor ve her biri kendi kullanıcısının GitHub hesabını kullanıyor.
 
 ### Senkronizasyon
-- Çalışmaya başlamadan önce ve her push'tan önce `git pull --rebase` yap.
+- Çalışmaya başlamadan önce `main`'i güncelle: `git switch main && git pull --ff-only`.
+- Push etmeden önce `git fetch origin`. Dal henüz push edilmediyse `git rebase origin/main`; push edildiyse `git merge origin/main`. Force push hiçbir dalda yok (`CLAUDE.md`).
 - `main` dalına doğrudan push yok. Her değişiklik bir PR ile gelir.
 - Dal adları: `feat/<modül>`, `fix/<konu>`, `docs/<konu>` (örn. `feat/scenario-simulator`).
 - Commit mesajları İngilizce.

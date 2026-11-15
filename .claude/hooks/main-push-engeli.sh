@@ -30,8 +30,9 @@ fi
 arguman="$(printf '%s' "$komut" | sed -E 's/.*git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push//')"
 arguman="${arguman%%[;&|]*}"
 
-if printf '%s' "$arguman" | grep -Eq '(^|[[:space:]])(-f|--force[a-z-]*)([[:space:]=]|$)'; then
-  engelle "force push yasak."
+# --force, --force-with-lease, --force-if-includes; -f tek başına veya birleşik (-uf); +refspec
+if printf '%s' "$arguman" | grep -Eq '(^|[[:space:]])(--force[a-z-]*|-[a-zA-Z]*f[a-zA-Z]*|\+[^[:space:]]+)([[:space:]=]|$)'; then
+  engelle "force push yasak (push edilmiş dalı rebase etme; git merge origin/main kullan)."
 fi
 
 if printf '%s' "$arguman" | grep -Eq '(^|[[:space:]:+])(refs/heads/)?main([[:space:]]|$)'; then

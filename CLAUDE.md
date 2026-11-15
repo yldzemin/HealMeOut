@@ -13,7 +13,8 @@ proje hafızasındadır:
 
 - **`main`'e direkt push YASAK.** GitHub ruleset'i (`main-koruma`) bunu herkes için,
   repo sahibi dahil, sunucu tarafında engeller. Bypass yetkisi olan kimse yok.
-- **Force push ve `main` silme YASAK.**
+- **Force push ve `main` silme YASAK.** Hiçbir dalda force push yok (`--force-with-lease` ve `+refspec` dahil).
+  Bu yüzden GitHub'a push edilmiş bir dal rebase edilmez (bkz. §1).
 - **Proje dili %100 İngilizce:** kod, yorumlar, dokümanlar, commit, dal adı, issue, PR ve
   review yorumları İngilizce yazılır. AI asistanı kendi kullanıcısıyla Türkçe konuşur.
 - **AI aracının adı GitHub'a yazılmaz (#44):** commit, PR, issue ve yorumlarda araç adı, imza,
@@ -27,7 +28,7 @@ proje hafızasındadır:
 
 - Her iş için güncel `main`'den yeni branch aç:
   ```sh
-  git switch main && git pull --rebase
+  git switch main && git pull --ff-only
   git switch -c <tür>/<konu>
   ```
 - Dal adları: `feat/<modül>`, `fix/<konu>`, `docs/<konu>` (örn. `feat/scenario-simulator`).
@@ -40,7 +41,10 @@ proje hafızasındadır:
 PR'ı açan bilgisayarın Fable'ı kendi değişikliğini incelemeden PR açmaz.
 Kısayol: **`/pr-ac`**.
 
-1. `git fetch origin && git rebase origin/main`
+1. `main`'i dala al: `git fetch origin`, sonra
+   - dal henüz push edilmediyse `git rebase origin/main`,
+   - dal GitHub'daysa `git merge origin/main` (rebase geçmişi değiştirir ve force push ister;
+     squash merge zaten tek commit'e indirir).
 2. `git diff origin/main...HEAD` baştan sona okunur: hata, güvenlik açığı, eksik hata
    yönetimi, gereksiz/ölü kod, eksik test.
 3. Projede test/lint varsa çalıştırılır.
