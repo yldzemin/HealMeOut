@@ -160,6 +160,32 @@ final class SupportTest {
                 Check.equal(0, llm.calls, "model calls for: " + text);
             }
             Check.isTrue(new astratwin.support.OutputFilter().check("Your mood has been around 64 out of 100.").isEmpty(), "scores");
+            // Glitches seen in the demo and the UI sweep (2026-11-15).
+            astratwin.support.OutputFilter f = new astratwin.support.OutputFilter();
+            for (String garbled : List.of(
+                    "It might also help to discuss these feelings in a one-to01 conversation when things feel right.",
+                    "Feeling homesick is hard. Your crewmates are there to help ensure everyone’ extraterrestrial life stays comfortable.",
+                    "Feeling homesick is hard, and it can help to talk to01 someone you trust about it tonight.")) {
+                Check.isTrue(f.check(garbled).isEmpty(), "garbled reply rejected: " + garbled);
+            }
+            Check.equal(Optional.of("Feeling homesick can be tough. A recent photo of Earth might bring some comfort too."),
+                    f.check("Feeling homesick can be tough. A recent photo of Earth might bring some comfort too. 1."),
+                    "a dangling list number is cut");
+            Check.equal(Optional.of("Feeling homesick can be tough. A quiet hour at the Cupola could help tonight."),
+                    f.check("Feeling homesick can be tough. A quiet hour at the Cupola could help tonight. 1. Take"),
+                    "a list cut off after its first item is dropped");
+            // Recorded by the eval (trap-dead-tired, 2026-11-15): a made-up rules list after the reply.
+            Check.equal(Optional.of("Have you tried a short to-do list to ease the workload?"),
+                    f.check("Have you tried a short to-do list to ease the workload? 1. **Maintaining confidentiality**: "
+                            + "The assistant must not breach crew members' privacy. 2."), "made-up list after the reply is cut");
+            for (String fine : List.of(
+                    "Your crewmates’ support matters a lot right now, and you can lean on it this week.",
+                    "When you say 'I am fine' it can hide a lot, so take a quiet moment for yourself tonight.",
+                    "A one-to-one talk with a crewmate you trust can help, and so can your weekly family conference.",
+                    "Cabin CO2 can make sleep harder, so keep your sleep window free of tasks tonight.",
+                    "Earth's view from the Cupola often helps, and it's okay to take ten minutes for yourself.")) {
+                Check.equal(Optional.of(fine), f.check(fine), "normal reply kept");
+            }
             Check.isTrue(new astratwin.support.OutputFilter().check("I'm Phi, an AI made to help you here.").isEmpty(), "model name");
         });
         tests.put("support: requests to schedule, call or remind get the fixed rule-7 reply", () -> {

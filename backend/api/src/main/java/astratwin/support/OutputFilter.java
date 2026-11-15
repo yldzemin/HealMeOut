@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -40,6 +41,9 @@ public final class OutputFilter {
             // Garbled tokens from the small model, e.g. "experien0ne", "disturban0".
             Pattern.compile("\\b[a-z]+[0-9]+[a-z]+\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\b[a-z]{3,}[0-9]+\\b", Pattern.CASE_INSENSITIVE),
+            // ... also after a hyphen or with two letters ("a one-to01 conversation", demo 2026-11-15). Not CO2 or C3.
+            Pattern.compile("\\b[a-z]+-[a-z]+[0-9]+\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\b[a-z]{1,2}[0-9]{2,}\\b"),
             // Web junk the model sometimes emits ("day-to0351679248_sessionid=null&pageName=%2F…", eval 2026-11-15).
             Pattern.compile("https?://|www\\.|[?&][A-Za-z]+=|%[0-9A-Fa-f]{2}|\\w+_\\w+|\\w*\\d{5,}\\w*"),
             // Rule 1: no lists ("1. … 2. …", a list that starts after a colon, or bullet lines).
@@ -79,6 +83,16 @@ public final class OutputFilter {
             "\\b(pray\\w*|god|faith|church|mosque|synagogue|temple|religio\\w*|spiritual\\w*|rosary|scripture|bible|quran|torah|shabbat)\\b",
             Pattern.CASE_INSENSITIVE);
 
+    /**
+     * A list the model started and never wrote, left at the end of the reply ("…some comfort too. 1.", UI sweep
+     * 2026-11-15). Only when there is no second item: a real list is rejected by rule 1 above.
+     */
+    private static final Pattern ORPHAN_ITEM = Pattern.compile("(?s)(?<=[.!?])\\s+1[.)](\\s.*)?$");
+    private static final Pattern SECOND_ITEM = Pattern.compile("\\b2[.)]\\s");
+    /** A word, an apostrophe and a space before the next word: a possessive (or a closing quote). */
+    private static final Pattern APOSTROPHE_GAP = Pattern.compile("([A-Za-z]+)['\u2019](?=\\s+[a-z])");
+    private static final Pattern OPENING_QUOTE = Pattern.compile("(^|[\\s(])['\u2018][A-Za-z]");
+
     /** The cleaned reply, or empty if it must not be shown. */
     public Optional<String> check(String reply) {
         return check(reply, Optional.empty());
@@ -92,8 +106,8 @@ public final class OutputFilter {
         if (reply == null || reply.isBlank()) {
             return Optional.empty();
         }
-        String text = reply.strip();
-        if (BLOCKED.stream().anyMatch(p -> p.matcher(text).find()) || leaksPrompt(text)) {
+        String text = cutOrphanItem(reply.strip());
+        if (BLOCKED.stream().anyMatch(p -> p.matcher(text).find()) || leaksPrompt(text) || brokenPossessive(text)) {
             return Optional.empty();
         }
         // The person's profile read back line by line, instead of a reply that uses it. Naming one thing that
@@ -109,6 +123,30 @@ public final class OutputFilter {
         tidy = completeSentences(tidy.length() > MAX_CHARS ? tidy.substring(0, MAX_CHARS) : tidy);
         tidy = limitWords(tidy, MAX_WORDS);
         return tidy.length() < 20 ? Optional.empty() : Optional.of(tidy);
+    }
+
+    /** Drops a dangling "1." (and anything after it) that starts a list the model never wrote. */
+    static String cutOrphanItem(String text) {
+        return SECOND_ITEM.matcher(text).find() ? text : ORPHAN_ITEM.matcher(text).replaceFirst("");
+    }
+
+    /**
+     * A possessive cut short ("help ensure everyone’ extraterrestrial environment…", demo 2026-11-15): an
+     * apostrophe and a space after a word that does not end in s. A plural possessive ("your crewmates’
+     * support") and the closing quote of a quoted phrase ("when you say 'I am fine' it…") are fine.
+     */
+    static boolean brokenPossessive(String text) {
+        Matcher m = APOSTROPHE_GAP.matcher(text);
+        while (m.find()) {
+            if (m.group(1).toLowerCase(Locale.ROOT).endsWith("s")) {
+                continue;
+            }
+            if (OPENING_QUOTE.matcher(text.substring(Math.max(0, m.start() - 80), m.start())).find()) {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 
     /** 6-word sequences {@code text} copies from {@code source}. */
