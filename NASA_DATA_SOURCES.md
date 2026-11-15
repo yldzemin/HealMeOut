@@ -7,7 +7,7 @@
 **Labels:**
 - **VERIFIED**: opened or tested on 2026-11-14.
 - **UNVERIFIED**: not confirmed; the reason is given.
-- **⚠️ NASA-only**: conflicts or may conflict with the team rule "use NASA-origin data only" (`PROJECT_MEMORY.md` §2). These need a team decision (issue #9).
+- **⚠️ NASA-only**: conflicts or may conflict with the team rule "use NASA-origin data only" (`docs/TECH_OVERVIEW.md` §5, rule 7). These need a team decision (issue #9).
 
 This file supersedes some values in `RESEARCH_REPORT.md` (2026-11-09). The list is in §9.
 
@@ -360,7 +360,7 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 | Light-time "today" | 11.37 min (2026-11-09) | 11.01 min (2026-11-14 00:00 UTC). Range 2026–2035: 3.16–22.25 min | JPL Horizons |
 | Compression garments | Unverified | **Verified** as a NASA orthostatic countermeasure | nasa.gov cardiovascular risk page |
 | Chang'e-4 LND in RadLab | Listed | **Not present** | RadLab query |
-| NOAA SWPC as a live source | Recommended (#2) | **Excluded** by the team NASA-only rule; use the NASA alternatives in §5.3 | `PROJECT_MEMORY.md` §2 |
+| NOAA SWPC as a live source | Recommended (#2) | **Excluded** by the team NASA-only rule; use the NASA alternatives in §5.3 | `docs/TECH_OVERVIEW.md` §5 |
 | DONKI | api.nasa.gov, 503 | api.nasa.gov is unreliable; use `ccmc.gsfc.nasa.gov/DONKI/WS/get/` | §5.2 |
 | ISS formulary (Diaz 2024) | Used as the drug reference | ⚠️ Not NASA-authored; needs a team decision | §3 |
 

@@ -59,7 +59,7 @@ docs/              ← shared; change through PR
 | `backend/` | backend developer | `feat/backend-*` |
 | `docs/`, `data/` | either, via PR | `docs/*`, `data/*` |
 
-Rules from `CLAUDE.md` still apply: no push to `main`, one topic per branch, squash merge.
+Team rules still apply: no push to `main`, one topic per branch, squash merge.
 
 ---
 
@@ -119,16 +119,41 @@ Both sides use these names and values. If one changes, update this section in th
 
 ## 5. Rules that apply to both sides
 
-1. **No unsourced numbers.** Every threshold comes from `PROJECT_MEMORY.md` §4.1, `NASA_DATA_SOURCES.md` or `PSYCHOLOGY_AND_LONG_DURATION.md`. If it is not there, it is not in the code.
-2. **Never use** the values in the "do not use in code" table (`PROJECT_MEMORY.md` §4.1).
-3. **Medication** only from the 2023 ISS formulary (Diaz 2024), pending decision #11. Always shown with evidence and source; always needs CMO approval.
+1. **No unsourced numbers.** Every threshold comes from §5.1 below, `NASA_DATA_SOURCES.md`, `RESEARCH_REPORT.md` or `PSYCHOLOGY_AND_LONG_DURATION.md`. If it is not there, it is not in the code.
+2. **Never use** the values in the "do not use in code" table (§5.1).
+3. **Medication** only from the ISS medical kit list of Diaz et al. 2024 (*npj Microgravity* 10:76, CC BY 4.0; decision #11; `IssFormulary` in the backend). Always shown with evidence and source; always needs CMO approval.
 4. **Privacy:**
    - Psychological check-in data is **never** sent to the Crew Deck.
    - Crew Deck shows medication details only to CMOs, or when the astronaut opts in, or in an emergency (allergies and current medication only).
    - Crew climate appears only as an anonymous aggregate with a minimum-response threshold (our design choice).
 5. **Disclaimer** always visible: "Simulation — not medical advice."
 6. **English only** in the UI, code, comments and commits.
-7. **NASA data only** (team rule). Partner instruments marked ⚠️ in `NASA_DATA_SOURCES.md` §4.2 (e.g. DosTel) are not used until #13 is decided.
+7. **NASA data is the core** (team rule, issue #9).
+   - Data that a NASA archive hosts and curates counts as NASA data, with a tag that names the mission or instrument team (decision #13): the Inspiration4 baselines via NASA OSDR, and DLR DosTel2 via NASA OSDR RadLab.
+   - No data from the China space agency (Participant Terms).
+   - #12 (NOAA-derived fields in DONKI) is still open, and the app does not use DONKI.
+
+### 5.1 Values from the first draft that must not be used in code
+
+The first draft spec (9 November) had wrong values. Details and sources are in `RESEARCH_REPORT.md` §4. The light-delay row applies only to the Moon and Mars "future extension" in the presentation.
+
+| Topic | Draft | Correct |
+|---|---|---|
+| Light delay (Mars, future extension) | fixed "22 MINUTES", "4–24 min" | Compute it from JPL Horizons. Range ~3–22 min (NSSDC distances). |
+| Glucose threshold | <60 | ADA: <70 Level 1, <54 Level 2 |
+| In-flight BP baseline | 120/80 | ~112/71. The real risk is orthostatic intolerance (on return). |
+| HRV critical <20 ms | — | Define the metric (RMSSD); use a personal baseline and a z-score |
+| Hydration loss | 1.5% per hour / 8% on EVA | 2.5 L per day (~0.13% of body mass per hour). On EVA 0.3–1.2% per hour. Performance drops after losing 2.5% of body mass. |
+| Radiation background | 0.05 mSv/h | ISS ~0.2–0.5 mSv per day (Simonsen 2025) |
+| Body temperature | fixed 37.0 | ~+1 °C drift on long missions (Stahn 2017) |
+| Propranolol | radiation crisis | ❌ Remove. An SPE does not cause hypertension. The ISS has metoprolol. |
+| Potassium iodide | SPE | ❌ Remove. An SPE is protons; KI protects only against radioiodine. |
+| Antioxidant cocktail | radioprotection | ❌ No evidence in humans. 400 IU of vitamin E raised cancer risk (SELECT). Use shelter, dosimetry and ondansetron (nausea) instead. |
+| Glucagon | <50 | First 15 g of oral glucose, re-check after 15 min (ADA). The ISS has no glucagon. |
+| Melatonin | 5 mg | 3 mg on the ISS. The main countermeasure is light and sleep scheduling. |
+| Epinephrine for depressurisation | — | ❌ The right response is to restore O2 and pressure. Epinephrine only for anaphylaxis or cardiac arrest. Model chain: pressure → PIO2 → SpO2. |
+| Automatic transdermal dosing | — | ❌ No such hardware exists. Redesign as "recommendation + CMO approval". |
+| Salt for low in-flight blood pressure | — | ❌ NASA reduces sodium in flight; salt + fluid loading only before atmospheric entry (OCHMO-TB-027). |
 
 ---
 

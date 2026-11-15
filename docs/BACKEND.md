@@ -135,7 +135,7 @@ Labelled `"modelled"`. Each uses only sourced rates:
 | Forecast | Model | Source |
 |---|---|---|
 | Sleep debt | Scheduled 8.5 h minus the sleep logged in the astronaut's last 7 check-ins. Projection: the part of the standard ISS sleep period (21:30–06:00 GMT) inside the horizon, slept at the recent average; ISS mean 6.09 h. Built from check-ins, so it uses the **psych** policy (§6): only the astronaut sees it. *Built (#62).* | Jones 2022 (doi:10.1093/sleep/zsac006); Barger 2014 |
-| Hydration | 2.5 L/day intake target; loss ~0.13% body mass/h at rest; ≥2.5% mass loss → performance drop | `PROJECT_MEMORY.md` §4.1 |
+| Hydration | 2.5 L/day intake target; loss ~0.13% body mass/h at rest; ≥2.5% mass loss → performance drop | `TECH_OVERVIEW.md` §5.1 |
 | Cumulative dose | *Built.* Sum of the TEPC dose equivalent (normal days 0.77–0.94 mSv/day in Sep 2017) against the 600 mSv career limit. Label it "instrument dose equivalent (ICRP-60), not effective dose"; show NASA's ISS reference 0.2–0.5 mSv/day effective next to it | CDAWeb `ISS_DOSANL_TEPC` (#30); Simonsen 2025 (NTRS 20250006168) |
 | Temperature drift | +~1 °C over ~2.5 months | Stahn 2017 |
 | Energy intake | ISS crews eat ~74–80% of estimated need | NTRS 20060049121; Smith 2005 |

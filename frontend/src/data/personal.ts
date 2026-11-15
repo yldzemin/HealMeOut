@@ -330,7 +330,7 @@ export function recentShortNights(crewId: string): number {
   return head?.trend?.points.filter((p) => p.value < 6).length ?? 0;
 }
 
-/** Simulated daily routine for one crew member. Fluid target 2.5 L/day: PROJECT_MEMORY.md §4.1. */
+/** Simulated daily routine for one crew member. Fluid target 2.5 L/day: docs/TECH_OVERVIEW.md §5.1. */
 /** `daysAhead`: whole days the demo clock has moved ("Next day", #81); the flight day moves with it. */
 export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3", daysAhead = 0) {
   const p = profileFor(crewId);

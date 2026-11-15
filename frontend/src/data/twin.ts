@@ -78,7 +78,7 @@ export function getTwin(crewId: string): TwinMetric[] {
     (t) => 0.1 * t,
   );
 
-  // Fluids: 2.5 L/day target (PROJECT_MEMORY.md §4.1); the profile's litres so far, same pace from here on.
+  // Fluids: 2.5 L/day target (docs/TECH_OVERVIEW.md §5.1); the profile's litres so far, same pace from here on.
   const deficit = fluidModel(p.fluidsL);
   const fluid = series(deficit, (t) => 0.05 * t, r2);
 
