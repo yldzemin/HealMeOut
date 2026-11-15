@@ -6,13 +6,19 @@ NASA Space Apps Challenge 2026 · *Create Health Monitoring Software for Astrona
 
 > Simulation, not medical advice. Values marked “simulated” are modelled.
 
+Screenshots from the running app with the live backend (2026-11-15).
+
 | Crew Deck | Personal twin |
 |---|---|
-| ![Crew Deck: the 7-person crew on a map of the ISS modules](docs/screenshots/crew-deck.png) | ![Personal screen: a low-glucose alert on the body figure, real NASA blood baselines](docs/screenshots/personal.png) |
-| **Emergency: a crewmate collapses** | **Environment: real ISS radiation, Sep 2017** |
-| ![Full-screen emergency: who, where, roles and the microgravity CPR checklist](docs/screenshots/emergency.png) | ![Environment: cabin CO2, NASA ISS dose data with the solar particle event, NASA IMM risks](docs/screenshots/environment.png) |
-| **Earth twin: forecasts and baselines** | **Private support companion** |
-| ![Twin: look-ahead slider, real ISS dose and private sleep-debt forecasts, simulated fluids and temperature, Earth Twin plan, forecast vs actual](docs/screenshots/twin.png) | ![Support companion running on a local model](docs/screenshots/companion.png) |
+| ![Crew Deck as the CMO: the 7-person crew on a map of the ISS modules, each with their level; C4 needs CMO review](docs/screenshots/crew-deck.png) | ![Personal screen: a low-glucose alert lights the blood region, next to real NASA OSDR pre-flight baselines from the Inspiration4 crew](docs/screenshots/personal.png) |
+| **Emergency: a crewmate collapses** | **Environment: real ISS radiation, Sep 2017 event** |
+| ![Full-screen emergency: who and where, proposed roles for the CMO to confirm, the microgravity CPR checklist and the emergency card](docs/screenshots/emergency.png) | ![Environment during the solar particle event: CO2 gauge with NASA limits, NASA TEPC dose rate on Sep 11, NASA IMM risks](docs/screenshots/environment.png) |
+| **Partner data: radiation in Columbus** | **Earth twin: forecasts and a support plan** |
+| ![DLR DosTel2 in the Columbus module, hosted by NASA OSDR RadLab, next to the NASA TEPC: the Sep 11 event shows in both, with the dose-rate alert below](docs/screenshots/partner-dose.png) | ![Twin for C3: look-ahead slider, private sleep debt past 18 h, real ISS dose, and the Earth Twin's 24–72 h support plan waiting for ground approval](docs/screenshots/twin.png) |
+| **Bad news from home: what the crew sees** | **Bad news from home: what C3 sees** |
+| ![Crew Deck as C2 during the private bad-news scenario: only "C3 requested reduced tasking", no reason](docs/screenshots/bad-news-crew.png) | ![C3's own Personal screen: private support steps, last night's 4.5 h and mood 28 from their check-in](docs/screenshots/bad-news-self.png) |
+| **Private support companion** | **Crisis → CMO, without the message** |
+| ![Support companion answering on a local model (phi3.5): sourced support options, no diagnosis, no drugs](docs/screenshots/companion.png) | ![CMO view: a "needs support now" band for C6 after crisis wording in the companion; who and when, never what was written](docs/screenshots/support-alert.png) |
 
 ## What it does
 

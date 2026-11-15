@@ -147,6 +147,6 @@ Note: NASA did not disclose the medical details. Never describe it as a heart at
 
 ## Open items
 
-- Screenshots for slides 1, 3 and 4: real ones from the running app are in `docs/screenshots/` (1440×900, 2026-11-15). Slide 1: `crew-deck.png`; slide 3: `personal.png` | `crew-deck.png`; slide 4: `crew-deck.png` → `emergency.png`.
+- Screenshots for slides 1, 3 and 4: real ones from the running app with the live backend are in `docs/screenshots/` (1440×900; twin 1440×1000; partner-dose is a crop of the Environment page; retaken 2026-11-15 after #72–#76). Slide 1: `crew-deck.png`; slide 3: `personal.png` | `crew-deck.png`; slide 4: `crew-deck.png` → `emergency.png`.
 - If an AI-generated image is used anywhere, it needs a visible watermark and no NASA logo.
 - "Use of SI" must be disclosed in the submission (code and research done with SI assistance).
