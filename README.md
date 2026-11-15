@@ -6,6 +6,9 @@ NASA Space Apps Challenge 2026 · *Create Health Monitoring Software for Astrona
 
 > Simulation, not medical advice. Values marked “simulated” are modelled.
 
+**▶ Try it in your browser, no install: https://yldzemin.github.io/HealMeOut/**
+The web demo runs on built-in demo data. The Environment screen and the support companion need the Java backend, so for those use the full install in [Run it](#run-it).
+
 Screenshots from the running app with the live backend (2026-11-15).
 
 | Crew Deck | Personal twin |
