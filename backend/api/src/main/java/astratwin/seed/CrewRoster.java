@@ -116,11 +116,12 @@ public final class CrewRoster {
                 new ConditionReport("C2", "head", Level.L1, "Headache since this afternoon",
                         "You are behind on fluids, and cabin CO2 can also cause headaches.",
                         "Drink water now, rest in a well-ventilated module and ease off heavy work. If you need a pain "
-                                + "reliever, ask the CMO for one from the ISS medical kit. Tell the CMO if the headache gets "
-                                + "worse or comes with vision changes.",
+                                + "reliever, the ISS kit has acetaminophen and ibuprofen: ask the CMO. Tell the CMO if the "
+                                + "headache gets worse or comes with vision changes.",
                         "Simulated story. NASA IMM: late headache, 59% chance on a 6-month ISS mission. A 7-day CO2 "
-                                + "average under 2.5 mmHg keeps headache risk low (OCHMO-TB-004).",
-                        IMM + "; OCHMO-TB-004"),
+                                + "average under 2.5 mmHg keeps headache risk low (OCHMO-TB-004). Medication named only "
+                                + "from the ISS kit list (decision #11).",
+                        IMM + "; OCHMO-TB-004; " + IssFormulary.SOURCE),
                 new ConditionReport("C3", "head", Level.L1, "You slept 5.6 h last night, under 6 hours",
                         "Protect tonight’s sleep window.",
                         "Keep tonight’s sleep window free of tasks. Switch your module lights to the pre-sleep setting an "
@@ -130,9 +131,12 @@ public final class CrewRoster {
                         IMM + "; Barger 2014"),
                 new ConditionReport("C4", "head", Level.L2, "Nausea since arrival on flight day 1",
                         "Space motion sickness is common in the first days.",
-                        "Anti-nausea medication from the ISS kit, decided by CMO-1 (you are CMO-2, so another CMO approves). "
-                                + "Keep head movements slow, sip water, eat small amounts and keep a fixed visual reference.",
-                        "Simulated story. NASA IMM: space motion sickness, 73% chance on a 6-month ISS mission.", IMM),
+                        "Anti-nausea medication from the ISS kit (promethazine or ondansetron), decided by CMO-1 (you are "
+                                + "CMO-2, so another CMO approves). Keep head movements slow, sip water, eat small amounts and "
+                                + "keep a fixed visual reference.",
+                        "Simulated story. NASA IMM: space motion sickness, 73% chance on a 6-month ISS mission. "
+                                + "Medication named only from the ISS kit list (decision #11).",
+                        IMM + "; " + IssFormulary.SOURCE),
                 new ConditionReport("C5", "whole", Level.L1, "Itchy rash on the left forearm", "You reported it this morning.",
                         "Keep the area clean and dry and avoid scratching; use a moisturiser. Show the CMO if it spreads, "
                                 + "blisters or does not improve in a few days.",

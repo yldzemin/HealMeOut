@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, ExternalLink, Siren } from "lucide-react";
 import { openExternal } from "@/lib/openExternal";
 import type { Indicator, MeasuredHow, Region } from "@/data/personal";
-import { LEVEL_RANK } from "@/data/personal";
+import { LEVEL_RANK, NASA_HOSTED_NOTE } from "@/data/personal";
 import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
 import { TrendChart } from "@/components/TrendChart";
 import { Badge } from "@/components/ui/badge";
@@ -121,7 +121,10 @@ export function DetailPanel({
               <IndicatorRow key={ind.id} ind={ind} />
             ))}
             {region.missionTag && (
-              <p className="mt-2 rounded-md border border-status-ok/40 px-2 py-1 text-[11px] text-status-ok">{region.missionTag}</p>
+              <p className="mt-2 rounded-md border border-status-ok/40 px-2 py-1 text-[11px] text-status-ok">
+                {region.missionTag}
+                <span className="block text-muted-foreground">{NASA_HOSTED_NOTE}</span>
+              </p>
             )}
           </div>
         )}

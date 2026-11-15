@@ -21,6 +21,7 @@ import {
   liveSleepDebt,
   type TwinMetric,
 } from "@/data/twin";
+import { NASA_HOSTED_NOTE } from "@/data/personal";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -350,6 +351,7 @@ export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: Cr
               <p className="w-fit rounded-md border border-status-ok/40 px-2 py-1 text-[11px] text-status-ok">
                 {mission.kind === "commercial" ? "Commercial mission" : "NASA mission"} · {mission.name} · {mission.start} to {mission.end} ·{" "}
                 {mission.orbit} · {mission.crew} · data hosted by {mission.hostedBy} ({studies})
+                <span className="block text-muted-foreground">{NASA_HOSTED_NOTE}</span>
               </p>
             )}
             {baselines.length === 0 ? (

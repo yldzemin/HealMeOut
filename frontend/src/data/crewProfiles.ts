@@ -2,8 +2,8 @@
 // astronaut. Every value here is SIMULATED. Each story is one of the most likely
 // conditions on a 6-month ISS mission in the NASA Integrated Medical Model
 // ranking (data/cache/imm_leo.json), or a sourced routine event (pre-landing
-// fluid loading, OCHMO-TB-027). Medication always goes through the CMO; no drug
-// is named until the ISS formulary question (#11) is decided.
+// fluid loading, OCHMO-TB-027). Medication always goes through the CMO and is
+// named only from the ISS kit list (Diaz et al. 2024, CC BY 4.0; decision #11).
 //
 // The backend seeds the same values (backend CrewRoster: vitals, 7 nights,
 // mood, and the L1+ stories as condition alerts). Keep both in sync.
@@ -20,7 +20,7 @@ export interface Story {
   todo: string;
   /** IMM probability of at least one event on a 6-month ISS mission, when the story is an IMM condition. */
   imm?: { condition: string; probability: number };
-  extraSource?: { label: string; url: string };
+  extraSources?: { label: string; url: string }[];
 }
 
 export interface CrewProfile {
@@ -45,6 +45,12 @@ export interface CrewProfile {
   nextEyeExam: string;
   story?: Story;
 }
+
+/** ISS medical kit list (team decision #11): credited under partner data and other references. */
+export const ISS_KIT_SOURCE = {
+  label: "Diaz et al. 2024, ISS medical kit list (npj Microgravity, CC BY 4.0)",
+  url: "https://doi.org/10.1038/s41526-024-00414-3",
+};
 
 export const IMM_SOURCE = {
   label: "NASA IMM: ranking of medical conditions by probability",
@@ -100,9 +106,12 @@ export const PROFILES: Record<string, CrewProfile> = {
       meaning:
         "Headaches are among the most common health events on the ISS. Dehydration and raised cabin CO2 are two usual causes; NASA keeps the 7-day CO2 average under 2.5 mmHg to keep headache risk low.",
       todo:
-        "Drink water now, rest in a well-ventilated module and ease off heavy work. If you need a pain reliever, ask the CMO for one from the ISS medical kit. Tell the CMO if the headache gets worse or comes with vision changes.",
+        "Drink water now, rest in a well-ventilated module and ease off heavy work. If you need a pain reliever, the ISS kit has acetaminophen and ibuprofen: ask the CMO. Tell the CMO if the headache gets worse or comes with vision changes.",
       imm: { condition: "Late headache", probability: 0.592 },
-      extraSource: { label: "NASA OCHMO-TB-004 Carbon dioxide", url: "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf" },
+      extraSources: [
+        { label: "NASA OCHMO-TB-004 Carbon dioxide", url: "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf" },
+        ISS_KIT_SOURCE,
+      ],
     },
   },
   C3: {
@@ -163,8 +172,9 @@ export const PROFILES: Record<string, CrewProfile> = {
       meaning:
         "In weightlessness the balance organs and the eyes send conflicting signals, which can cause nausea and loss of appetite in the first days. NASA’s Integrated Medical Model rates it among the most likely events on an ISS mission.",
       todo:
-        "Anti-nausea medication from the ISS kit, decided by CMO-1 (you are CMO-2, so another CMO approves). Keep head movements slow, sip water, eat small amounts and keep a fixed visual reference.",
+        "Anti-nausea medication from the ISS kit (promethazine or ondansetron), decided by CMO-1 (you are CMO-2, so another CMO approves). Keep head movements slow, sip water, eat small amounts and keep a fixed visual reference.",
       imm: { condition: "Space motion sickness", probability: 0.73 },
+      extraSources: [ISS_KIT_SOURCE],
     },
   },
   C5: {
@@ -257,7 +267,7 @@ export const PROFILES: Record<string, CrewProfile> = {
         "After months in weightlessness your body holds less fluid. Back in gravity, blood pools in the legs and standing up can make you dizzy or faint. NASA prepares crews with fluid loading before deorbit.",
       todo:
         "Before deorbit: weight-based fluid loading with salt tablets, as in the NASA protocol. Keep up your exercise to protect bones and muscles for the return.",
-      extraSource: { label: "NASA OCHMO-TB-027 Water (fluid loading)", url: "https://www.nasa.gov/wp-content/uploads/2023/03/water-technical-brief-ochmo.pdf" },
+      extraSources: [{ label: "NASA OCHMO-TB-027 Water (fluid loading)", url: "https://www.nasa.gov/wp-content/uploads/2023/03/water-technical-brief-ochmo.pdf" }],
     },
   },
 };

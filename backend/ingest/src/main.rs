@@ -5,19 +5,20 @@
 //! network, so it runs offline; the raw files are listed in `data/raw/README.md`.
 //!
 //! Usage (from the repo root):
-//! `cargo run --manifest-path backend/ingest/Cargo.toml -- [--repo <path>] [all|baselines|iss-dose|imm]`
+//! `cargo run --manifest-path backend/ingest/Cargo.toml -- [--repo <path>] [all|baselines|iss-dose|partner-dose|imm]`
 
 mod cache;
 mod imm;
 mod iss_dose;
 mod osdr;
+mod partner_dose;
 mod source;
 
 use anyhow::{Context, Result, bail};
 use source::Source;
 use std::path::PathBuf;
 
-const USAGE: &str = "usage: astra-ingest [--repo <path>] [all|baselines|iss-dose|imm]";
+const USAGE: &str = "usage: astra-ingest [--repo <path>] [all|baselines|iss-dose|partner-dose|imm]";
 
 fn main() -> Result<()> {
     let mut repo = PathBuf::from(".");
@@ -40,6 +41,7 @@ fn main() -> Result<()> {
     let sources: Vec<Box<dyn Source>> = vec![
         Box::new(osdr::OsdrBaselines),
         Box::new(iss_dose::IssDose),
+        Box::new(partner_dose::PartnerDose),
         Box::new(imm::Imm),
     ];
     let selected: Vec<&dyn Source> = sources

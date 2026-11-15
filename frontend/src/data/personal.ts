@@ -62,6 +62,10 @@ export interface Region {
 export const INSPIRATION4_TAG =
   "Commercial mission · SpaceX Inspiration4 · 16–18 Sep 2021 · low Earth orbit · data hosted by NASA OSDR";
 
+/** Why NASA-hosted commercial and partner data count as NASA data (team decision #13). Shown under each such tag. */
+export const NASA_HOSTED_NOTE =
+  "Counts as NASA data: a NASA archive hosts and curates it (team decision #13). Credit to the mission or instrument team.";
+
 const SRC = {
   osd575: { label: "NASA OSDR OSD-575 (Inspiration4 blood panel)", url: "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575" },
   barger: { label: "Barger et al. 2014, Lancet Neurology", url: "https://doi.org/10.1016/S1474-4422(14)70122-X" },
@@ -278,7 +282,7 @@ export function withStory(r: Region, p: CrewProfile): Region {
     meaning: st.meaning,
     todo: st.todo,
     method: imm ? `${r.method} ${imm}` : r.method,
-    sources: [...(st.imm ? [IMM_SOURCE] : []), ...(st.extraSource ? [st.extraSource] : []), ...r.sources],
+    sources: [...(st.imm ? [IMM_SOURCE] : []), ...(st.extraSources ?? []), ...r.sources],
   };
 }
 

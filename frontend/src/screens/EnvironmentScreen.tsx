@@ -4,6 +4,8 @@ import { ChevronRight, Play, Square, Wind, Radiation } from "lucide-react";
 import type { ViewerRole } from "@/types";
 import {
   getDoseSeries,
+  getPartnerDose,
+  type ApiPartnerDose,
   getImm,
   startScenario,
   stepScenario,
@@ -18,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Co2Gauge } from "@/components/Co2Gauge";
+import { PartnerDoseCard } from "@/components/PartnerDoseCard";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 /** Median daily ISS TEPC dose equivalent, Sep 4–9 2017 (NASA_DATA_SOURCES.md §4.3); the dose rule fires at 1.5×. */
@@ -54,6 +57,7 @@ export function EnvironmentScreen({
 }) {
   const [dose, setDose] = useState<ApiEnvironment[]>([]);
   const [imm, setImm] = useState<ApiCondition[]>([]);
+  const [partner, setPartner] = useState<ApiPartnerDose | null>(null);
   const [error, setError] = useState<string | null>(null);
   const online = station !== null;
   const latestDose = station?.dose?.timestamp;
@@ -66,6 +70,7 @@ export function EnvironmentScreen({
   useEffect(() => {
     if (!online) return;
     getImm().then(setImm).catch(() => setImm([]));
+    getPartnerDose().then(setPartner).catch(() => setPartner(null));
   }, [online]);
 
   const points = useMemo(
@@ -199,6 +204,8 @@ export function EnvironmentScreen({
           </p>
         </CardContent>
       </Card>
+
+      {partner && partner.items.length > 0 && <PartnerDoseCard partner={partner} />}
 
       {envAlerts.length > 0 && (
         <Card>

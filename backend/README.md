@@ -61,6 +61,7 @@ All routes take `?viewer=CMO|GROUND|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` 
 | GET · POST | `/api/checkins` (body `{"mood","fatigue","stress","conflict","sleepHours"}`) | **SELF only**; low trend → private PPC prompt |
 | GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy; each forecast also uses its own data kind's policy, so sleep debt is SELF only) |
 | GET | `/api/environment/dose` | hourly ISS dose series currently loaded |
+| GET | `/api/environment/partner-dose` | `{tag, source, items, reference}`: DLR DosTel2 hourly absorbed dose in Columbus (NASA OSDR RadLab, decision #13), with its partner tag, and the full NASA TEPC series of the same days |
 | GET | `/api/imm` | NASA IMM LEO 6-month probabilities |
 | GET | `/api/stream/telemetry.csv` | live CSV stream (chunked; `&limit=N`); vitals policy per row, Crew Deck gets 403 |
 | GET | `/api/stream/recent.csv?n=100` · `/api/stream/status` | recent rows as CSV · stream status |

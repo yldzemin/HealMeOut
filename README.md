@@ -34,6 +34,15 @@ NASA Space Apps Challenge 2026 · *Create Health Monitoring Software for Astrona
 | NASA OCHMO technical briefs, NASA-STD-3001, NTRS evidence reports | Thresholds and countermeasures; every alert cites its source. |
 | NASA ISS Reference Guide; NASA 3D Resources ISS model | Station map and 3D overview. |
 
+**Space Agency Partner Data and Other References**
+
+| Data | Use |
+|---|---|
+| DLR **DosTel2** (DOSIS 3D) in the ISS Columbus module, hosted by **NASA OSDR RadLab** | Real absorbed dose, Sep 4–19 2017, next to the NASA TEPC: the Sep 11 event shows in both. Shown with a *partner data* tag; credit to DLR. |
+| Diaz et al. 2024, *npj Microgravity* 10:76, ISS medical kit list (CC BY 4.0) | The only drugs the app names, always as a recommendation for the CMO to approve. |
+
+Data that a NASA archive hosts and curates counts as NASA data for this team (decision #13); each such value names its mission or instrument team.
+
 Full inventory: [`NASA_DATA_SOURCES.md`](NASA_DATA_SOURCES.md). The 3D anatomy comes from HuBMAP (NIH), CC BY 4.0: [`frontend/public/models/ATTRIBUTION.md`](frontend/public/models/ATTRIBUTION.md).
 
 **What is simulated:** no public dataset has in-flight vital signs, so heart rate, SpO2, temperature, blood pressure and in-flight glucose are simulated around each person's baseline and labelled. Crew callsigns are fictional.

@@ -333,9 +333,9 @@ There is **no NASA-only, calibrated, real-time ">10 MeV pfu" product.**
 
 ## 7. Open team decisions
 
-1. **Medication recommendations** (#11): keep the non-NASA ISS formulary paper (Diaz 2024), or limit recommendations to NASA sources (Wotring, HSRB)?
-2. **NOAA-derived DONKI fields** (#12): label them "NOAA instrument via NASA DONKI", or drop them?
-3. **Partner and commercial data** (#13): do partner instruments in RadLab (DLR, ESA, ASI) and commercial missions curated by OSDR (Inspiration4, Axiom) count as NASA data?
+1. **Medication recommendations** (#11): **decided 2026-11-15: use** the ISS medical kit list of Diaz et al. 2024 (CC BY 4.0), credited under "Space Agency Partner Data and Other References". An explicit exception to the NASA-only rule; the app names only products on that list (`IssFormulary`).
+2. **NOAA-derived DONKI fields** (#12): still open. The app does not use DONKI yet.
+3. **Partner and commercial data** (#13): **decided 2026-11-15: yes.** Data that a NASA archive hosts and curates counts as NASA data. Each value carries a tag that names the mission or instrument team and explains why it is used. In use: Inspiration4 baselines (OSDR, commercial-mission tag) and DLR DosTel2 in Columbus (OSDR RadLab, partner tag). China-agency data stays excluded (Participant Terms).
 
 ---
 

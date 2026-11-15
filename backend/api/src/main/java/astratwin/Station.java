@@ -13,6 +13,7 @@ import astratwin.domain.DataKind;
 import astratwin.domain.Environment;
 import astratwin.domain.Forecast;
 import astratwin.domain.Level;
+import astratwin.domain.PartnerTag;
 import astratwin.domain.Reading;
 import astratwin.privacy.CrewCard;
 import astratwin.privacy.PrivacyFilter;
@@ -273,6 +274,24 @@ public final class Station {
         CrewMember m = member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
         TwinContext context = new TwinContext(environment.all(), readings.all(), checkIns.forCrew(crewId), Instant.now());
         return twin.forecasts(context, m, kind -> allows(kind, request, crewId));
+    }
+
+    /** Partner-instrument tag for {@link #partnerDose()} (team decision #13). */
+    public static final PartnerTag DOSTEL_TAG = new PartnerTag("DosTel2 (DOSIS 3D)", "DLR (German Aerospace Center)",
+            "ISS Columbus module", "NASA OSDR RadLab",
+            "https://visualization.osdr.nasa.gov/radlab/gui/",
+            "Partner-agency instrument. NASA OSDR RadLab hosts and distributes the data, so the team counts it as "
+                    + "NASA-hosted data (decision #13); credit to DLR. Silicon detector: absorbed dose only, not "
+                    + "comparable one-to-one with the tissue-equivalent TEPC.");
+
+    /**
+     * Real hourly absorbed dose in the Columbus module, Sep 4–19, 2017 (DLR DosTel2 via NASA OSDR RadLab),
+     * with the whole NASA TEPC series of the same days as {@code reference} (the station replays TEPC
+     * only up to its current scenario time).
+     */
+    public Map<String, Object> partnerDose() {
+        return Map.of("tag", DOSTEL_TAG, "source", String.valueOf(data.partnerDoseSource()), "items", data.partnerDose(),
+                "reference", data.issDose());
     }
 
     public synchronized List<Environment> doseSeries() {

@@ -110,6 +110,24 @@ export interface StationView {
   disclaimer: string;
 }
 
+/** Partner-agency data hosted by a NASA archive, with why we use it (team decision #13). */
+export interface ApiPartnerTag {
+  instrument: string;
+  agency: string;
+  location: string;
+  hostedBy: string;
+  link: string;
+  why: string;
+}
+
+export interface ApiPartnerDose {
+  tag: ApiPartnerTag;
+  source: string;
+  items: ApiEnvironment[];
+  /** The NASA TEPC series for the same days, whatever the station's scenario time. */
+  reference: ApiEnvironment[];
+}
+
 export interface ApiBaselineStats {
   crewId: string;
   analyte: string;
@@ -233,6 +251,7 @@ export const getBaselines = (crewId: string, view: ViewKind) =>
 export const getForecasts = (crewId: string, view: ViewKind) =>
   call<ApiForecast[]>("GET", `crew/${encodeURIComponent(crewId)}/forecasts`, view);
 export const getDoseSeries = () => call<ApiEnvironment[]>("GET", "environment/dose");
+export const getPartnerDose = () => call<ApiPartnerDose>("GET", "environment/partner-dose");
 export const getImm = () => call<ApiCondition[]>("GET", "imm");
 export const postCheckIn = (
   view: ViewKind,

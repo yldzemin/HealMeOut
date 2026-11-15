@@ -58,9 +58,20 @@ final class IntegrationTest {
             Check.equal(7, c3.size(), "C3 check-ins: one per night");
             Check.equal(5.6, c3.get(6).sleepHours(), "C3 last night");
             Check.equal(64, c3.get(6).mood(), "C3 mood from the profile");
-            Check.isTrue(cmo.alerts().stream().noneMatch(a -> a.recommendation() != null
-                    && a.recommendation().matches("(?i).*(ibuprofen|acetaminophen|paracetamol|ondansetron|promethazine).*")),
-                    "no drug names until #11 is decided");
+            // Decision #11: drugs are named only from the ISS kit list, and the source is credited.
+            java.util.regex.Pattern drug = java.util.regex.Pattern.compile("(?i)\\b(acetaminophen|paracetamol|ibuprofen|aspirin|"
+                    + "ondansetron|promethazine|melatonin|zolpidem|modafinil|sertraline|oxymetazoline|epinephrine|metoprolol)\\b");
+            for (Alert a : cmo.alerts()) {
+                java.util.regex.Matcher m = drug.matcher(String.valueOf(a.recommendation()));
+                while (m.find()) {
+                    Check.isTrue(astratwin.seed.IssFormulary.find(m.group(1)).isPresent(), m.group(1) + " is not on the ISS kit list");
+                    Check.isTrue(a.source().contains("CC BY 4.0"), "kit list credited in " + a.id());
+                }
+            }
+            Check.isTrue(c4.recommendation().contains("promethazine"), "C4's card names the kit's anti-nausea options");
+            Map<String, Object> partner = station.partnerDose();
+            Check.equal(384, ((List<?>) partner.get("items")).size(), "DosTel2 hourly means, Sep 4–19 2017 (#13)");
+            Check.equal("DLR (German Aerospace Center)", ((astratwin.domain.PartnerTag) partner.get("tag")).agency(), "partner tag");
             station.startScenario("chest-pain");
             station.stopScenario();
             Check.equal(5, station.view(new ViewRequest(Viewer.CMO, null)).alerts().size(), "conditions come back after a reset");

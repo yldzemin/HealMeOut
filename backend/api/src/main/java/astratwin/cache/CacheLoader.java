@@ -32,11 +32,16 @@ public final class CacheLoader {
         Map<String, Object> baselines = envelope(dir.resolve("baselines.json"));
         Map<String, Object> dose = envelope(dir.resolve("iss_dose.json"));
         Map<String, Object> imm = envelope(dir.resolve("imm_leo.json"));
+        // Optional: partner-instrument dose (#13).
+        Path partnerFile = dir.resolve("iss_dose_partner.json");
+        Map<String, Object> partner = Files.isRegularFile(partnerFile) ? envelope(partnerFile) : null;
         return new CacheData(
                 items(baselines).stream().map(CacheLoader::baseline).toList(),
                 items(dose).stream().map(CacheLoader::environment).toList(),
                 items(imm).stream().map(m -> new ConditionProbability(str(m, "condition"), num(m, "probability"))).toList(),
-                str(baselines, "source"), str(dose, "source"), str(imm, "source"));
+                str(baselines, "source"), str(dose, "source"), str(imm, "source"),
+                partner == null ? List.of() : items(partner).stream().map(CacheLoader::environment).toList(),
+                partner == null ? null : str(partner, "source"));
     }
 
     private static Map<String, Object> envelope(Path file) throws IOException {

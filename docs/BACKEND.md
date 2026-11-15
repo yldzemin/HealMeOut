@@ -49,6 +49,7 @@ Every file in `data/cache/` uses the same envelope. `items` use the entity shape
 |---|---|---|
 | `baselines.json` | `Baseline` (one item per crew × analyte × `timepoint`, with `mission`) | `data/osdr/OSD-575_*`, `data/osdr/OSD-569_*`; `mission` from the OSDR study metadata |
 | `iss_dose.json` | `Environment` (`doseRate_uGy_h`, `doseEqRate_uSv_h`, `instrument`) | CDAWeb `ISS_DOSANL_TEPC` (NASA SRAG), Sep 4–19, 2017, 1-minute |
+| `iss_dose_partner.json` | `Environment` (`doseRate_uGy_h`, `instrument`), hourly means; optional | NASA OSDR RadLab, DLR DosTel2 in ISS Columbus, Sep 4–19, 2017 (partner instrument, decision #13) |
 | `eda_iss.json` | `Environment` (`co2_mmHg`, `temp_C`, `rh_pct`) | OSDR EDA |
 | `imm_leo.json` | condition probabilities | `NASA_DATA_SOURCES.md` §10.1 |
 
@@ -157,7 +158,7 @@ Input: readings, check-ins, environment. Output: `Alert` objects with level L0�
 
 Each alert carries `evidence` and `source` strings for the frontend "?" card. Thresholds marked "our design" must say so in `evidence`.
 
-**Recommendations:** medication only from the ISS formulary (Diaz 2024; decision #11), always `status: "open"` until the CMO approves. Never auto-apply anything.
+**Recommendations:** medication only from the ISS medical kit list (Diaz et al. 2024, CC BY 4.0; **decided in #11**: used, credited under "Space Agency Partner Data and Other References", an explicit exception to the NASA-only rule). `IssFormulary` holds the products the app may name; a test checks every drug in a recommendation against it. Always `status: "open"` until the CMO approves. Never auto-apply anything. The support companion still never names a drug (§10).
 
 ---
 

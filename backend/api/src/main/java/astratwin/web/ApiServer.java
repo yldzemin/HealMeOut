@@ -257,8 +257,9 @@ public final class ApiServer {
                 };
             }
             case "GET environment" -> {
-                require(p.length == 2 && p[1].equals("dose"), "use GET /api/environment/dose");
-                yield station.doseSeries();
+                require(p.length == 2 && (p[1].equals("dose") || p[1].equals("partner-dose")),
+                        "use GET /api/environment/dose or /api/environment/partner-dose");
+                yield p[1].equals("dose") ? station.doseSeries() : station.partnerDose();
             }
             case "GET imm" -> station.imm();
             case "GET checkins" -> station.checkIns(selfCrewId(request));
