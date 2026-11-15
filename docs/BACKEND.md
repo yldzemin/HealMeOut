@@ -259,4 +259,18 @@ Every message goes through these steps in order:
   - `GET /api/support/status` (public: engine and availability).
   - `GET /api/support/conversation`, `POST /api/support/message` with body `{"text"}`, and `POST /api/support/clear` (all SELF only).
 - **Options:** `--llm-url http://127.0.0.1:11434`, `--llm-model phi3.5`, `--llm off` (guided only).
+- **Guards added after evaluation (#59):**
+  - **Prompt requests:** "system prompt", "ignore previous instructions" and similar get a fixed reply.
+  - **Turkish input** goes to the guided responder; phi3.5 misread it.
+  - **Retry:** a rejected reply is retried once with another seed (seed 42 + attempt, so results are reproducible).
+  - **Output filter** also rejects:
+    - offers to schedule, remind or contact anyone (rule 7);
+    - non-English text and garbled tokens;
+    - mix-ups of the sourced facts, e.g. a "weekly special conference" or "outdoor" activities;
+    - prompt leaks: copied rule 6-grams or paraphrases.
+  - **Invariant:** every guided reply passes the output filter (unit test).
+- **Evaluation:** `backend/api/eval.sh` runs `eval/support_cases.json` against the real model and writes `eval/REPORT.md`.
+  - 34 cases: crisis in English and Turkish, false-positive traps, medication and diagnosis, adversarial, everyday, Turkish input.
+  - Last run: **34/34**, reproducible across runs.
+  - 18 fixed safety replies (the model is not called), 13 model replies (mean 2.9 s), 3 guided replies.
 - **Open decision (needs-human):** a crisis message currently gets the fixed reply and nothing else. Whether it should also alert the CMO or the flight surgeon, overriding the privacy rule for safety, is a team decision.

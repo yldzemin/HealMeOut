@@ -23,6 +23,8 @@ import java.util.Optional;
 public final class OllamaResponder implements SupportResponder {
     private static final Duration AVAILABILITY_CACHE = Duration.ofSeconds(15);
     private static final int HISTORY = 4;
+    /** Fixed seed: the same message gets the same reply (reproducible demos and evaluation). */
+    static final int SEED = 42;
 
     private final URI base;
     private final String model;
@@ -81,7 +83,7 @@ public final class OllamaResponder implements SupportResponder {
         body.put("keep_alive", "30m");
         body.put("messages", messages);
         body.put("options", Map.of("temperature", 0.4, "top_p", 0.9, "num_predict", 160, "num_ctx", 4096,
-                "repeat_penalty", 1.1));
+                "repeat_penalty", 1.1, "seed", SEED + request.attempt()));
         try {
             HttpResponse<String> res = http.send(HttpRequest.newBuilder(base.resolve("/api/chat"))
                     .timeout(timeout)
