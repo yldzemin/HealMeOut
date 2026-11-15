@@ -180,6 +180,7 @@ Referans: 2023 ISS formülerisi, 106 ilaç (Diaz et al. 2024, npj Microgravity, 
 | CO2 | 1 saatlik ortalama ≤3 mmHg; 7 günlük ortalama <2.5 mmHg; 2.8–4.5 mmHg'de baş ağrısı | OCHMO-TB-004 |
 | O2 | PIO2 alt limiti 122 mmHg; normoksi aralığı 145–155 mmHg | OCHMO-TB-003/002 |
 | Uyku | ISS'te 6.1 sa/gece | Barger 2014 |
+| Sleep schedule | Standard ISS sleep period 21:30–06:00 GMT (8.5 h scheduled); crews slept the full 8.5 h on 5.9% of nights | Jones 2022, Sleep 45(3):zsac006, doi:10.1093/sleep/zsac006 |
 | Kemik kaybı | ayda ~%1–1.5 | NASA HHP white paper |
 
 ### 5 tehlike (RIDGE) ve karşı önlemler

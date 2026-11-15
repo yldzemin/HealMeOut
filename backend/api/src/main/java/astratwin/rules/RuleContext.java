@@ -1,5 +1,6 @@
 package astratwin.rules;
 
+import astratwin.domain.CheckIn;
 import astratwin.domain.CrewMember;
 import astratwin.domain.Environment;
 import astratwin.domain.Reading;
@@ -7,12 +8,13 @@ import astratwin.store.ReadingRepository;
 import astratwin.twin.BaselineStatistics;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** What a rule can see when it runs. */
 public record RuleContext(
         List<CrewMember> crew, ReadingRepository readings, List<Environment> environment,
-        BaselineStatistics baselines, Instant now) {
+        BaselineStatistics baselines, Map<String, List<CheckIn>> checkIns, Instant now) {
 
     public Optional<Reading> latest(String crewId, String metric) {
         return readings.latest(crewId, metric);

@@ -37,26 +37,59 @@ function IndicatorRow({ ind }: { ind: Indicator }) {
   );
 }
 
-function CmoCard({ text }: { text: string }) {
+/** Decision on a live backend alert; resolves when the API has logged it. */
+export type AlertDecision = (alertId: string, decision: "approve" | "reject") => Promise<void>;
+
+function CmoCard({
+  text,
+  alertId,
+  canDecide,
+  onDecision,
+}: {
+  text: string;
+  alertId?: string;
+  canDecide: boolean;
+  onDecision?: AlertDecision;
+}) {
   const [decision, setDecision] = useState<"approved" | "declined" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const decide = async (d: "approve" | "reject") => {
+    try {
+      if (alertId && onDecision) await onDecision(alertId, d);
+      setDecision(d === "approve" ? "approved" : "declined");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
   return (
     <div className="rounded-lg border border-status-cmo/60 p-4">
       <p className="mb-1 text-xs font-medium text-status-cmo">Recommendation · needs CMO approval</p>
       <p className="mb-3 text-sm">{text}</p>
       {decision ? (
         <p className="text-sm text-muted-foreground">CMO {decision}. Logged.</p>
+      ) : !canDecide ? (
+        <p className="text-sm text-muted-foreground">Waiting for the CMO or flight surgeon to review.</p>
       ) : (
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => setDecision("approved")}>Approve</Button>
-          <Button size="sm" variant="outline" onClick={() => setDecision("declined")}>Decline</Button>
+          <Button size="sm" onClick={() => void decide("approve")}>Approve</Button>
+          <Button size="sm" variant="outline" onClick={() => void decide("reject")}>Decline</Button>
         </div>
       )}
+      {error && <p className="mt-2 text-xs text-status-emergency">{error}</p>}
     </div>
   );
 }
 
 /** Explanation-first panel (docs/FRONTEND.md, personal screen decision 3). */
-export function DetailPanel({ region }: { region: Region }) {
+export function DetailPanel({
+  region,
+  canDecide = true,
+  onDecision,
+}: {
+  region: Region;
+  canDecide?: boolean;
+  onDecision?: AlertDecision;
+}) {
   const Icon = region.level === "L0" ? CheckCircle2 : region.level === "L4" ? Siren : AlertTriangle;
   const color = LEVEL_COLOR[region.level];
 
@@ -83,6 +116,9 @@ export function DetailPanel({ region }: { region: Region }) {
             {region.indicators.map((ind) => (
               <IndicatorRow key={ind.id} ind={ind} />
             ))}
+            {region.missionTag && (
+              <p className="mt-2 rounded-md border border-status-ok/40 px-2 py-1 text-[11px] text-status-ok">{region.missionTag}</p>
+            )}
           </div>
         )}
 
@@ -99,7 +135,7 @@ export function DetailPanel({ region }: { region: Region }) {
         <section>
           <h3 className="mb-1 text-sm font-semibold">What to do</h3>
           {LEVEL_RANK[region.level] >= LEVEL_RANK.L2 ? (
-            <CmoCard text={region.todo} />
+            <CmoCard text={region.todo} alertId={region.alertId} canDecide={canDecide} onDecision={onDecision} />
           ) : (
             <p className="text-sm leading-relaxed text-muted-foreground">{region.todo}</p>
           )}

@@ -49,7 +49,15 @@ export interface Region {
   todo: string;
   method: string;
   sources: Source[];
+  /** Commercial-mission tag shown next to real Inspiration4 values (#30). */
+  missionTag?: string;
+  /** Backend alert behind this region's level, if any (for CMO approve / decline). */
+  alertId?: string;
 }
+
+/** Same wording as the backend tag (TECH_OVERVIEW §4.4); values from the OSDR study metadata. */
+export const INSPIRATION4_TAG =
+  "Commercial mission · SpaceX Inspiration4 · 16–18 Sep 2021 · low Earth orbit · data hosted by NASA OSDR";
 
 const SRC = {
   osd575: { label: "NASA OSDR OSD-575 (Inspiration4 blood panel)", url: "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575" },
@@ -89,7 +97,7 @@ function bloodIndicator(crewId: string, id: string): Indicator | undefined {
   const last = a.points.find((p) => p.timepoint === "L-3");
   return {
     id,
-    label: a.label,
+    label: `${a.label} (pre-flight, L-3)`,
     value: last ? String(last.value) : "—",
     unit: a.unit,
     baseline: a.baselineSd === null ? `${a.baselineMean}` : `${a.baselineMean} ± ${a.baselineSd}`,
@@ -215,6 +223,7 @@ export function getRegions(crewId: string): Region[] {
       method:
         "Real values from NASA OSDR (Inspiration4 crew, pre- and post-flight). On the ISS, blood samples are frozen and analysed after return; on-board analysers are still tech demos.",
       sources: [SRC.osd575, SRC.ada, SRC.water],
+      missionTag: hasRealBlood ? INSPIRATION4_TAG : undefined,
     },
     {
       id: "musculo",

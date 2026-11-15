@@ -110,6 +110,8 @@ Privacy: CMO and ground roles see only a notice that check-in data is private to
 
 **Slider + forecast charts + Earth Twin plan.** A "look ahead" slider (T+0 → T+12, quick T+0/T+6/T+12 buttons) moves a cursor across four charts: fluid deficit vs 2.5 L/day, sleep debt vs the 8.5 h schedule (Barger 2014), cumulative mission dose (ISS 0.2–0.5 mSv/day, Simonsen 2025), core temperature (Stahn 2017). Actual = solid, forecast = dashed with a widening band; a forecast that crosses a threshold (our design) warns early ("reaches … at T+9 h"). Right: the Earth Twin plan from the flight surgeon with Accept / Discuss at PPC (the astronaut or CMO decides), and "Forecast vs actual" (forecast made 6 h ago vs now) as the visible test of forecast accuracy. Everything is labelled "Modelled".
 
+**With the backend (#55 + #62):** the dose chart is the real ISS TEPC series (actual = the last 12 hourly samples; forecast = the backend's last-24-h-mean projection; band = lowest to highest daily mean of the last 7 days), and its forecast-vs-actual row is computed from the same data. Sleep debt is the backend's forecast from the astronaut's own check-ins. Fluids, temperature and the plan stay simulated and labelled. **Privacy:** sleep debt and the sleep-related plan items are psych data, so they appear only in the astronaut's own view, never for the CMO or ground (`BACKEND.md` §6). The real pre-flight baseline table sits below the charts.
+
 ---
 
 ## 3. Design tokens
@@ -211,3 +213,24 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
 - Plan B works: `npm run build` output opens from the Java API on `localhost`.
 - MVP screens work on mock data.
 - Every number on screen has a `real`/`simulated` badge and a source link in its "?" card.
+
+---
+
+## 10. Backend integration (#56)
+
+- **Client:** `src/api/client.ts` (types match `backend/README.md`) and `src/api/useStation.ts`, which polls `GET /api/station` every 2 s.
+  - When the API answers, the status bar shows **Live station data**; otherwise the UI uses its mock data and keeps retrying. `VITE_USE_MOCK=true` forces mock data.
+  - Base URL: the same origin when the API serves the build, otherwise `http://127.0.0.1:8080`.
+- **Roles → viewer:** astronaut → `SELF`, CMO → `CMO`, ground → `GROUND` (provisional, see `BACKEND.md` §6).
+- **Screens on live data:**
+  - **Personal:** live vitals and rule alerts on the body regions (`src/data/live.ts`). The worst region opens first. The CMO card approves or rejects the backend alert; the astronaut sees "waiting for review". The commercial-mission tag sits under the real Inspiration4 values.
+  - **Crew Deck / Emergency:** *Run scenario* starts the backend `chest-pain` scenario. The full-screen overlay follows the live EMERGENCY alert; *End drill* resets the station.
+  - **Environment:**
+    - Cabin CO2 and the real ISS dose chart (NASA SRAG TEPC, Sep 2017).
+    - The NASA IMM top conditions.
+    - CO2 and solar-particle-event scenarios with *Next step*.
+    - Live telemetry read line by line from the CSV stream.
+  - **Twin:** T+6 / T+12 dose and sleep-debt forecasts (labelled modelled; sleep debt only in the astronaut's own view) and the real pre-flight baseline with the commercial-mission tag.
+  - **Check-in:** answers are saved privately (`POST /api/checkins`, SELF only). The **Talk it through** tab is the private support companion (local model).
+- **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk`.
+- **Plan B (browser):** `cd frontend && npm ci && npm run build`, then `backend/api/run.sh`, which serves the build at `http://127.0.0.1:8080/`.

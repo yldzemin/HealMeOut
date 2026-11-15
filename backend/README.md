@@ -9,6 +9,8 @@ Two parts that never call each other; the JSON files in `data/cache/` are the on
 
 The cache files are committed, so **to run the demo you only need Java 21**.
 
+**Full app (frontend + backend):** `cd frontend && npm ci && npm run build` once (needs Node.js), then `backend/api/run.sh` serves the app at **http://127.0.0.1:8080/** and the demo console at `/demo/`.
+
 ## Run the demo
 
 ```sh
@@ -25,7 +27,7 @@ Open **http://127.0.0.1:8080/demo/**:
 - **Add a reading:** e.g. glucose 52 for C3 → L3 alert; then approve or reject it as the CMO.
 - **Live telemetry (CSV stream):** *Start simulated* streams wearable values (heart rate, SpO2, temperature) for the whole crew every second; *Replay sample CSV* plays `data/stream/sample_telemetry.csv`, where C5's SpO2 drops and the rule fires. The panel reads the live CSV line by line; each run is also logged to `data/stream/out/`.
 - **Support companion (Self view only):** switch the viewer to *Self*, pick a crew member and write how you feel. Replies come from a local model through Ollama (`phi3.5`); crisis wording and medication questions get a fixed reply without the model; if Ollama is not running, a rule-based fallback answers. Setup: install Ollama, then `ollama pull phi3.5` (about 2.2 GB, once).
-- **Personal baseline & twin:** real pre-flight baselines with the commercial-mission tag (SpaceX Inspiration4, NASA OSDR), and the T+6/T+12 dose forecast.
+- **Personal baseline & twin:** real pre-flight baselines with the commercial-mission tag (SpaceX Inspiration4, NASA OSDR), and the T+6/T+12 dose and sleep-debt forecasts (sleep debt is built from check-ins, so only the astronaut sees it).
 
 Every value is labelled `real` or `simulated`. *Simulation — not medical advice.*
 
@@ -45,7 +47,7 @@ It reads the raw files listed in `data/raw/README.md` and does not use the netwo
 
 ## API
 
-All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SELF`). Without a viewer the most restricted view, `CREW_DECK`, applies.
+All routes take `?viewer=CMO|GROUND|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SELF`). Without a viewer the most restricted view, `CREW_DECK`, applies. `GROUND` (flight surgeon) is provisionally the CMO tier without psychological data.
 
 | Method | Path | Returns |
 |---|---|---|
@@ -55,8 +57,9 @@ All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SE
 | POST | `/api/scenarios/{id}/start` | scenario state after step 1 |
 | POST | `/api/scenario/step` · `/api/scenario/stop` | next step · reset |
 | POST | `/api/readings` | body `{"crewId","metric","value","unit"}`; returns the station view |
-| POST | `/api/alerts/{id}/approve` · `/reject` | CMO view only |
-| GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy) |
+| POST | `/api/alerts/{id}/approve` · `/reject` | CMO or GROUND view only |
+| GET · POST | `/api/checkins` (body `{"mood","fatigue","stress","conflict","sleepHours"}`) | **SELF only**; low trend → private PPC prompt |
+| GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy; each forecast also uses its own data kind's policy, so sleep debt is SELF only) |
 | GET | `/api/environment/dose` | hourly ISS dose series currently loaded |
 | GET | `/api/imm` | NASA IMM LEO 6-month probabilities |
 | GET | `/api/stream/telemetry.csv` | live CSV stream (chunked; `&limit=N`); vitals policy per row, Crew Deck gets 403 |
@@ -65,4 +68,4 @@ All routes take `?viewer=CMO|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` for `SE
 | GET | `/api/support/status` | companion engine and availability (public) |
 | GET · POST | `/api/support/conversation` · `/api/support/message` (body `{"text"}`) · `/api/support/clear` | **SELF only** (`viewer=SELF&crewId=Cx`); others get 403 |
 
-Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch) [--llm-url http://127.0.0.1:11434] [--llm-model phi3.5] [--llm off].
+Options: `java -jar backend/api/out/astra-twin-api.jar [--port 8080] [--host 127.0.0.1] [--data data/cache] [--stream sim]` (`--stream sim` starts the simulated stream at launch) [--llm-url http://127.0.0.1:11434] [--llm-model phi3.5] [--llm off] [--ui frontend/dist] (`--ui` also serves the built frontend at `/`).

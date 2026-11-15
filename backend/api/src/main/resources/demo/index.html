@@ -53,6 +53,7 @@
     <label for="viewer">Viewer</label>
     <select id="viewer">
       <option value="CMO">CMO</option>
+      <option value="GROUND">Ground (flight surgeon)</option>
       <option value="CREW_DECK">Crew Deck</option>
       <option value="EMERGENCY">Emergency</option>
       <option value="SELF">Self</option>
@@ -182,13 +183,13 @@ function renderCrew(crew) {
     const mission = m.baselineMission ? `<div class="mission">Commercial mission · ${esc(m.baselineMission.name)} · ${esc(m.baselineMission.start)} to ${esc(m.baselineMission.end)} · ${esc(m.baselineMission.orbit)} · data hosted by ${esc(m.baselineMission.hostedBy)}</div>` : "";
     return `<div class="tile lvl-${m.level}">
       <div class="row" style="margin:0">${badge(m.level)} <b>${esc(m.callsign)}</b> <span class="muted">${esc(m.id)} · ${esc(m.role)}</span></div>
-      <div class="small muted">${esc(m.module)} · <span class="tag ${m.provenance.startsWith("real") ? "real" : "sim"}">${esc(m.provenance)}</span></div>
+      <div class="small muted">${esc(m.module)} · <span class="tag ${m.baselineProvenance === "real" ? "real" : "sim"}">${m.baselineProvenance === "real" ? "real baseline (NASA OSDR)" : "simulated"}</span></div>
       ${mission}${vitals}${med}${ci}</div>`;
   }).join("");
 }
 
 function renderAlerts(alerts) {
-  const cmo = $("viewer").value === "CMO";
+  const cmo = ["CMO", "GROUND"].includes($("viewer").value);
   if (!alerts.length) { $("alerts").innerHTML = `<div class="muted">No alerts visible to this viewer.</div>`; return; }
   $("alerts").innerHTML = alerts.slice().reverse().map((a) => `
     <div class="alert ${a.level} ${a.active ? "" : "inactive"}">

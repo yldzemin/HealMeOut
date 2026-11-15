@@ -1,7 +1,9 @@
 // Twin forecasts for one astronaut over the last 12 h and the next 12 h.
-// Every curve is SIMULATED ("modelled"). Rates come from sourced values in
-// docs/BACKEND.md §3.2; thresholds marked "our design" are not NASA criteria.
+// getTwin() is the SIMULATED set (mock mode, and fluids/temperature always). With the backend
+// running, liveDose() and liveSleepDebt() replace two curves with the API's data. Rates come from
+// sourced values in docs/BACKEND.md §3.2; thresholds marked "our design" are not NASA criteria.
 
+import type { ApiEnvironment, ApiForecast } from "@/api/client";
 import type { Source } from "@/data/personal";
 
 export interface TwinPoint {
@@ -19,11 +21,16 @@ export interface TwinMetric {
   threshold?: { value: number; above: boolean; label: string };
   explain: string;
   source: Source;
+  /** "nasa": real NASA data via the backend; "checkins": the astronaut's own check-ins; "simulated": modelled here. */
+  provenance: "nasa" | "checkins" | "simulated";
+  /** Built from psychological check-ins: only the astronaut sees it (BACKEND.md §6). */
+  privateToSelf?: boolean;
 }
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i - 12);
 const r1 = (x: number) => Math.round(x * 10) / 10;
 const r2 = (x: number) => Math.round(x * 100) / 100;
+const r3 = (x: number) => Math.round(x * 1000) / 1000;
 
 /** Split one model into actual (t ≤ 0) and forecast (t ≥ 0) with a widening band. */
 function series(f: (t: number) => number, spread: (t: number) => number, round = r1): TwinPoint[] {
@@ -35,6 +42,13 @@ function series(f: (t: number) => number, spread: (t: number) => number, round =
     return { t, forecast: v, band: [round(v - s), round(v + s)] as [number, number] };
   });
 }
+
+const SLEEP_SOURCE: Source = { label: "Barger et al. 2014, Lancet Neurology", url: "https://doi.org/10.1016/S1474-4422(14)70122-X" };
+const SLEEP_THRESHOLD = { value: 18, above: true, label: "18 h debt (our design)" };
+const DOSE_SOURCE: Source = {
+  label: "NASA SRAG ISS TEPC via CDAWeb",
+  url: "https://cdaweb.gsfc.nasa.gov/hapi/data?id=ISS_DOSANL_TEPC&time.min=2017-09-04T00:00:00Z&time.max=2017-09-20T00:00:00Z&parameters=DOSE_EQ60&format=csv",
+};
 
 export function getTwin(): TwinMetric[] {
   // Sleep debt: scheduled 8.5 h vs logged sleep, last 7 nights (Barger 2014). Planned sleep
@@ -75,15 +89,18 @@ export function getTwin(): TwinMetric[] {
       threshold: { value: 0.8, above: true, label: "0.8 L behind (our design)" },
       explain: "At today’s pace you finish the day behind your fluid target.",
       source: { label: "NASA OCHMO-TB-027 Water", url: "https://www.nasa.gov/wp-content/uploads/2023/03/water-technical-brief-ochmo.pdf" },
+      provenance: "simulated",
     },
     {
       id: "sleep",
       title: "Sleep debt, last 7 nights",
       unit: "h",
       points: sleepDebt,
-      threshold: { value: 18, above: true, label: "18 h debt (our design)" },
+      threshold: SLEEP_THRESHOLD,
       explain: "A 6.5 h night tonight adds 2 h of debt against the 8.5 h schedule.",
-      source: { label: "Barger et al. 2014, Lancet Neurology", url: "https://doi.org/10.1016/S1474-4422(14)70122-X" },
+      source: SLEEP_SOURCE,
+      provenance: "simulated",
+      privateToSelf: true,
     },
     {
       id: "dose",
@@ -92,6 +109,7 @@ export function getTwin(): TwinMetric[] {
       points: dose,
       explain: "Normal ISS background. Career limit is 600 mSv.",
       source: { label: "Simonsen 2025, NASA (NTRS 20250006168)", url: "https://ntrs.nasa.gov/api/citations/20250006168" },
+      provenance: "simulated",
     },
     {
       id: "temp",
@@ -100,6 +118,7 @@ export function getTwin(): TwinMetric[] {
       points: temp,
       explain: "Stable. Resting temperature runs about 1 °C higher on long missions.",
       source: { label: "Stahn et al. 2017, Scientific Reports", url: "https://doi.org/10.1038/s41598-017-15560-w" },
+      provenance: "simulated",
     },
   ];
 }
@@ -118,18 +137,141 @@ export interface PlanItem {
   text: string;
   why: string;
   due: string;
+  /** Follows from sleep data (check-ins): only the astronaut sees it. */
+  privateToSelf?: boolean;
 }
 
 /** Earth Twin plan from the flight surgeon (simulated). The astronaut or CMO decides. */
 export const EARTH_PLAN: PlanItem[] = [
   { id: "fluid", text: "Drink an extra 500 mL before 22:00 GMT.", why: "Fluid deficit forecast", due: "T+2 h" },
-  { id: "sleep", text: "Protect a full 8.5 h sleep window tonight: move the 23:00 task to tomorrow.", why: "Sleep debt forecast", due: "T+3 h" },
-  { id: "rt", text: "Repeat the reaction test after tonight’s sleep.", why: "Short nights this week", due: "T+11 h" },
+  { id: "sleep", text: "Protect a full 8.5 h sleep window tonight: move the 23:00 task to tomorrow.", why: "Sleep debt forecast", due: "T+3 h", privateToSelf: true },
+  { id: "rt", text: "Repeat the reaction test after tonight’s sleep.", why: "Short nights this week", due: "T+11 h", privateToSelf: true },
 ];
 
-/** Forecast made 6 h ago vs what was measured now (simulated). */
-export const FORECAST_CHECK = [
-  { metric: "Fluid deficit", forecast: "0.72 L", actual: "0.79 L", error: "+0.07 L" },
-  { metric: "Core temperature", forecast: "37.35 °C", actual: "37.40 °C", error: "+0.05 °C" },
-  { metric: "Cumulative dose", forecast: "28.72 mSv", actual: "28.80 mSv", error: "+0.08 mSv" },
+export interface ForecastCheck {
+  metric: string;
+  forecast: string;
+  actual: string;
+  error: string;
+  provenance: "nasa" | "simulated";
+}
+
+/** Forecast made 6 h ago vs what was measured now (simulated; the dose row is replaced when live). */
+export const FORECAST_CHECK: ForecastCheck[] = [
+  { metric: "Fluid deficit", forecast: "0.72 L", actual: "0.79 L", error: "+0.07 L", provenance: "simulated" },
+  { metric: "Core temperature", forecast: "37.35 °C", actual: "37.40 °C", error: "+0.05 °C", provenance: "simulated" },
+  { metric: "Cumulative dose", forecast: "28.72 mSv", actual: "28.80 mSv", error: "+0.08 mSv", provenance: "simulated" },
 ];
+
+// ---------- Live curves from the backend ----------
+
+/** Hourly dose-equivalent rates (μSv/h), oldest first. */
+function doseRates(series: ApiEnvironment[]): number[] {
+  return series
+    .filter((e) => e.doseEqRate_uSv_h !== undefined)
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+    .map((e) => e.doseEqRate_uSv_h!);
+}
+
+const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/**
+ * Cumulative dose from the real ISS TEPC series (the backend's cumulative_dose definition: each
+ * hourly sample counts one hour, since the first loaded sample). Actual = the last 12 hourly
+ * samples; forecast = the backend's T+12 forecast (last 24-h mean rate); band = the lowest to the
+ * highest daily mean rate of the last 7 days.
+ */
+export function liveDose(series: ApiEnvironment[], forecasts: ApiForecast[]): TwinMetric | null {
+  const rates = doseRates(series);
+  const f12 = forecasts.find((f) => f.metric === "cumulative_dose" && f.horizonHours === 12);
+  if (rates.length < 48 || !f12 || f12.points.length < 2) return null;
+  const n = rates.length;
+  const cum: number[] = [];
+  let total = 0;
+  for (const r of rates) {
+    total += r / 1000;
+    cum.push(total);
+  }
+  const v0 = f12.points[0].value;
+  const perH = (f12.points[1].value - v0) / 12;
+  const daily: number[] = [];
+  for (let k = 0; k < 7 && n - 24 * (k + 1) >= 0; k++) daily.push(mean(rates.slice(n - 24 * (k + 1), n - 24 * k)) / 1000);
+  const lo = Math.min(...daily);
+  const hi = Math.max(...daily);
+  const points = HOURS.map((t): TwinPoint => {
+    if (t < 0) return { t, actual: r3(cum[n - 1 + t]) };
+    if (t === 0) return { t, actual: r3(v0), forecast: r3(v0), band: [r3(v0), r3(v0)] };
+    return { t, forecast: r3(v0 + perH * t), band: [r3(v0 + lo * t), r3(v0 + hi * t)] };
+  });
+  return {
+    id: "dose",
+    title: "Cumulative dose (ISS TEPC)",
+    unit: "mSv",
+    points,
+    explain: `Real ISS data (Sep 2017), since the first loaded sample. Forecast: last 24-h mean, ${r3(perH * 24)} mSv/day. Instrument dose equivalent, not effective dose; career limit 600 mSv.`,
+    source: DOSE_SOURCE,
+    provenance: "nasa",
+  };
+}
+
+/** The dose forecast made 6 h ago (last 24-h mean rate then) against the TEPC value now. */
+export function liveDoseCheck(series: ApiEnvironment[]): ForecastCheck | null {
+  const rates = doseRates(series);
+  const n = rates.length;
+  if (n < 31) return null;
+  const sumTo = (end: number) => rates.slice(0, end).reduce((a, b) => a + b, 0) / 1000;
+  const then = sumTo(n - 6);
+  const forecast = then + (mean(rates.slice(n - 30, n - 6)) / 1000) * 6;
+  const actual = sumTo(n);
+  const err = actual - forecast;
+  return {
+    metric: "Cumulative dose",
+    forecast: `${r3(forecast)} mSv`,
+    actual: `${r3(actual)} mSv`,
+    error: `${err >= 0 ? "+" : ""}${r3(err)} mSv`,
+    provenance: "nasa",
+  };
+}
+
+/** Hours of the standard ISS sleep period (21:30–06:00 GMT, Jones 2022) in the next `hours` hours. */
+export function scheduledSleepHours(from: Date, hours: number): number {
+  const start = from.getTime();
+  const end = start + hours * 3_600_000;
+  let total = 0;
+  const day = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()) - 86_400_000;
+  for (let d = day; d <= end; d += 86_400_000) {
+    const a = Math.max(start, d + 21.5 * 3_600_000);
+    const b = Math.min(end, d + 30 * 3_600_000);
+    if (b > a) total += b - a;
+  }
+  return total / 3_600_000;
+}
+
+/**
+ * Sleep debt from the backend (built from the astronaut's own check-ins, #62). The debt changes
+ * only while the scheduled sleep period runs, at the shortfall the backend's T+12 point implies.
+ */
+export function liveSleepDebt(forecasts: ApiForecast[], now: Date): TwinMetric | null {
+  const f12 = forecasts.find((f) => f.metric === "sleep_debt" && f.horizonHours === 12);
+  if (!f12 || f12.points.length < 2) return null;
+  const d0 = f12.points[0].value;
+  const window12 = scheduledSleepHours(now, 12);
+  const perSleptHour = window12 > 0 ? (f12.points[1].value - d0) / window12 : 0;
+  const points = HOURS.map((t): TwinPoint => {
+    if (t < 0) return { t, actual: d0 };
+    if (t === 0) return { t, actual: d0, forecast: d0, band: [d0, d0] };
+    const v = r1(d0 + scheduledSleepHours(now, t) * perSleptHour);
+    return { t, forecast: v, band: [r1(v - 0.1 * t), r1(v + 0.1 * t)] };
+  });
+  return {
+    id: "sleep",
+    title: "Sleep debt, last 7 check-ins",
+    unit: "h",
+    points,
+    threshold: SLEEP_THRESHOLD,
+    explain: "From your check-ins: scheduled 8.5 h minus logged sleep. Tonight's sleep period (21:30–06:00 GMT) at your recent average.",
+    source: SLEEP_SOURCE,
+    provenance: "checkins",
+    privateToSelf: true,
+  };
+}

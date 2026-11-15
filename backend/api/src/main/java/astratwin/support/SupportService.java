@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * Private support companion: safety gate → primary responder (local LLM) → output filter, with the
@@ -24,6 +25,10 @@ public final class SupportService {
     private final SupportResponder fallback;
     private final Function<String, Optional<CheckIn>> checkIns;
     private final Map<String, List<SupportMessage>> conversations = new ConcurrentHashMap<>();
+    /** Turkish input: the small model misreads it, so the guided responder (which knows Turkish keywords) answers. */
+    private static final Pattern TURKISH_LETTERS = Pattern.compile("[çğışöüÇĞİŞÖÜ]");
+    private static final Pattern TURKISH_WORDS = Pattern.compile(
+            "\\b(ve|bir|cok|bana|beni|degil|istiyorum|miyim|musun|kafam|son|gunlerde|arkadasim\\w*|ekip\\w*|uyuyam\\w*)\\b");
 
     /** {@code primary} may be null (model disabled); {@code fallback} must always answer. */
     public SupportService(SupportResponder primary, SupportResponder fallback, Function<String, Optional<CheckIn>> checkIns) {
@@ -65,6 +70,9 @@ public final class SupportService {
             case MEDICAL -> {
                 return new SupportReply(verdict.reply(), "safety", List.of("medical-redirect"));
             }
+            case PROMPT_REQUEST -> {
+                return new SupportReply(verdict.reply(), "safety", List.of("prompt-request"));
+            }
             case OK -> {
                 // continue below
             }
@@ -72,16 +80,36 @@ public final class SupportService {
         if (primary == null) {
             return fallback(request, "llm-off");
         }
+        if (isTurkish(request.text())) {
+            return fallback(request, "non-english-input");
+        }
         if (!primary.available()) {
             return fallback(request, "llm-unavailable");
         }
-        Optional<SupportReply> reply = primary.reply(request);
-        if (reply.isEmpty()) {
-            return fallback(request, "llm-error");
+        // One retry with a different seed before falling back: most rejections are one-off slips.
+        for (int attempt = 0; attempt < 2; attempt++) {
+            Optional<SupportReply> reply = primary.reply(request.withAttempt(attempt));
+            if (reply.isEmpty()) {
+                return fallback(request, "llm-error");
+            }
+            Optional<String> safe = filter.check(reply.get().text());
+            if (safe.isPresent()) {
+                return new SupportReply(safe.get(), reply.get().source(), attempt == 0 ? List.of() : List.of("retried"));
+            }
         }
-        Optional<String> safe = filter.check(reply.get().text());
-        return safe.map(text -> new SupportReply(text, reply.get().source(), reply.get().flags()))
-                .orElseGet(() -> fallback(request, "filtered"));
+        return fallback(request, "filtered");
+    }
+
+    static boolean isTurkish(String text) {
+        if (TURKISH_LETTERS.matcher(text).find()) {
+            return true;
+        }
+        java.util.regex.Matcher m = TURKISH_WORDS.matcher(SafetyGate.normalize(text));
+        int hits = 0;
+        while (m.find()) {
+            hits++;
+        }
+        return hits >= 2;
     }
 
     private SupportReply fallback(SupportRequest request, String why) {

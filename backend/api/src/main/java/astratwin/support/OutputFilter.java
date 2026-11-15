@@ -1,6 +1,10 @@
 package astratwin.support;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -20,7 +24,34 @@ public final class OutputFilter {
                     Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\byou are (clinically )?depressed\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bi diagnose\\b|\\bmy diagnosis\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\bi am (a )?(human|real person|doctor|therapist|psychologist)\\b", Pattern.CASE_INSENSITIVE));
+            Pattern.compile("\\bi am (a )?(human|real person|doctor|therapist|psychologist)\\b", Pattern.CASE_INSENSITIVE),
+            // Rule 7 of the prompt, enforced: the companion cannot schedule, remind or contact anyone.
+            Pattern.compile("\\b(i will|i'll|i can|let me|shall i|should i|would you like me to|do you want me to)\\s+"
+                    + "(schedule|book|set up|arrange|remind|call|contact|notify|alert|message|email)\\b",
+                    Pattern.CASE_INSENSITIVE),
+            // Replies are always English; the small model writes broken Turkish.
+            Pattern.compile("[çğışöüÇĞİŞÖÜ]"),
+            // Garbled tokens from the small model, e.g. "experien0ne".
+            Pattern.compile("\\b[a-z]+[0-9]+[a-z]+\\b", Pattern.CASE_INSENSITIVE),
+            // Contradicts the facts in SupportPrompt (window stops at , . ;): family conference weekly, special conference monthly,
+            // psychological conference every two weeks with the behavioral health provider (not the CMO).
+            Pattern.compile("\\b(weekly|every week|each week)\\b[^,.;]{0,40}\\b(special|psychological) conferences?",
+                    Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\b(special|psychological) conferences?\\b[^,.;]{0,40}\\b(weekly|every week|each week)\\b",
+                    Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\b(monthly|once a month|each month|every month)\\b[^,.;]{0,40}\\b(family|psychological) conferences?",
+                    Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\b(family|psychological) conferences?\\b[^,.;]{0,40}\\b(monthly|once a month|each month|every month)\\b",
+                    Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bwith (the )?cmo (during|at|in) [^.]{0,30}conference", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bspecial[^.]{0,30}(meeting|conference)[^.]{0,20}with (the |your )?crew\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\b(outdoor|go outside|fresh air)\\b", Pattern.CASE_INSENSITIVE),
+            // Prompt leak in other words (the 6-gram check catches copies).
+            Pattern.compile("\\b(system prompt|reply in english|my (instructions|rules) (are|say))\\b", Pattern.CASE_INSENSITIVE));
+
+    /** Word 6-grams of the prompt's identity and rules (not its facts, which replies restate). */
+    private static final int NGRAM = 6;
+    private static final Set<String> PROMPT_NGRAMS = ngrams(SupportPrompt.RULES);
 
     /** The cleaned reply, or empty if it must not be shown. */
     public Optional<String> check(String reply) {
@@ -28,12 +59,28 @@ public final class OutputFilter {
             return Optional.empty();
         }
         String text = reply.strip();
-        if (BLOCKED.stream().anyMatch(p -> p.matcher(text).find())) {
+        if (BLOCKED.stream().anyMatch(p -> p.matcher(text).find()) || leaksPrompt(text)) {
             return Optional.empty();
         }
         String tidy = text.replaceAll("\\s*\\([^)]*\\)", "").replaceAll("[ \\t]+", " ").strip();
         tidy = completeSentences(tidy.length() > MAX_CHARS ? tidy.substring(0, MAX_CHARS) : tidy);
         return tidy.length() < 20 ? Optional.empty() : Optional.of(tidy);
+    }
+
+    /** Two or more 6-word sequences copied from the conditioning prompt. */
+    static boolean leaksPrompt(String text) {
+        Set<String> copied = new HashSet<>(ngrams(text));
+        copied.retainAll(PROMPT_NGRAMS);
+        return copied.size() >= 2;
+    }
+
+    private static Set<String> ngrams(String text) {
+        String[] w = text.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9 ]", " ").trim().split("\\s+");
+        Set<String> out = new HashSet<>();
+        for (int i = 0; i + NGRAM <= w.length; i++) {
+            out.add(String.join(" ", Arrays.copyOfRange(w, i, i + NGRAM)));
+        }
+        return out;
     }
 
     /** Cuts an unfinished last sentence (the model stopped at its token budget). */

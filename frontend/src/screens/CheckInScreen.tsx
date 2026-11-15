@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Lock } from "lucide-react";
 import type { ViewerRole } from "@/types";
 import { CheckInFlow } from "@/components/CheckInFlow";
+import { SupportChat } from "@/components/SupportChat";
+import { postCheckIn } from "@/api/client";
 import { ReactionTest } from "@/components/ReactionTest";
 import { recentShortNights, REACTION_BASELINE_MS, type Routine } from "@/data/personal";
 import { Button } from "@/components/ui/button";
@@ -15,12 +17,22 @@ export function CheckInScreen({
   role,
   routine,
   onRoutine,
+  live = false,
+  onSaved,
 }: {
   role: ViewerRole;
   routine: Routine;
   onRoutine: (r: Routine) => void;
+  /** Backend reachable: answers are saved privately (SELF only) and the companion is available. */
+  live?: boolean;
+  onSaved?: () => Promise<void>;
 }) {
-  const [tab, setTab] = useState<"checkin" | "reaction">("checkin");
+  // ?tab=talk|reaction opens a tab directly (demo deep link).
+  const [tab, setTab] = useState<"checkin" | "reaction" | "talk">(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return t === "talk" || t === "reaction" ? t : "checkin";
+  });
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   if (role.kind !== "astronaut") {
     return (
@@ -50,10 +62,28 @@ export function CheckInScreen({
           <Button role="tab" aria-selected={tab === "reaction"} variant={tab === "reaction" ? "default" : "outline"} onClick={() => setTab("reaction")}>
             Reaction test (weekly)
           </Button>
+          {live && (
+            <Button role="tab" aria-selected={tab === "talk"} variant={tab === "talk" ? "default" : "outline"} onClick={() => setTab("talk")}>
+              Talk it through
+            </Button>
+          )}
         </div>
       </div>
-      {tab === "checkin" ? (
-        <CheckInFlow recentShortNights={recentShortNights(role.crewId)} onDone={() => onRoutine({ ...routine, checkinDone: true })} />
+      {saveError && <p className="text-sm text-status-emergency">Check-in not saved: {saveError}</p>}
+      {tab === "talk" && live ? (
+        <SupportChat view={role} />
+      ) : tab === "checkin" ? (
+        <CheckInFlow
+          recentShortNights={recentShortNights(role.crewId)}
+          onDone={(c) => {
+            onRoutine({ ...routine, checkinDone: true });
+            if (!live) return;
+            setSaveError(null);
+            postCheckIn(role, { mood: c.mood, fatigue: c.fatigue, stress: c.stress, conflict: c.conflict, sleepHours: c.sleepHours })
+              .then(() => onSaved?.())
+              .catch((e: unknown) => setSaveError(e instanceof Error ? e.message : String(e)));
+          }}
+        />
       ) : (
         <ReactionTest
           baselineMs={REACTION_BASELINE_MS}

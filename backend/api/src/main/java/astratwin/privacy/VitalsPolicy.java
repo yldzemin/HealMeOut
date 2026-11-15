@@ -5,7 +5,7 @@ import astratwin.domain.MedicalCard;
 import astratwin.domain.Viewer;
 import java.util.Optional;
 
-/** Vitals detail: self, CMO and emergency view; never the Crew Deck. */
+/** Vitals detail: self, CMO, ground and emergency view; never the Crew Deck. */
 public final class VitalsPolicy implements ViewPolicy {
     @Override
     public DataKind kind() {
@@ -14,6 +14,7 @@ public final class VitalsPolicy implements ViewPolicy {
 
     @Override
     public boolean allows(ViewRequest request, String subjectCrewId, Optional<MedicalCard> card) {
-        return request.isSelf(subjectCrewId) || request.viewer() == Viewer.CMO || request.viewer() == Viewer.EMERGENCY;
+        return request.isSelf(subjectCrewId) || request.viewer() == Viewer.CMO || request.viewer() == Viewer.GROUND
+                || request.viewer() == Viewer.EMERGENCY;
     }
 }

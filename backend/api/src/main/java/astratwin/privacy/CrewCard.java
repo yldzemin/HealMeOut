@@ -11,23 +11,23 @@ import java.util.List;
 
 /** One crew tile after the privacy filter. Fields the viewer may not see are null (left out of JSON). */
 public record CrewCard(
-        String id, String callsign, Role role, String module, Level level, String provenance,
+        String id, String callsign, Role role, String module, Level level, String baselineProvenance,
         MissionTag baselineMission, List<Reading> vitals, MedicalCard medical, List<CheckIn> checkIns) {
 
     static CrewCard of(CrewMember m, MissionTag mission) {
-        return new CrewCard(m.id(), m.callsign(), m.role(), m.module(), m.level(), m.provenance(), mission,
+        return new CrewCard(m.id(), m.callsign(), m.role(), m.module(), m.level(), m.baselineProvenance(), mission,
                 null, null, null);
     }
 
     CrewCard withVitals(List<Reading> v) {
-        return new CrewCard(id, callsign, role, module, level, provenance, baselineMission, v, medical, checkIns);
+        return new CrewCard(id, callsign, role, module, level, baselineProvenance, baselineMission, v, medical, checkIns);
     }
 
     CrewCard withMedical(MedicalCard c) {
-        return new CrewCard(id, callsign, role, module, level, provenance, baselineMission, vitals, c, checkIns);
+        return new CrewCard(id, callsign, role, module, level, baselineProvenance, baselineMission, vitals, c, checkIns);
     }
 
     CrewCard withCheckIns(List<CheckIn> c) {
-        return new CrewCard(id, callsign, role, module, level, provenance, baselineMission, vitals, medical, c);
+        return new CrewCard(id, callsign, role, module, level, baselineProvenance, baselineMission, vitals, medical, c);
     }
 }

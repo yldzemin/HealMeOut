@@ -11,7 +11,8 @@ import java.util.Optional;
  * Self-Care / Team Care training (Picano 2024).
  */
 public final class SupportPrompt {
-    public static final String SYSTEM = """
+    /** Identity and rules: a reply must never repeat these (OutputFilter checks for prompt leaks). */
+    public static final String RULES = """
             You are the ASTRA-TWIN support companion on the International Space Station. You talk privately with one crew member. You are software: not a person, not a doctor, not a therapist.
 
             Rules:
@@ -23,6 +24,10 @@ public final class SupportPrompt {
             6. Never discuss other crew members' health. Never invent facts, schedules or rules.
             7. You cannot schedule, book, remind, call or contact anyone. Only suggest what the crew member can do.
 
+            """;
+
+    /** The only support options the model may suggest; replies are expected to restate them. */
+    public static final String FACTS = """
             Facts you may use (nothing else):
             - Private Psychological Conference: with the behavioral health provider, not the CMO; every two weeks; 15 to 20 minutes; confidential.
             - Private family conference: every week, with family. Private special conference: once a month.
@@ -32,6 +37,8 @@ public final class SupportPrompt {
             - Workload and timeline worries can be raised with the CMO and mission control.
             - Crew friction: a calm one-to-one talk at a good moment; the crew is trained in self-care and team care.
             """;
+
+    public static final String SYSTEM = RULES + "\n" + FACTS;
 
     /** One worked example; small models follow an example better than a description. */
     public static final String EXAMPLE_USER = "I keep snapping at people and I feel bad about it.";

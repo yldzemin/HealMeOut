@@ -1,61 +1,78 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CrewMember, ScreenId, ViewerRole } from "@/types";
-import { getCrew } from "@/api/client";
+import { decideAlert, getMockCrew, startScenario, stopScenario, toCrewMember } from "@/api/client";
+import { useStation } from "@/api/useStation";
 import { StatusBar } from "@/components/StatusBar";
 import { LeftRail } from "@/components/LeftRail";
-import { ScreenPlaceholder } from "@/screens/ScreenPlaceholder";
 import { PersonalScreen } from "@/screens/PersonalScreen";
 import { CrewDeckScreen } from "@/screens/CrewDeckScreen";
 import { EmergencyOverlay } from "@/components/EmergencyOverlay";
 import { CheckInScreen } from "@/screens/CheckInScreen";
+import { EnvironmentScreen } from "@/screens/EnvironmentScreen";
 import { TwinScreen } from "@/screens/TwinScreen";
-import { INITIAL_ROUTINE, type Routine } from "@/data/personal";
+import { INITIAL_ROUTINE, LEVEL_RANK, type Routine } from "@/data/personal";
 
-const SCREENS: Record<ScreenId, { title: string; description: string }> = {
-  personal: {
-    title: "Personal",
-    description: "Your twin: clickable body figure, indicators with plain-language explanations, next measurement.",
-  },
-  crew: {
-    title: "Crew Deck",
-    description: "Whole crew at a glance: who needs help and where. Psychological data is never shown here.",
-  },
-  environment: {
-    title: "Environment",
-    description: "Cabin CO2, temperature, humidity and radiation dose from NASA data.",
-  },
-  twin: {
-    title: "Twin",
-    description: "T+0 / T+6 / T+12 h forecasts, labelled as modelled.",
-  },
-  checkin: {
-    title: "Check-in",
-    description: "The daily 2-minute check-in: mood, fatigue, stress, sleep, workload, crew climate, food.",
-  },
-};
+const SCREEN_IDS: ScreenId[] = ["personal", "crew", "environment", "twin", "checkin"];
+
+/** Deep links for demos and screenshots: ?screen=environment&role=cmo | ground | astronaut:C3 */
+function fromUrl(): { screen: ScreenId; role: ViewerRole } {
+  const q = new URLSearchParams(window.location.search);
+  const s = q.get("screen") as ScreenId | null;
+  const r = q.get("role") ?? "";
+  const role: ViewerRole = r === "cmo" ? { kind: "cmo" } : r === "ground" ? { kind: "ground" } : { kind: "astronaut", crewId: r.startsWith("astronaut:") ? r.slice(10) : "C3" };
+  return { screen: s && SCREEN_IDS.includes(s) ? s : "personal", role };
+}
 
 export default function App() {
-  const [crew, setCrew] = useState<CrewMember[]>([]);
-  const [role, setRole] = useState<ViewerRole>({ kind: "astronaut", crewId: "C3" });
-  const [screen, setScreen] = useState<ScreenId>("personal");
-  // L4 emergency takes over the full screen from any screen (FRONTEND.md, Crew Deck decision 3).
+  const initial = fromUrl();
+  const [mockCrew, setMockCrew] = useState<CrewMember[]>([]);
+  const [role, setRole] = useState<ViewerRole>(initial.role);
+  const [screen, setScreen] = useState<ScreenId>(initial.screen);
   const [routine, setRoutine] = useState<Routine>(INITIAL_ROUTINE);
-  const [emergency, setEmergency] = useState<{ patientId: string; startedAt: number } | null>(null);
+  // Mock mode only: the emergency is local. With the backend it follows the live EMERGENCY alert.
+  const [localEmergency, setLocalEmergency] = useState<{ patientId: string; startedAt: number } | null>(null);
+  const { mode, station, refresh } = useStation(role);
+  const live = station !== null;
 
   useEffect(() => {
-    getCrew().then(setCrew).catch((err) => console.error(err));
+    getMockCrew().then(setMockCrew).catch((err) => console.error(err));
   }, []);
 
-  const liveCrew = emergency
-    ? crew.map((c) => (c.id === emergency.patientId ? { ...c, level: "L4" as const } : c))
-    : crew;
-  // L1 is self-care; an "open alert" needs CMO or ground action (L2+).
-  const openAlerts = liveCrew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
+  const liveAlert = station?.alerts.find((a) => a.active && a.category === "EMERGENCY");
+  const emergency = live
+    ? liveAlert
+      ? { patientId: liveAlert.crewId, startedAt: Date.parse(liveAlert.createdAt) }
+      : null
+    : localEmergency;
+
+  const baseCrew = live ? station.crew.map(toCrewMember) : mockCrew;
+  const crew = !live && emergency ? baseCrew.map((c) => (c.id === emergency.patientId ? { ...c, level: "L4" as const } : c)) : baseCrew;
+  // An "open alert" needs CMO or ground action (L2+); L1 is self-care.
+  const openAlerts = live
+    ? station.alerts.filter((a) => a.active && a.status === "open" && LEVEL_RANK[a.level] >= LEVEL_RANK.L2).length
+    : crew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
+
+  const startEmergency = async (patientId: string) => {
+    if (!live) {
+      setLocalEmergency({ patientId, startedAt: Date.now() });
+      return;
+    }
+    await startScenario("chest-pain"); // backend patient: C2, the same as the Crew Deck button
+    await refresh();
+  };
+  const endEmergency = async () => {
+    if (!live) {
+      setLocalEmergency(null);
+      return;
+    }
+    await stopScenario();
+    await refresh();
+  };
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <StatusBar crew={liveCrew} role={role} onRoleChange={setRole} openAlerts={openAlerts} />
+      <StatusBar crew={crew} role={role} onRoleChange={setRole} openAlerts={openAlerts} mode={mode} />
       <div className="flex min-h-0 flex-1">
         <LeftRail current={screen} onSelect={setScreen} />
         <main className="min-w-0 flex-1 overflow-auto p-8">
@@ -69,33 +86,34 @@ export default function App() {
               transition={{ duration: 0.18 }}
             >
               {screen === "personal" ? (
-                <PersonalScreen crew={liveCrew} role={role} routine={routine} />
-              ) : screen === "crew" ? (
-                <CrewDeckScreen
-                  crew={liveCrew}
-                  onStartEmergency={(patientId) => setEmergency({ patientId, startedAt: Date.now() })}
+                <PersonalScreen
+                  crew={crew}
+                  role={role}
+                  routine={routine}
+                  station={station}
+                  onDecision={async (id, d) => {
+                    await decideAlert(id, d, role);
+                    await refresh();
+                  }}
                 />
+              ) : screen === "crew" ? (
+                <CrewDeckScreen crew={crew} onStartEmergency={(patientId) => void startEmergency(patientId)} />
+              ) : screen === "environment" ? (
+                <EnvironmentScreen role={role} station={station} refresh={refresh} />
               ) : screen === "twin" ? (
-                <TwinScreen role={role} />
-              ) : screen === "checkin" ? (
-                <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} />
+                <TwinScreen role={role} crew={crew} station={station} />
               ) : (
-                <ScreenPlaceholder {...SCREENS[screen]} />
+                <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} live={live} onSaved={refresh} />
               )}
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
       {emergency && (
-        <EmergencyOverlay
-          crew={liveCrew}
-          patientId={emergency.patientId}
-          startedAt={emergency.startedAt}
-          onEnd={() => setEmergency(null)}
-        />
+        <EmergencyOverlay crew={crew} patientId={emergency.patientId} startedAt={emergency.startedAt} onEnd={() => void endEmergency()} />
       )}
       <footer className="border-t border-border bg-sidebar px-5 py-1.5 text-xs text-muted-foreground">
-        Simulation, not medical advice · NASA data via OSDR · Values marked “simulated” are modelled
+        Simulation, not medical advice · NASA data via OSDR and CDAWeb · Values marked “simulated” are modelled
       </footer>
     </div>
   );

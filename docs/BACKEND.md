@@ -12,12 +12,13 @@ Two parts in two languages. They never call each other: the only contract betwee
 | Part | Language | Job | Libraries |
 |---|---|---|---|
 | `backend/ingest/` | **Rust** (stable, edition 2024) | Command-line tool. Reads the OSDR CSVs and study metadata, fetches the ISS dose (CDAWeb) and EDA, transcribes the IMM table, writes `data/cache/*.json` | `csv`, `serde`, `serde_json`, `reqwest` (blocking, rustls), `clap`, `anyhow` |
-| `backend/api/` | **Java 21 + Spring Boot 4.1** (Web, Validation) | HTTP API. Loads `data/cache/*.json` at start-up; runs the twin, rules and scenario engines and the privacy filter | Jackson (JSON), JUnit 5 |
+| `backend/api/` | **Java 21, JDK only** (#33): the JDK HTTP server and an in-project JSON reader and writer. Spring Boot 4.1 (#24) is deferred until the API moves to a server | HTTP API. Loads `data/cache/*.json` at start-up; runs the twin, rules and scenario engines and the privacy filter | none (`javac`, `jar`; tests with a small in-project runner) |
 
 Both parts:
 
 - **Only `ingest` goes online.** The API never calls the internet, so the demo always runs offline.
-- Enable CORS (API) for the frontend dev server and the GitHub Pages origin.
+- CORS: the API sends `Access-Control-Allow-Origin: *`, so the Vite dev server and the Tauri webview can call it; with `--ui frontend/dist` the API serves the built frontend itself (same origin).
+- Routes and JSON shapes: `backend/README.md` (the agreed contract, #56).
 - Pin dependency versions: commit `Cargo.lock`; fix the Spring Boot and plugin versions in the build file.
 
 ```
@@ -122,11 +123,15 @@ Labelled `"modelled"`. Each uses only sourced rates:
 
 | Forecast | Model | Source |
 |---|---|---|
-| Sleep debt | scheduled 8.5 h vs logged sleep; ISS mean 6.09 h | Barger 2014 |
+| Sleep debt | Scheduled 8.5 h minus the sleep logged in the astronaut's last 7 check-ins. Projection: the part of the standard ISS sleep period (21:30–06:00 GMT) inside the horizon, slept at the recent average; ISS mean 6.09 h. Built from check-ins, so it uses the **psych** policy (§6): only the astronaut sees it. *Built (#62).* | Jones 2022 (doi:10.1093/sleep/zsac006); Barger 2014 |
 | Hydration | 2.5 L/day intake target; loss ~0.13% body mass/h at rest; ≥2.5% mass loss → performance drop | `CLAUDE_HAFIZASI.md` §4.1 |
-| Cumulative dose | Sum of the TEPC dose equivalent (normal days 0.77–0.94 mSv/day in Sep 2017) against the 600 mSv career limit. Label it "instrument dose equivalent (ICRP-60), not effective dose"; show NASA's ISS reference 0.2–0.5 mSv/day effective next to it | CDAWeb `ISS_DOSANL_TEPC` (#30); Simonsen 2025 (NTRS 20250006168) |
+| Cumulative dose | *Built.* Sum of the TEPC dose equivalent (normal days 0.77–0.94 mSv/day in Sep 2017) against the 600 mSv career limit. Label it "instrument dose equivalent (ICRP-60), not effective dose"; show NASA's ISS reference 0.2–0.5 mSv/day effective next to it | CDAWeb `ISS_DOSANL_TEPC` (#30); Simonsen 2025 (NTRS 20250006168) |
 | Temperature drift | +~1 °C over ~2.5 months | Stahn 2017 |
 | Energy intake | ISS crews eat ~74–80% of estimated need | NTRS 20060049121; Smith 2005 |
+
+Each `ForecastModel` names the data kind it is built from (`kind()`, default vitals); the forecasts route returns only the forecasts whose kind the viewer may see (§6).
+
+Temperature drift is not a T+6/T+12 forecast: ~+1 °C over ~2.5 months is ~0.003 °C in 6 h, so the simulated temperature already includes the drift (37.4 °C) and the whole-body region cites Stahn 2017.
 
 When a new reading arrives, compare it with the previous forecast and store the error (for the "forecast vs actual" view).
 
@@ -143,7 +148,7 @@ Input: readings, check-ins, environment. Output: `Alert` objects with level L0�
 | SpO2 | <90% → L4 | <90% = hypoxaemia (ARASTIRMA_RAPORU §4, SpO2 row). NASA's own limit is PIO2 ≥122 mmHg (OCHMO-TB-003) |
 | Dose rate | 24-h rolling mean of `doseEqRate_uSv_h` > 1.5× the preceding 7-day median → L2 (shelter advice, ground informed). Never alert on single hours: South Atlantic Anomaly passes reach 183 μSv/h on normal days | our design (#30). Calibration from Sep 2017 TEPC data: normal days 0.86–1.04×, Sep 11 1.90× |
 | Lab analytes, HR, BP | |z| ≥ 2 vs personal baseline → L1; persists or combined with symptoms → L2 | our design (no universal in-flight threshold) |
-| Psych check-in trend | persistent decline over N days → private prompt "discuss at next PPC" | our design; never on Crew Deck |
+| Psych check-in trend | 3 check-ins in a row with mood ≤ 40/100 or stress ≥ 70/100 → private L1 prompt "discuss it at your next PPC, or contact your flight surgeon now" (`PsychTrendRule`) | our design; SELF only; never changes the crew level |
 
 Each alert carries `evidence` and `source` strings for the frontend "?" card. Thresholds marked "our design" must say so in `evidence`.
 
@@ -178,14 +183,16 @@ Inject a family-event flag; personal support plan; Earth Twin 24–72 h plan for
 
 Enforce here, not only in the UI:
 
-| Data | Self | CMO | Other crew (Crew Deck) | Emergency |
-|---|---|---|---|---|
-| Status level, module | ✔ | ✔ | ✔ | ✔ |
-| Vitals detail | ✔ | ✔ | — | ✔ |
-| Medication | ✔ | ✔ | only if opted in | allergies + current meds |
-| Psych check-in | ✔ | — (shared to BHP by the astronaut) | **never** | **never** |
-| Support companion conversation (§10) | ✔ | **never** | **never** | **never** |
-| Crew climate | own answers | aggregate | aggregate, min. response threshold | — |
+| Data | Self | CMO | Ground (flight surgeon)* | Other crew (Crew Deck) | Emergency |
+|---|---|---|---|---|---|
+| Status level, module | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Vitals detail | ✔ | ✔ | ✔ | — | ✔ |
+| Medication | ✔ | ✔ | ✔ | only if opted in | allergies + current meds |
+| Psych check-in, psych alerts | ✔ | — (shared to BHP by the astronaut) | — | **never** | **never** |
+| Support companion conversation (§10) | ✔ | **never** | **never** | **never** | **never** |
+| Crew climate | own answers | aggregate | aggregate | aggregate, min. response threshold | — |
+
+\* **Provisional (#56):** the frontend has a "Ground (flight surgeon)" role; the backend gives it the CMO tier without psychological data until the team decides. Psych alerts never change the crew level, because the level is visible on the Crew Deck. CMO and ground may approve or reject alerts.
 
 Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psychological communications); AMIS 2024 (NTRS 20240004505); IOM *Safe Passage*.
 
@@ -256,4 +263,18 @@ Every message goes through these steps in order:
   - `GET /api/support/status` (public: engine and availability).
   - `GET /api/support/conversation`, `POST /api/support/message` with body `{"text"}`, and `POST /api/support/clear` (all SELF only).
 - **Options:** `--llm-url http://127.0.0.1:11434`, `--llm-model phi3.5`, `--llm off` (guided only).
+- **Guards added after evaluation (#59):**
+  - **Prompt requests:** "system prompt", "ignore previous instructions" and similar get a fixed reply.
+  - **Turkish input** goes to the guided responder; phi3.5 misread it.
+  - **Retry:** a rejected reply is retried once with another seed (seed 42 + attempt, so results are reproducible).
+  - **Output filter** also rejects:
+    - offers to schedule, remind or contact anyone (rule 7);
+    - non-English text and garbled tokens;
+    - mix-ups of the sourced facts, e.g. a "weekly special conference" or "outdoor" activities;
+    - prompt leaks: copied rule 6-grams or paraphrases.
+  - **Invariant:** every guided reply passes the output filter (unit test).
+- **Evaluation:** `backend/api/eval.sh` runs `eval/support_cases.json` against the real model and writes `eval/REPORT.md`.
+  - 34 cases: crisis in English and Turkish, false-positive traps, medication and diagnosis, adversarial, everyday, Turkish input.
+  - Last run: **34/34**, reproducible across runs.
+  - 18 fixed safety replies (the model is not called), 13 model replies (mean 2.9 s), 3 guided replies.
 - **Open decision (needs-human):** a crisis message currently gets the fixed reply and nothing else. Whether it should also alert the CMO or the flight surgeon, overriding the privacy rule for safety, is a team decision.

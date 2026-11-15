@@ -2,6 +2,7 @@ package astratwin.web;
 
 import astratwin.Station;
 import astratwin.domain.AlertStatus;
+import astratwin.domain.CheckIn;
 import astratwin.domain.DataKind;
 import astratwin.domain.Viewer;
 import astratwin.json.Json;
@@ -38,6 +39,7 @@ import java.util.function.Predicate;
  * /api/scenario/stop, /api/readings, /api/alerts/{id}/approve|reject.
  * Telemetry: GET /api/stream/status, /api/stream/telemetry.csv (live, chunked), /api/stream/recent.csv;
  * POST /api/stream/start?source=sim|replay&file=sample_telemetry.csv&intervalMs=1000, /api/stream/stop.
+ * Check-ins (SELF only): GET /api/checkins, POST /api/checkins (body mood, fatigue, stress, conflict, sleepHours).
  * Support companion (SELF only): GET /api/support/status, /api/support/conversation;
  * POST /api/support/message (body {"text"}), /api/support/clear.
  * Viewer: ?viewer=CMO|CREW_DECK|EMERGENCY|SELF&crewId=C1; the default is CREW_DECK (most restricted).
@@ -49,6 +51,7 @@ public final class ApiServer {
     private final Path streamDir;
     private final SupportService support;
     private final HttpServer server;
+    private Path uiDir;
 
     public ApiServer(Station station, TelemetryStreamer streamer, Path streamDir, SupportService support,
             String host, int port) throws IOException {
@@ -76,12 +79,65 @@ public final class ApiServer {
         return server.getAddress().getPort();
     }
 
-    private void handleRoot(HttpExchange ex) throws IOException {
-        if (ex.getRequestURI().getPath().equals("/")) {
-            redirect(ex, "/demo/");
-        } else {
-            send(ex, 404, Map.of("error", "not found"));
+    /**
+     * Also serve a built frontend ({@code vite build} output) at {@code /} (plan B in docs/FRONTEND.md).
+     * Without it, {@code /} redirects to the demo console.
+     */
+    public ApiServer serveUi(Path dir) {
+        if (dir != null && !Files.isRegularFile(dir.resolve("index.html"))) {
+            throw new IllegalArgumentException(dir + " has no index.html; run npm run build in frontend/");
         }
+        this.uiDir = dir == null ? null : dir.toAbsolutePath().normalize();
+        return this;
+    }
+
+    private void handleRoot(HttpExchange ex) throws IOException {
+        String path = ex.getRequestURI().getPath();
+        if (uiDir == null) {
+            if (path.equals("/")) {
+                redirect(ex, "/demo/");
+            } else {
+                send(ex, 404, Map.of("error", "not found"));
+            }
+            return;
+        }
+        Path file = uiDir.resolve(path.substring(1)).normalize();
+        if (!file.startsWith(uiDir)) {
+            send(ex, 404, Map.of("error", "not found"));
+            return;
+        }
+        if (!Files.isRegularFile(file)) {
+            // Single-page app: unknown paths without a file extension get index.html.
+            String last = path.substring(path.lastIndexOf('/') + 1);
+            if (last.contains(".")) {
+                send(ex, 404, Map.of("error", "not found"));
+                return;
+            }
+            file = uiDir.resolve("index.html");
+        }
+        byte[] bytes = Files.readAllBytes(file);
+        ex.getResponseHeaders().set("Content-Type", contentType(file.getFileName().toString()));
+        ex.sendResponseHeaders(200, bytes.length);
+        try (OutputStream out = ex.getResponseBody()) {
+            out.write(bytes);
+        }
+    }
+
+    private static String contentType(String name) {
+        String n = name.toLowerCase(java.util.Locale.ROOT);
+        if (n.endsWith(".html")) return "text/html; charset=utf-8";
+        if (n.endsWith(".js") || n.endsWith(".mjs")) return "text/javascript; charset=utf-8";
+        if (n.endsWith(".css")) return "text/css; charset=utf-8";
+        if (n.endsWith(".json")) return "application/json; charset=utf-8";
+        if (n.endsWith(".svg")) return "image/svg+xml";
+        if (n.endsWith(".png")) return "image/png";
+        if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
+        if (n.endsWith(".ico")) return "image/x-icon";
+        if (n.endsWith(".woff2")) return "font/woff2";
+        if (n.endsWith(".woff")) return "font/woff";
+        if (n.endsWith(".glb")) return "model/gltf-binary";
+        if (n.endsWith(".wasm")) return "application/wasm";
+        return "application/octet-stream";
     }
 
     private void handleDemo(HttpExchange ex) throws IOException {
@@ -179,8 +235,8 @@ public final class ApiServer {
             }
             case "POST alerts" -> {
                 require(p.length == 3, "use POST /api/alerts/{id}/approve or /reject");
-                if (request.viewer() != Viewer.CMO) {
-                    throw new SecurityException("only the CMO view can approve or reject");
+                if (request.viewer() != Viewer.CMO && request.viewer() != Viewer.GROUND) {
+                    throw new SecurityException("only the CMO or ground view can approve or reject");
                 }
                 AlertStatus status = switch (p[2]) {
                     case "approve" -> AlertStatus.APPROVED;
@@ -196,7 +252,7 @@ public final class ApiServer {
                 }
                 yield switch (p[2]) {
                     case "baselines" -> station.baselines(p[1]);
-                    case "forecasts" -> station.forecasts(p[1]);
+                    case "forecasts" -> station.forecasts(p[1], request);
                     default -> throw new NoSuchElementException("no route " + ex.getRequestURI().getPath());
                 };
             }
@@ -205,6 +261,15 @@ public final class ApiServer {
                 yield station.doseSeries();
             }
             case "GET imm" -> station.imm();
+            case "GET checkins" -> station.checkIns(selfCrewId(request));
+            case "POST checkins" -> {
+                String crewId = selfCrewId(request);
+                Map<String, Object> body = JsonParser.parseObject(new String(ex.getRequestBody().readAllBytes(),
+                        StandardCharsets.UTF_8));
+                yield station.addCheckIn(new CheckIn(crewId, java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString(),
+                        score(body, "mood"), score(body, "fatigue"), score(body, "stress"), score(body, "conflict"),
+                        hours(body, "sleepHours"), "entered by the astronaut"));
+            }
             case "GET support" -> {
                 require(p.length == 2, "use GET /api/support/status or /api/support/conversation");
                 if (p[1].equals("status")) {
@@ -336,6 +401,20 @@ public final class ApiServer {
         try (OutputStream out = ex.getResponseBody()) {
             out.write(bytes);
         }
+    }
+
+    private static int score(Map<String, Object> body, String key) {
+        if (!(body.get(key) instanceof Double d) || d < 0 || d > 100) {
+            throw new IllegalArgumentException(key + " must be a number from 0 to 100");
+        }
+        return (int) Math.round(d);
+    }
+
+    private static double hours(Map<String, Object> body, String key) {
+        if (!(body.get(key) instanceof Double d) || d < 0 || d > 24) {
+            throw new IllegalArgumentException(key + " must be a number from 0 to 24");
+        }
+        return Math.round(d * 10) / 10.0;
     }
 
     private static void require(boolean condition, String message) {
