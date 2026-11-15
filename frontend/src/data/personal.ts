@@ -331,7 +331,8 @@ export function recentShortNights(crewId: string): number {
 }
 
 /** Simulated daily routine for one crew member. Fluid target 2.5 L/day: PROJECT_MEMORY.md §4.1. */
-export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3") {
+/** `daysAhead`: whole days the demo clock has moved ("Next day", #81); the flight day moves with it. */
+export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3", daysAhead = 0) {
   const p = profileFor(crewId);
   const tasks: TodayTask[] = [
     { id: "checkin", label: "Daily check-in", done: routine.checkinDone },
@@ -342,7 +343,7 @@ export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3") {
   return {
     tasks,
     streakDays: p.streakDays + (routine.checkinDone ? 1 : 0),
-    nextMeasurement: `Flight day ${p.missionDay} · evening vitals at 19:30 GMT`,
+    nextMeasurement: `Flight day ${p.missionDay + daysAhead} · evening vitals at 19:30 GMT`,
     reactionBestMs: Math.min(routine.reactionBestMs, p.reactionBestMs),
   };
 }

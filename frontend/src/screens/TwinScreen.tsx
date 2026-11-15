@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from "recharts";
-import { AlertTriangle, ExternalLink, RadioTower } from "lucide-react";
+import { AlertTriangle, ExternalLink, Minus, RadioTower, TrendingDown, TrendingUp } from "lucide-react";
 import type { CrewMember, ViewerRole } from "@/types";
 import {
   getBaselines,
@@ -20,6 +20,7 @@ import {
   liveDose,
   liveDoseCheck,
   liveSleepDebt,
+  sleepDebtChange,
   type TwinMetric,
 } from "@/data/twin";
 import { NASA_HOSTED_NOTE } from "@/data/personal";
@@ -90,6 +91,20 @@ function MetricChart({ m, cursor }: { m: TwinMetric; cursor: number }) {
             </Badge>
           )}
         </div>
+        {m.change && (
+          <p
+            className={`flex items-center gap-1.5 text-xs font-medium ${m.change.tone === "worse" ? "text-status-self" : m.change.tone === "better" ? "text-status-ok" : "text-muted-foreground"}`}
+          >
+            {m.change.tone === "worse" ? (
+              <TrendingUp className="size-3.5" aria-hidden />
+            ) : m.change.tone === "better" ? (
+              <TrendingDown className="size-3.5" aria-hidden />
+            ) : (
+              <Minus className="size-3.5" aria-hidden />
+            )}
+            {m.change.text}
+          </p>
+        )}
         {crossing !== null && (
           <p className={`flex items-center gap-1.5 text-xs ${warn ? "text-status-self" : "text-muted-foreground"}`}>
             <AlertTriangle className="size-3.5" aria-hidden />
@@ -185,7 +200,10 @@ export function TwinScreen({
   const crewId = self ? role.crewId : picked;
   const online = station !== null;
   const doseStamp = station?.dose?.timestamp;
-  const checkInCount = station?.crew.find((c) => c.id === crewId)?.checkIns?.length ?? 0;
+  const checkIns = station?.crew.find((c) => c.id === crewId)?.checkIns;
+  // Refetch when a check-in is added or replaced (one per day, #81) or the station day moves.
+  const lastCheckIn = checkIns?.[checkIns.length - 1];
+  const checkInKey = `${checkIns?.length ?? 0}:${lastCheckIn?.date}:${lastCheckIn?.sleepHours}:${station?.clock?.today}`;
 
   const [forecasts, setForecasts] = useState<ApiForecast[]>([]);
   const [baselines, setBaselines] = useState<ApiBaselineStats[]>([]);
@@ -214,7 +232,7 @@ export function TwinScreen({
     };
     // `role` is a new object on every render; its kind and crewId are covered by crewId and role.kind.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, crewId, role.kind, doseStamp, checkInCount]);
+  }, [online, crewId, role.kind, doseStamp, checkInKey]);
 
   const metrics = useMemo(() => {
     const out: TwinMetric[] = [];
@@ -228,13 +246,13 @@ export function TwinScreen({
         else if (loaded) out.push(m);
       } else if (m.id === "sleep") {
         const live = liveSleepDebt(forecasts, new Date());
-        if (live) out.push(live);
+        if (live) out.push({ ...live, change: sleepDebtChange(checkIns ?? []) });
       } else {
         out.push(m);
       }
     }
     return out;
-  }, [crewId, online, self, loaded, doseSeries, forecasts]);
+  }, [crewId, online, self, loaded, doseSeries, forecasts, checkIns]);
 
   const checks = useMemo(() => {
     const live = online ? liveDoseCheck(doseSeries) : null;

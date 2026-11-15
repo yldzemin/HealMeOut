@@ -39,7 +39,7 @@ Each OS builds its own installer (`npm run tauri build` on that OS). Commit no b
 
 ### 1.2 App shell and navigation
 
-- **Top status bar:** station time · Earth link status · open alert count · **role switcher** (Astronaut C1–C7 / CMO / Ground).
+- **Top status bar:** station time · station date with **Next day** and **Back to today** (live only, #81) · Earth link status (icon only below 1536 px wide) · open alert count · **role switcher** (Astronaut C1–C7 / CMO / Ground).
   - The role switcher is a **simulation** (no real login); the UI says so.
   - Switching role changes what is visible, enforcing `TECH_OVERVIEW.md` §5 rule 4 on screen: the astronaut sees their own psych check-in; the CMO sees medication and detailed values; psych data never appears on the Crew Deck for any role.
 - **Left rail:** Personal · Crew Deck · Environment · Twin · Check-in.
@@ -239,6 +239,11 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
     - Partner data (#13): DLR DosTel2 daily absorbed dose in Columbus next to the NASA TEPC, with a partner tag that says why it counts as NASA-hosted data.
   - **Twin:** T+6 / T+12 dose and sleep-debt forecasts (labelled modelled; sleep debt only in the astronaut's own view) and the real pre-flight baseline with the commercial-mission tag.
   - **Check-in:** answers are saved privately (`POST /api/checkins`, SELF only). The **Talk it through** tab is the private support companion (local model).
+  - **Next day (#81):** the status bar shows the station date. **Next day** moves the station one day ahead (`POST /api/clock/next-day`), so the astronaut can log another night and watch the Twin change.
+    - "Day +N" marks a simulated date; **Back to today** resets the demo station.
+    - The daily check-in tick follows the station date, and a new day starts the check-in from the first question.
+    - The Twin's sleep-debt card says what the newest check-in changed, e.g. "+2.1 h from your 16 Nov check-in (4.0 h of sleep)".
+    - The button is disabled while a scenario runs, because scenarios keep their own timeline.
   - **About you (companion):** a button in *Talk it through* opens what the companion knows about the astronaut: their profile (personality, hobbies, what helps, faith, worries, style, family), their last 3 days, and the exact text the local model gets. SELF only (`GET /api/support/profile`).
   - **Crisis → CMO (#51):** when crisis wording reaches the companion, the CMO's view shows a "needs support now" band under the status bar on every screen: who, when and what to do, never the message. "I am on it" acknowledges and closes it. The astronaut's chat says that the CMO was told.
 - **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk`.

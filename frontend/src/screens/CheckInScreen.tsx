@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lock } from "lucide-react";
+import { ChevronsRight, Lock } from "lucide-react";
 import type { ViewerRole } from "@/types";
 import { CheckInFlow } from "@/components/CheckInFlow";
 import { SupportChat } from "@/components/SupportChat";
@@ -20,6 +20,7 @@ export function CheckInScreen({
   onRoutine,
   live = false,
   onSaved,
+  day,
 }: {
   role: ViewerRole;
   routine: Routine;
@@ -27,6 +28,8 @@ export function CheckInScreen({
   /** Backend reachable: answers are saved privately (SELF only) and the companion is available. */
   live?: boolean;
   onSaved?: () => Promise<void>;
+  /** The station date (#81): a new day starts a new check-in. */
+  day?: string;
 }) {
   // ?tab=talk|reaction opens a tab directly (demo deep link).
   const [tab, setTab] = useState<"checkin" | "reaction" | "talk">(() => {
@@ -75,6 +78,7 @@ export function CheckInScreen({
         <SupportChat view={role} />
       ) : tab === "checkin" ? (
         <CheckInFlow
+          key={day}
           recentShortNights={recentShortNights(role.crewId)}
           onDone={(c) => {
             onRoutine({ ...routine, checkinDone: true });
@@ -94,6 +98,12 @@ export function CheckInScreen({
               onRoutine({ ...routine, reactionBestMs: r.medianMs });
           }}
         />
+      )}
+      {live && tab === "checkin" && routine.checkinDone && (
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <ChevronsRight className="size-4 text-primary" aria-hidden />
+          Today's check-in is saved. To log another night and watch your Twin change, use <span className="font-medium text-foreground">Next day</span> in the top bar.
+        </p>
       )}
     </div>
   );

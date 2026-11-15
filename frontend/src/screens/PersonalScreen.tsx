@@ -6,7 +6,7 @@ import { Body3D, MODEL_CREDIT } from "@/components/Body3D";
 import { RegionChips } from "@/components/RegionChips";
 import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
 import { DetailPanel, type AlertDecision } from "@/components/DetailPanel";
-import type { StationView } from "@/api/client";
+import { stationToday, type StationView } from "@/api/client";
 import { applyLive } from "@/data/live";
 import { TodayStrip } from "@/components/TodayStrip";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,11 +83,11 @@ export function PersonalScreen({
   const canDecide = !station || !self;
   // Live: today's check-in may already be saved on the station.
   const lastCheckIn = card?.checkIns?.[card.checkIns.length - 1];
-  const checkedInToday = lastCheckIn?.date === new Date().toISOString().slice(0, 10);
+  const checkedInToday = lastCheckIn?.date === stationToday(station);
   const today = useMemo(() => {
-    const t = getToday({ ...routine, checkinDone: routine.checkinDone || checkedInToday }, crewId);
+    const t = getToday({ ...routine, checkinDone: routine.checkinDone || checkedInToday }, crewId, station?.clock?.dayOffset ?? 0);
     return self ? t : { ...t, tasks: t.tasks.filter((x) => x.id !== "checkin"), streakDays: undefined, reactionBestMs: undefined };
-  }, [routine, checkedInToday, crewId, self]);
+  }, [routine, checkedInToday, crewId, self, station?.clock?.dayOffset]);
   const top = worst(regions);
 
   // An alert opens its region; otherwise start on the day summary.

@@ -16,6 +16,7 @@ import astratwin.domain.Forecast;
 import astratwin.domain.Level;
 import astratwin.domain.PartnerTag;
 import astratwin.domain.Reading;
+import astratwin.domain.StationClock;
 import astratwin.privacy.CrewCard;
 import astratwin.privacy.PrivacyFilter;
 import astratwin.privacy.StationView;
@@ -107,6 +108,8 @@ public final class Station {
     private final TwinEngine twin;
     private final PrivacyFilter privacy;
     private final ScenarioEngine scenarios;
+    /** Whole days added to real time by Next day (#81); zero after every reset. */
+    private Duration clockOffset = Duration.ZERO;
 
     public Station(CacheData data) {
         this.data = data;
@@ -136,14 +139,15 @@ public final class Station {
 
     /** Nominal station: simulated vitals, nominal cabin CO2, and the real dose data of Sep 4–8, 2017. */
     public synchronized void resetData() {
+        clockOffset = Duration.ZERO;
         readings.clear();
         environment.clear();
         alerts.clear();
         checkIns.clear();
         roster.members().forEach(crew::save);
-        Instant now = Instant.now();
+        Instant now = now();
         roster.nominalReadings(now).forEach(this::record);
-        roster.checkIns(LocalDate.now(ZoneOffset.UTC)).forEach(checkIns::add);
+        roster.checkIns(today()).forEach(checkIns::add);
         conditions.clear();
         conditions.addAll(roster.conditions());
         List<Environment> nominal = new ArrayList<>();
@@ -151,6 +155,48 @@ public final class Station {
         data.issDose().stream().filter(e -> e.timestamp().isBefore(SpeIssScenario.NOMINAL_END)).forEach(nominal::add);
         environment.addAll(nominal);
         reevaluate();
+    }
+
+    /** Station time: real UTC time plus the demo's day offset. Every station timestamp uses it. */
+    public synchronized Instant now() {
+        return Instant.now().plus(clockOffset);
+    }
+
+    /** The station's UTC date: the date a new check-in gets. */
+    public synchronized LocalDate today() {
+        return now().atZone(ZoneOffset.UTC).toLocalDate();
+    }
+
+    public synchronized StationClock clock() {
+        Instant now = now();
+        return new StationClock(now, now.atZone(ZoneOffset.UTC).toLocalDate().toString(), (int) clockOffset.toDays());
+    }
+
+    /**
+     * Demo (#81): moves the station one day ahead, so the next check-in counts as a new night and the
+     * Twin moves with it. Records a fresh set of nominal vitals and cabin CO2 at the new time, and ends
+     * the stories about a single night (C3's short night is about day 0). Refused
+     * while a scenario runs or is still shown: scenarios have their own timeline.
+     */
+    public synchronized StationClock nextDay() {
+        if (scenarios.state().isPresent()) {
+            throw new IllegalStateException("a scenario is running: reset it first, scenarios have their own timeline");
+        }
+        clockOffset = clockOffset.plusDays(1);
+        conditions.removeIf(CrewRoster::oneNight);
+        Instant now = now();
+        roster.nominalReadings(now).forEach(this::record);
+        environment.addAll(List.of(Environment.co2(2.1, now, "simulated")));
+        reevaluate();
+        return clock();
+    }
+
+    /** Back to today: the nominal station again; check-ins entered on later days are dropped. */
+    public synchronized StationClock backToToday() {
+        if (!clockOffset.isZero()) {
+            resetData();
+        }
+        return clock();
     }
 
     public synchronized ScenarioState startScenario(String id) {
@@ -180,7 +226,7 @@ public final class Station {
         if (metric == null || metric.isBlank()) {
             throw new IllegalArgumentException("metric is required");
         }
-        record(new Reading(crewId, metric, value, unit, Instant.now(), "simulated", measuredHow(metric),
+        record(new Reading(crewId, metric, value, unit, now(), "simulated", measuredHow(metric),
                 "Entered in the demo console"));
         reevaluate();
     }
@@ -230,7 +276,7 @@ public final class Station {
      */
     public synchronized void raiseSupportRequest(String crewId) {
         member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
-        supportRequests.put(crewId, Instant.now());
+        supportRequests.put(crewId, now());
         String id = SupportAlert.id(crewId);
         alerts.find(id).filter(a -> a.status() != AlertStatus.OPEN).ifPresent(a -> alerts.setStatus(id, AlertStatus.OPEN));
         reevaluate();
@@ -247,10 +293,13 @@ public final class Station {
         return new StationView(request.viewer(), request.viewerCrewId(), stationLevel, crewCards, visible,
                 environment.latest(e -> e.co2_mmHg() != null).orElse(null),
                 environment.latest(e -> e.doseEqRate_uSv_h() != null).orElse(null),
-                scenarioState(request).orElse(null), DISCLAIMER);
+                scenarioState(request).orElse(null), clock(), DISCLAIMER);
     }
 
-    /** Stores a check-in from the astronaut (SELF only at the web layer) and re-runs the rules. */
+    /**
+     * Stores a check-in from the astronaut (SELF only at the web layer) and re-runs the rules. One per
+     * day: a second check-in on the same date replaces the first.
+     */
     public synchronized List<CheckIn> addCheckIn(CheckIn checkIn) {
         member(checkIn.crewId()).orElseThrow(() -> new NoSuchElementException("no crew member " + checkIn.crewId()));
         checkIns.add(checkIn);
@@ -275,8 +324,8 @@ public final class Station {
         if (persona.isEmpty()) {
             return Optional.empty();
         }
-        Instant now = Instant.now();
-        String since = LocalDate.now(ZoneOffset.UTC).minusDays(COMPANION_DAYS).toString();
+        Instant now = now();
+        String since = today().minusDays(COMPANION_DAYS).toString();
         List<String> recent = new ArrayList<>();
         List<CheckIn> days = checkIns.forCrew(crewId).stream().filter(c -> c.date().compareTo(since) >= 0).toList();
         if (days.isEmpty()) {
@@ -360,7 +409,7 @@ public final class Station {
     /** T+6/T+12 forecasts for one member; each model's data kind decides whether this viewer sees it. */
     public synchronized List<Forecast> forecasts(String crewId, ViewRequest request) {
         CrewMember m = member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
-        TwinContext context = new TwinContext(environment.all(), readings.all(), checkIns.forCrew(crewId), Instant.now());
+        TwinContext context = new TwinContext(environment.all(), readings.all(), checkIns.forCrew(crewId), now());
         return twin.forecasts(context, m, kind -> allows(kind, request, crewId));
     }
 
@@ -399,7 +448,7 @@ public final class Station {
     }
 
     private void apply(ScenarioStep step) {
-        Instant now = Instant.now();
+        Instant now = now();
         for (Reading r : step.readings()) {
             record(r.timestamp() != null ? r : new Reading(r.crewId(), r.metric(), r.value(), r.unit(), now,
                     r.provenance(), r.measuredHow(), r.note()));
@@ -418,7 +467,7 @@ public final class Station {
             byCrew.put(m.id(), checkIns.forCrew(m.id()));
         }
         RuleContext context = new RuleContext(crew.all(), readings, environment.all(), baselines, byCrew,
-                List.copyOf(conditions), Instant.now());
+                List.copyOf(conditions), now());
         List<Alert> firing = new ArrayList<>(rules.evaluate(context));
         supportRequests.forEach((crewId, at) -> firing.add(SupportAlert.of(crewId, at)));
         alerts.sync(firing);

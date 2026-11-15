@@ -52,13 +52,14 @@ All routes take `?viewer=CMO|GROUND|CREW_DECK|EMERGENCY|SELF` (and `&crewId=C1` 
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/api/health` | status and disclaimer |
-| GET | `/api/station` | crew tiles, alerts, cabin and dose, scenario state (filtered for the viewer) |
+| GET | `/api/station` | crew tiles, alerts, cabin and dose, scenario state, demo clock (filtered for the viewer) |
 | GET | `/api/scenarios` | scenario list |
 | POST | `/api/scenarios/{id}/start` | scenario state after step 1 |
 | POST | `/api/scenario/step` · `/api/scenario/stop` | next step · reset |
+| GET · POST | `/api/clock` · `/api/clock/next-day` · `/api/clock/today` | demo clock `{now, today, dayOffset}` · one day ahead (refused during a scenario) · back to today, which resets the station (#81) |
 | POST | `/api/readings` | body `{"crewId","metric","value","unit"}`; returns the station view |
 | POST | `/api/alerts/{id}/approve` · `/reject` | CMO or GROUND view only |
-| GET · POST | `/api/checkins` (body `{"mood","fatigue","stress","conflict","sleepHours"}`) | **SELF only**; low trend → private PPC prompt |
+| GET · POST | `/api/checkins` (body `{"mood","fatigue","stress","conflict","sleepHours"}`) | **SELF only**; one per day (a second one that day replaces the first); low trend → private PPC prompt |
 | GET | `/api/crew/{id}/baselines` · `/forecasts` | personal baseline stats · T+6/T+12 forecasts (vitals policy; each forecast also uses its own data kind's policy, so sleep debt is SELF only) |
 | GET | `/api/environment/dose` | hourly ISS dose series currently loaded |
 | GET | `/api/environment/partner-dose` | `{tag, source, items, reference}`: DLR DosTel2 hourly absorbed dose in Columbus (NASA OSDR RadLab, decision #13), with its partner tag, and the full NASA TEPC series of the same days |

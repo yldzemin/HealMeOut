@@ -29,6 +29,8 @@ export interface TwinMetric {
   privateToSelf?: boolean;
   /** Decimals for the headline value (e.g. 37.0 °C rather than 37). */
   digits?: number;
+  /** What the newest data changed (#81), e.g. "+2.1 h from your 17 Nov check-in". */
+  change?: { text: string; tone: "worse" | "better" | "same" };
 }
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i - 12);
@@ -272,6 +274,21 @@ export function scheduledSleepHours(from: Date, hours: number): number {
  * Sleep debt from the backend (built from the astronaut's own check-ins, #62). The debt changes
  * only while the scheduled sleep period runs, at the shortfall the backend's T+12 point implies.
  */
+/**
+ * How much the newest check-in moved the sleep debt (#81): the same 7-check-in window as the backend's
+ * SleepDebtModel, with and without the newest night. Undefined before there are two check-ins.
+ */
+export function sleepDebtChange(checkIns: { date: string; sleepHours: number }[]): TwinMetric["change"] {
+  if (checkIns.length < 2) return undefined;
+  const debt = (list: { sleepHours: number }[]) => list.slice(-7).reduce((d, c) => d + Math.max(0, 8.5 - c.sleepHours), 0);
+  const delta = r1(debt(checkIns) - debt(checkIns.slice(0, -1)));
+  const last = checkIns[checkIns.length - 1];
+  const day = new Date(`${last.date}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const why = `your ${day} check-in (${last.sleepHours.toFixed(1)} h of sleep)`;
+  if (delta === 0) return { text: `No change from ${why}`, tone: "same" };
+  return { text: `${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)} h from ${why}`, tone: delta > 0 ? "worse" : "better" };
+}
+
 export function liveSleepDebt(forecasts: ApiForecast[], now: Date): TwinMetric | null {
   const f12 = forecasts.find((f) => f.metric === "sleep_debt" && f.horizonHours === 12);
   if (!f12 || f12.points.length < 2) return null;

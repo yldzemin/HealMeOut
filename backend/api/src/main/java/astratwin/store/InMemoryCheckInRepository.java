@@ -2,6 +2,7 @@ package astratwin.store;
 
 import astratwin.domain.CheckIn;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public final class InMemoryCheckInRepository implements CheckInRepository {
@@ -9,7 +10,9 @@ public final class InMemoryCheckInRepository implements CheckInRepository {
 
     @Override
     public void add(CheckIn checkIn) {
+        checkIns.removeIf(c -> c.crewId().equals(checkIn.crewId()) && c.date().equals(checkIn.date()));
         checkIns.add(checkIn);
+        checkIns.sort(Comparator.comparing(CheckIn::date)); // ISO dates sort as text
     }
 
     @Override

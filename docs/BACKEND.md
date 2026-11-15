@@ -121,6 +121,12 @@ Rule-based and model-based. **No machine learning**: 4 people × 7 time points i
   - HR, BP, SpO2 and temperature from the profile;
   - one check-in for each of the 7 days before today, with the profile's nights and mood (today's check-in is still to do);
   - the reported conditions of §4 (`condition:<crewId>:<region>`).
+- **Demo clock (#81):** station time is real UTC time plus a whole-day offset. Every timestamp the station writes uses it: readings, alerts, forecasts, check-in dates, the companion's 3-day window and telemetry.
+  - `POST /api/clock/next-day` moves the station one day ahead. It records a fresh set of nominal vitals and cabin CO2 at the new time. C3's short-night story ends, because it is about day 0; the other stories are ongoing and stay.
+  - Refused while a scenario is running or still shown: scenarios keep their own timeline.
+  - Every reset goes back to today: a scenario start or stop, or `POST /api/clock/today`.
+  - `GET /api/station` and `GET /api/clock` return `{now, today, dayOffset}`.
+- **One check-in per day:** a second check-in on the same date replaces the first, and check-ins are kept in date order. Before #81, two check-ins on one day counted as two nights of sleep debt.
 
 ### 3.2 Forecasts (T+6, T+12)
 

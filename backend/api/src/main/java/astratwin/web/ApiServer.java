@@ -37,6 +37,7 @@ import java.util.function.Predicate;
  * GET /api/health, /api/station, /api/scenarios, /api/crew/{id}/baselines, /api/crew/{id}/forecasts,
  * /api/environment/dose, /api/imm; POST /api/scenarios/{id}/start, /api/scenario/step,
  * /api/scenario/stop, /api/readings, /api/alerts/{id}/approve|reject.
+ * Demo clock (#81): GET /api/clock; POST /api/clock/next-day, /api/clock/today (back to today, resets the station).
  * Telemetry: GET /api/stream/status, /api/stream/telemetry.csv (live, chunked), /api/stream/recent.csv;
  * POST /api/stream/start?source=sim|replay&file=sample_telemetry.csv&intervalMs=1000, /api/stream/stop.
  * Check-ins (SELF only): GET /api/checkins, POST /api/checkins (body mood, fatigue, stress, conflict, sleepHours).
@@ -265,12 +266,18 @@ public final class ApiServer {
                 yield p[1].equals("dose") ? station.doseSeries() : station.partnerDose();
             }
             case "GET imm" -> station.imm();
+            case "GET clock" -> station.clock();
+            case "POST clock" -> {
+                require(p.length == 2 && (p[1].equals("next-day") || p[1].equals("today")),
+                        "use POST /api/clock/next-day or /api/clock/today");
+                yield p[1].equals("next-day") ? station.nextDay() : station.backToToday();
+            }
             case "GET checkins" -> station.checkIns(selfCrewId(request));
             case "POST checkins" -> {
                 String crewId = selfCrewId(request);
                 Map<String, Object> body = JsonParser.parseObject(new String(ex.getRequestBody().readAllBytes(),
                         StandardCharsets.UTF_8));
-                yield station.addCheckIn(new CheckIn(crewId, java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString(),
+                yield station.addCheckIn(new CheckIn(crewId, station.today().toString(),
                         score(body, "mood"), score(body, "fatigue"), score(body, "stress"), score(body, "conflict"),
                         hours(body, "sleepHours"), "entered by the astronaut"));
             }

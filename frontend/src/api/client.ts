@@ -117,8 +117,21 @@ export interface StationView {
   cabin?: ApiEnvironment;
   dose?: ApiEnvironment;
   scenario?: ApiScenarioState;
+  /** Demo clock (#81); older backends leave it out. */
+  clock?: ApiClock;
   disclaimer: string;
 }
+
+/** Station time: real UTC time plus whole days moved by "Next day" (#81). */
+export interface ApiClock {
+  now: string;
+  /** UTC date (YYYY-MM-DD): the date a new check-in gets. */
+  today: string;
+  dayOffset: number;
+}
+
+/** The station's date: the backend clock when live, otherwise today in UTC. */
+export const stationToday = (station: StationView | null): string => station?.clock?.today ?? new Date().toISOString().slice(0, 10);
 
 /** Partner-agency data hosted by a NASA archive, with why we use it (team decision #13). */
 export interface ApiPartnerTag {
@@ -277,6 +290,10 @@ export const getStation = (view: ViewKind) => call<StationView>("GET", "station"
 export const startScenario = (id: string) => call<ApiScenarioState>("POST", `scenarios/${encodeURIComponent(id)}/start`);
 export const stepScenario = () => call<ApiScenarioState>("POST", "scenario/step");
 export const stopScenario = () => call<{ stopped: boolean }>("POST", "scenario/stop");
+/** Moves the station one day ahead; refused while a scenario runs. */
+export const nextDay = () => call<ApiClock>("POST", "clock/next-day");
+/** Back to today: resets the demo station. */
+export const backToToday = () => call<ApiClock>("POST", "clock/today");
 export const decideAlert = (id: string, decision: "approve" | "reject", view: ViewKind) =>
   call<ApiAlert>("POST", `alerts/${encodeURIComponent(id)}/${decision}`, view);
 export const getBaselines = (crewId: string, view: ViewKind) =>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CrewMember, ScreenId, ViewerRole } from "@/types";
-import { decideAlert, getMockCrew, startScenario, stopScenario, toCrewMember } from "@/api/client";
+import { backToToday, decideAlert, getMockCrew, nextDay, startScenario, stationToday, stopScenario, toCrewMember } from "@/api/client";
 import { useStation } from "@/api/useStation";
 import { StatusBar } from "@/components/StatusBar";
 import { LeftRail } from "@/components/LeftRail";
@@ -33,14 +33,18 @@ export default function App() {
   // Per astronaut: switching from C3 to C4 must not carry C3's check-in or reaction best over.
   const [routines, setRoutines] = useState<Record<string, Routine>>({});
   const routineId = role.kind === "astronaut" ? role.crewId : null;
-  const routine = (routineId && routines[routineId]) || INITIAL_ROUTINE;
-  const setRoutine = (r: Routine) => {
-    if (routineId) setRoutines((m) => ({ ...m, [routineId]: r }));
-  };
   // Mock mode only: the emergency is local. With the backend it follows the live EMERGENCY alert.
   const [localEmergency, setLocalEmergency] = useState<{ patientId: string; startedAt: number } | null>(null);
   const { mode, station, refresh } = useStation(role);
   const live = station !== null;
+  const today = stationToday(station);
+  const stored = (routineId && routines[routineId]) || INITIAL_ROUTINE;
+  // Live: the daily check-in is done when the station has one for its own date, so "Next day" (#81) opens a new one.
+  const checkedInToday = live && routineId ? (station.crew.find((c) => c.id === routineId)?.checkIns ?? []).some((c) => c.date === today) : false;
+  const routine: Routine = live ? { ...stored, checkinDone: checkedInToday } : stored;
+  const setRoutine = (r: Routine) => {
+    if (routineId) setRoutines((m) => ({ ...m, [routineId]: r }));
+  };
 
   useEffect(() => {
     getMockCrew().then(setMockCrew).catch((err) => console.error(err));
@@ -86,7 +90,23 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <StatusBar crew={crew} role={role} onRoleChange={setRole} openAlerts={openAlerts} mode={mode} />
+      <StatusBar
+        crew={crew}
+        role={role}
+        onRoleChange={setRole}
+        openAlerts={openAlerts}
+        mode={mode}
+        clock={station?.clock}
+        scenarioRunning={Boolean(station?.scenario)}
+        onNextDay={async () => {
+          await nextDay();
+          await refresh();
+        }}
+        onBackToToday={async () => {
+          await backToToday();
+          await refresh();
+        }}
+      />
       {supportAlerts.length > 0 && (
         <SupportAlertBanner
           alerts={supportAlerts}
@@ -135,7 +155,7 @@ export default function App() {
                   }}
                 />
               ) : (
-                <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} live={live} onSaved={refresh} />
+                <CheckInScreen day={today} role={role} routine={routine} onRoutine={setRoutine} live={live} onSaved={refresh} />
               )}
             </motion.div>
           </AnimatePresence>

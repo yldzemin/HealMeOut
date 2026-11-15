@@ -123,7 +123,7 @@ public final class TelemetryStreamer implements AutoCloseable {
         if (source == null) {
             return;
         }
-        Optional<List<TelemetryRow>> next = source.nextTick(Instant.now());
+        Optional<List<TelemetryRow>> next = source.nextTick(station.now());
         if (next.isEmpty()) {
             finished = true;
             stopInternal();

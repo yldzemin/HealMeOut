@@ -156,6 +156,14 @@ public final class CrewRoster {
                         "a spouse and two adult children", p));
     }
 
+    /**
+     * Stories about a single night (C3's short night). They end when the station moves to the next day
+     * (#81); the other stories are ongoing and stay.
+     */
+    public static boolean oneNight(ConditionReport c) {
+        return c.crewId().equals("C3") && c.region().equals("head");
+    }
+
     /** Simulated reported conditions: the stories of the frontend profiles that need attention (L1+). */
     public List<ConditionReport> conditions() {
         return List.of(
