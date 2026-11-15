@@ -212,12 +212,14 @@ public final class ApiServer {
             case "GET scenarios" -> station.scenarioList();
             case "POST scenarios" -> {
                 require(p.length == 3 && p[2].equals("start"), "use POST /api/scenarios/{id}/start");
-                yield station.startScenario(p[1]);
+                station.startScenario(p[1]);
+                yield station.scenarioState(request).orElseThrow();
             }
             case "POST scenario" -> {
                 require(p.length == 2, "use POST /api/scenario/step or /api/scenario/stop");
                 if (p[1].equals("step")) {
-                    yield station.step();
+                    station.step();
+                    yield station.scenarioState(request).orElseThrow();
                 }
                 require(p[1].equals("stop"), "use POST /api/scenario/step or /api/scenario/stop");
                 station.stopScenario();

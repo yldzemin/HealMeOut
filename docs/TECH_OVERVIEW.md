@@ -86,7 +86,7 @@ Both sides use these names and values. If one changes, update this section in th
 | `MissionTag` | `name`, `kind` (`commercial`/`nasa`), `start`, `end` (ISO dates), `orbit`, `crew`, `hostedBy`, `studyId`, `link` |
 | `Reading` | `crewId`, `metric`, `value`, `unit`, `timestamp`, `provenance`, `measuredHow` |
 | `CheckIn` | `crewId`, `date`, mood/fatigue/stress/conflict (0–100), sleep hours and quality, workload, crew climate, MCC frustration, family, restorative activities, food |
-| `Alert` | `id`, `crewId` (or `STATION`), `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`), `category` (`VITALS`, `MEDICATION`, `PSYCH`, `ENVIRONMENT`, `EMERGENCY`, `SUPPORT`; drives the privacy filter), `active` (false once the rule stops firing), `createdAt` |
+| `Alert` | `id`, `crewId` (or `STATION`), `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`), `category` (`STATUS`, `VITALS`, `MEDICATION`, `PSYCH`, `ENVIRONMENT`, `EMERGENCY`, `SUPPORT`, `PLAN`; drives the privacy filter), `active` (false once the rule stops firing), `createdAt` |
 | `Forecast` | `crewId`, `horizonHours` (6/12), `metric`, `points[]`, `label: "modelled"` |
 | `Environment` | `co2_mmHg`, `temp_C`, `rh_pct`, `doseRate_uGy_h` (absorbed), `doseEqRate_uSv_h` (dose equivalent, ICRP-60; empty if the source has none), `instrument`, `timestamp`, `provenance` |
 | `Scenario` | `id`, `title`, `steps[]` |
@@ -139,7 +139,7 @@ Both sides use these names and values. If one changes, update this section in th
 | `chest-pain` | Crewmate chest pain and collapse | **MVP** (challenge video; Crew-11, Jan 2026) | Hinkelbein 2020 CPR guideline; Diaz 2024 |
 | `co2` | Cabin CO2 build-up | MVP | OCHMO-TB-004 |
 | `spe-iss` | Solar particle event on the ISS, Sep 10, 2017 | Target | CDAWeb ISS TEPC (NASA SRAG), 1-minute dose equivalent |
-| `bad-news` | Bad news from home | Target | Picano 2024; OCHMO-TB-016 |
+| `bad-news` | Bad news from home (built; private to C3) | Target | Picano 2024; OCHMO-TB-016 |
 | others | Dehydration/hypoglycemia, sleep disruption, landing orthostatic intolerance | Extra | `ARASTIRMA_RAPORU.md` |
 
 Details: [`BACKEND.md`](BACKEND.md) §5 (logic) and [`FRONTEND.md`](FRONTEND.md) §6 (screens).

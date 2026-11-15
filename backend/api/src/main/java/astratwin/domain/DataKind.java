@@ -15,5 +15,10 @@ public enum DataKind {
     /** A crew member needs help now: broadcast to everyone. */
     EMERGENCY,
     /** Crisis wording in the support companion (#51): the astronaut and the CMO, never the message itself. */
-    SUPPORT
+    SUPPORT,
+    /**
+     * A schedule or support plan for one crew member: the astronaut, the CMO and ground. Never the Crew
+     * Deck or the emergency view, because a plan can hint at a private reason.
+     */
+    PLAN
 }

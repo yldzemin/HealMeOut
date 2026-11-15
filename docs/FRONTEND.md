@@ -185,7 +185,10 @@ Environment panel curve from real EDA data; headache symptom prompt; L1 → L2 a
 Dose-rate chart replaying the ISS TEPC dose equivalent (μSv/h, `iss_dose.json`) around Sep 11, 2017; shelter recommendation card. Label it "instrument dose equivalent, not effective dose" (BACKEND §3.2).
 
 ### `bad-news` (Target)
-Personal screen support steps; Crew Deck shows only "C3 requested reduced tasking", no reason.
+Personal screen support steps; Crew Deck shows only "C3 requested reduced tasking", no reason. *Built* (live only):
+- **Crew Deck:** "Run scenario: bad news from home (simulated)", with *Next step* and *Reset*. The step card shows what the viewer may see: C3 sees the story, everyone else "Crew support (private)" and the public step. Crew cards show STATUS notices ("Requested reduced tasking").
+- **Personal (C3):** the head region shows the private support steps. Mood and sleep come from C3's own check-ins, so the hard night shows.
+- **Twin:** the Earth Twin's "24–72 h support plan" heads the plan card for C3, the CMO and ground. Ground or the CMO approves or declines it; C3 sees "Waiting for ground approval" and then the decision.
 
 ---
 

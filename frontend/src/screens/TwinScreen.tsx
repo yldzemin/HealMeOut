@@ -6,6 +6,7 @@ import {
   getBaselines,
   getDoseSeries,
   getForecasts,
+  type ApiAlert,
   type ApiBaselineStats,
   type ApiEnvironment,
   type ApiForecast,
@@ -22,6 +23,7 @@ import {
   type TwinMetric,
 } from "@/data/twin";
 import { NASA_HOSTED_NOTE } from "@/data/personal";
+import type { AlertDecision } from "@/components/DetailPanel";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -130,7 +132,54 @@ function MetricChart({ m, cursor }: { m: TwinMetric; cursor: number }) {
  * curve is real ISS TEPC data and sleep debt comes from the astronaut's check-ins; fluids and
  * temperature stay simulated. Sleep debt and the sleep plan items are psych data: astronaut only.
  */
-export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: CrewMember[]; station: StationView | null }) {
+/** The Earth Twin's support plan from the backend (category PLAN): the astronaut, CMO and ground see it; ground or the CMO decides. */
+function SupportPlanItem({ alert, canDecide, onDecision }: { alert: ApiAlert; canDecide: boolean; onDecision?: AlertDecision }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const decide = (d: "approve" | "reject") => {
+    if (!onDecision) return;
+    setBusy(true);
+    setError(null);
+    onDecision(alert.id, d)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <li className="rounded-lg border border-status-ground/60 p-3">
+      <p className="text-xs font-medium text-status-ground">{alert.title} · for ground approval</p>
+      <p className="mt-1 text-sm">{alert.explanation}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{alert.recommendation}</p>
+      {alert.status !== "open" ? (
+        <p className="mt-2 text-xs text-status-ok">{alert.status === "approved" ? "Approved by ground. Logged." : "Declined. Logged."}</p>
+      ) : canDecide && onDecision ? (
+        <div className="mt-2 flex gap-2">
+          <Button size="sm" disabled={busy} onClick={() => decide("approve")}>
+            Approve
+          </Button>
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => decide("reject")}>
+            Decline
+          </Button>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">Waiting for ground approval.</p>
+      )}
+      {error && <p className="mt-1 text-xs text-status-emergency">{error}</p>}
+    </li>
+  );
+}
+
+export function TwinScreen({
+  role,
+  crew,
+  station,
+  onDecision,
+}: {
+  role: ViewerRole;
+  crew: CrewMember[];
+  station: StationView | null;
+  /** Decision on a backend alert (the support plan); refreshes the station view. */
+  onDecision?: AlertDecision;
+}) {
   const [picked, setPicked] = useState("C3");
   const self = role.kind === "astronaut";
   const crewId = self ? role.crewId : picked;
@@ -193,6 +242,8 @@ export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: Cr
   }, [crewId, online, doseSeries]);
 
   const plan = EARTH_PLAN.filter((p) => self || !p.privateToSelf);
+  // The backend only sends a plan alert to viewers allowed to see it (astronaut, CMO, ground).
+  const supportPlan = station?.alerts.find((a) => a.active && a.category === "PLAN" && a.crewId === crewId);
   const member = crew.find((c) => c.id === crewId);
   const mission = baselines.find((b) => b.mission)?.mission;
   const studies = [...new Set(baselines.map((b) => b.source))].join(", ");
@@ -281,6 +332,7 @@ export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: Cr
                 From the flight surgeon, based on these forecasts. Received over the ISS link (seconds). You or the CMO decide. Simulated.
               </p>
               <ul className="flex flex-col gap-3">
+                {supportPlan && <SupportPlanItem alert={supportPlan} canDecide={!self} onDecision={onDecision} />}
                 {plan.map((p) => (
                   <li key={p.id} className="rounded-lg border border-border p-3">
                     <p className="text-sm">{p.text}</p>

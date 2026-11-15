@@ -121,11 +121,19 @@ export default function App() {
                   }}
                 />
               ) : screen === "crew" ? (
-                <CrewDeckScreen crew={crew} onStartEmergency={(patientId) => void startEmergency(patientId)} />
+                <CrewDeckScreen crew={crew} station={station} refresh={refresh} onStartEmergency={(patientId) => void startEmergency(patientId)} />
               ) : screen === "environment" ? (
                 <EnvironmentScreen role={role} station={station} refresh={refresh} />
               ) : screen === "twin" ? (
-                <TwinScreen role={role} crew={crew} station={station} />
+                <TwinScreen
+                  role={role}
+                  crew={crew}
+                  station={station}
+                  onDecision={async (id, d) => {
+                    await decideAlert(id, d, role);
+                    await refresh();
+                  }}
+                />
               ) : (
                 <CheckInScreen role={role} routine={routine} onRoutine={setRoutine} live={live} onSaved={refresh} />
               )}

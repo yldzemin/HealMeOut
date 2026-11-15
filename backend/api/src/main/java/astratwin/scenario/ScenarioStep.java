@@ -1,5 +1,6 @@
 package astratwin.scenario;
 
+import astratwin.domain.CheckIn;
 import astratwin.domain.Environment;
 import astratwin.domain.Reading;
 import java.util.ArrayList;
@@ -8,12 +9,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * One step of a scenario: data it adds (readings, environment) and what it shows (roles,
+ * One step of a scenario: data it adds (readings, environment, check-ins) and what it shows (roles,
  * checklist, banner). Readings and environment samples without a timestamp get "now" when applied.
+ * In a private scenario ({@link Scenario#privateTo()}), everyone but that astronaut sees only
+ * {@code publicTitle} and {@code publicDetail}.
  */
 public record ScenarioStep(
         String at, String title, String detail, List<Reading> readings, List<Environment> environment,
-        Map<String, String> roles, List<String> checklist, String banner, String evidence) {
+        List<CheckIn> checkIns, Map<String, String> roles, List<String> checklist, String banner, String evidence,
+        String publicTitle, String publicDetail) {
 
     public static Builder at(String at, String title) {
         return new Builder(at, title);
@@ -25,6 +29,9 @@ public record ScenarioStep(
         private String detail = "";
         private final List<Reading> readings = new ArrayList<>();
         private final List<Environment> environment = new ArrayList<>();
+        private final List<CheckIn> checkIns = new ArrayList<>();
+        private String publicTitle;
+        private String publicDetail;
         private final Map<String, String> roles = new LinkedHashMap<>();
         private final List<String> checklist = new ArrayList<>();
         private String banner;
@@ -56,6 +63,19 @@ public record ScenarioStep(
             return this;
         }
 
+        /** A simulated check-in by the astronaut (psych data: only they see it). */
+        public Builder checkIn(CheckIn checkIn) {
+            checkIns.add(checkIn);
+            return this;
+        }
+
+        /** What everyone except the astronaut sees of this step in a private scenario. */
+        public Builder publicView(String title, String detail) {
+            this.publicTitle = title;
+            this.publicDetail = detail;
+            return this;
+        }
+
         public Builder role(String task, String who) {
             roles.put(task, who);
             return this;
@@ -78,7 +98,8 @@ public record ScenarioStep(
 
         public ScenarioStep build() {
             return new ScenarioStep(at, title, detail, List.copyOf(readings), List.copyOf(environment),
-                    Map.copyOf(roles), List.copyOf(checklist), banner, evidence);
+                    List.copyOf(checkIns), Map.copyOf(roles), List.copyOf(checklist), banner, evidence,
+                    publicTitle == null ? title : publicTitle, publicDetail == null ? detail : publicDetail);
         }
     }
 }

@@ -34,6 +34,7 @@ function regionOf(alert: ApiAlert): RegionId | null {
     case "collapse":
       return "heart";
     case "psych-trend":
+    case "family-event":
     case "co2":
       return "head";
     case "dose-rate":
@@ -65,8 +66,19 @@ export function applyLive(regions: Region[], crewId: string, card: ApiCrewCard |
       if (sys && dia && i >= 0) r.indicators[i] = live(r.indicators[i], sys, `${Math.round(sys.value)}/${Math.round(dia.value)}`);
     }
     if (r.id === "head" && lastCheckIn) {
-      const i = r.indicators.findIndex((x) => x.id === "mood");
-      if (i >= 0) r.indicators[i] = { ...r.indicators[i], value: String(lastCheckIn.mood), measuredHow: "periodic" };
+      // The astronaut's own view: mood and sleep from their latest check-ins (the seeded nights equal the monitor's).
+      const checkIns = card!.checkIns!;
+      const mood = r.indicators.findIndex((x) => x.id === "mood");
+      if (mood >= 0) r.indicators[mood] = { ...r.indicators[mood], value: String(lastCheckIn.mood), measuredHow: "periodic" };
+      const sleep = r.indicators.findIndex((x) => x.id === "sleep");
+      if (sleep >= 0) r.indicators[sleep] = { ...r.indicators[sleep], value: lastCheckIn.sleepHours.toFixed(1), measuredHow: "periodic" };
+      if (r.trend && checkIns.length >= 2) {
+        r.trend = {
+          ...r.trend,
+          points: checkIns.slice(-7).map((c) => ({ label: c.date.slice(5), value: c.sleepHours })),
+        };
+      }
+      r.method = `${r.method} Live: mood and sleep from your daily check-ins.`;
     }
     if (r.id === "lungs") set("spo2", "spo2");
     if (r.id === "whole") set("temp", "temp_c");
@@ -91,7 +103,8 @@ export function applyLive(regions: Region[], crewId: string, card: ApiCrewCard |
     // The worst active alert for this region sets its level, status and next step.
     const top = mine
       .filter((a) => regionOf(a) === r.id && LEVEL_RANK[a.level] >= LEVEL_RANK[r.level])
-      .sort((a, b) => LEVEL_RANK[b.level] - LEVEL_RANK[a.level])[0];
+      // Highest level first; at the same level the newest alert, so a new event shows over a standing story.
+      .sort((a, b) => LEVEL_RANK[b.level] - LEVEL_RANK[a.level] || b.createdAt.localeCompare(a.createdAt))[0];
     if (top) {
       // A condition alert is a profile story: its explanation and sources come from the profile.
       const story = top.id.startsWith("condition:") ? withStory(r, profileFor(crewId)) : null;

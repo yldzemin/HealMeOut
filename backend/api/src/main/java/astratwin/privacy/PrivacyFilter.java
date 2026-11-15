@@ -31,7 +31,7 @@ public final class PrivacyFilter {
     public static PrivacyFilter standard() {
         return new PrivacyFilter(List.of(new PublicPolicy(DataKind.STATUS), new PublicPolicy(DataKind.ENVIRONMENT),
                 new PublicPolicy(DataKind.EMERGENCY), new VitalsPolicy(), new MedicationPolicy(), new PsychPolicy(),
-                new SupportPolicy()));
+                new SupportPolicy(), new PlanPolicy()));
     }
 
     public boolean allows(DataKind kind, ViewRequest request, String subjectCrewId, Optional<MedicalCard> card) {

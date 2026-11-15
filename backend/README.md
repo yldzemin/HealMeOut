@@ -34,7 +34,7 @@ Every value is labelled `real` or `simulated`. *Simulation — not medical advic
 ## Tests
 
 ```sh
-backend/api/test.sh           # 41 tests, including "psych data never reaches the Crew Deck"
+backend/api/test.sh           # 42 tests, including "psych data never reaches the Crew Deck"
 ```
 
 ## Rebuild the cache (optional, needs Rust)

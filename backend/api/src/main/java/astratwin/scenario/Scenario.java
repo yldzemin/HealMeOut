@@ -14,4 +14,17 @@ public interface Scenario {
     String source();
 
     List<ScenarioStep> steps();
+
+    /**
+     * Crew id of the astronaut whose private data the scenario is about, or null. Everyone else sees
+     * only the public title and each step's public view.
+     */
+    default String privateTo() {
+        return null;
+    }
+
+    /** Title shown to everyone but {@link #privateTo()}. */
+    default String publicTitle() {
+        return title();
+    }
 }

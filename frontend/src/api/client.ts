@@ -54,7 +54,8 @@ export interface ApiCrewCard {
 }
 
 /** SUPPORT: crisis wording in the support companion (#51); only the astronaut and the CMO get it. */
-export type AlertCategory = "VITALS" | "MEDICATION" | "PSYCH" | "ENVIRONMENT" | "EMERGENCY" | "SUPPORT";
+/** STATUS: seen by everyone, e.g. "requested reduced tasking". PLAN: a crew member's support plan (self, CMO, ground). */
+export type AlertCategory = "STATUS" | "VITALS" | "MEDICATION" | "PSYCH" | "ENVIRONMENT" | "EMERGENCY" | "SUPPORT" | "PLAN";
 
 export interface ApiAlert {
   id: string;

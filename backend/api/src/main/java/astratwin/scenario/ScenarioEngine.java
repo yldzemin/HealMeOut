@@ -76,4 +76,27 @@ public final class ScenarioEngine {
                 s.detail(), Map.copyOf(roles), List.copyOf(checklist), banner, s.evidence(), List.copyOf(log),
                 index + 1 >= steps.size()));
     }
+
+    /** Crew id the running scenario is private to, or null. */
+    public Optional<String> privateTo() {
+        return Optional.ofNullable(active).map(Scenario::privateTo);
+    }
+
+    /**
+     * The running scenario as everyone but its astronaut sees it: public titles and details only, no
+     * roles, checklist, banner or evidence. Same as {@link #state()} for a scenario that is not private.
+     */
+    public Optional<ScenarioState> publicState() {
+        if (active == null || active.privateTo() == null) {
+            return state();
+        }
+        if (index < 0) {
+            return Optional.empty();
+        }
+        ScenarioStep s = steps.get(index);
+        List<String> publicLog = steps.subList(0, index + 1).stream().map(x -> x.at() + " — " + x.publicTitle()).toList();
+        return Optional.of(new ScenarioState(active.id(), active.publicTitle(), index + 1, steps.size(), s.at(),
+                s.publicTitle(), s.publicDetail(), Map.of(), List.of(), null, null, publicLog,
+                index + 1 >= steps.size()));
+    }
 }

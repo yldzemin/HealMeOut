@@ -23,12 +23,16 @@ import astratwin.rules.CollapseRule;
 import astratwin.rules.ConditionReportRule;
 import astratwin.rules.Co2Rule;
 import astratwin.rules.DoseRateRule;
+import astratwin.rules.FamilyEventRule;
 import astratwin.rules.GlucoseRule;
 import astratwin.rules.PsychTrendRule;
+import astratwin.rules.ReducedTaskingRule;
 import astratwin.rules.RuleContext;
 import astratwin.rules.RulesEngine;
 import astratwin.rules.SpO2Rule;
+import astratwin.rules.SupportPlanRule;
 import astratwin.rules.ZScoreRule;
+import astratwin.scenario.BadNewsScenario;
 import astratwin.scenario.ChestPainScenario;
 import astratwin.scenario.Co2Scenario;
 import astratwin.scenario.ScenarioEngine;
@@ -106,7 +110,8 @@ public final class Station {
         this.baselines = new BaselineStatistics(data.baselines());
         this.roster = new CrewRoster(baselines);
         this.rules = new RulesEngine(List.of(new CollapseRule(), new GlucoseRule(), new SpO2Rule(), new Co2Rule(),
-                new DoseRateRule(), new ZScoreRule(), new PsychTrendRule(), new ConditionReportRule()));
+                new DoseRateRule(), new ZScoreRule(), new PsychTrendRule(), new ConditionReportRule(),
+                new FamilyEventRule(), new ReducedTaskingRule(), new SupportPlanRule()));
         this.twin = new TwinEngine(List.of(new CumulativeDoseModel(), new SleepDebtModel()));
         this.privacy = PrivacyFilter.standard();
         this.scenarios = new ScenarioEngine(List.of(
@@ -115,7 +120,9 @@ public final class Station {
                 new ChestPainScenario(roster.member("C2"), roster.member("C1"), roster.member("C4"),
                         roster.member("C3"), roster.member("C6")),
                 new Co2Scenario("C6"),
-                new SpeIssScenario(data.issDose())));
+                new SpeIssScenario(data.issDose()),
+                // C3, as in PSYCHOLOGY_AND_LONG_DURATION.md §4.5.
+                new BadNewsScenario("C3")));
         roster.cards().forEach(cards::save);
         resetData();
     }
@@ -147,6 +154,12 @@ public final class Station {
         resetData();
         apply(scenarios.start(id));
         return scenarios.state().orElseThrow();
+    }
+
+    /** The running scenario as this viewer may see it: a private scenario is redacted for everyone else. */
+    public synchronized Optional<ScenarioState> scenarioState(ViewRequest request) {
+        boolean full = scenarios.privateTo().map(request::isSelf).orElse(true);
+        return full ? scenarios.state() : scenarios.publicState();
     }
 
     public synchronized ScenarioState step() {
@@ -231,7 +244,7 @@ public final class Station {
         return new StationView(request.viewer(), request.viewerCrewId(), stationLevel, crewCards, visible,
                 environment.latest(e -> e.co2_mmHg() != null).orElse(null),
                 environment.latest(e -> e.doseEqRate_uSv_h() != null).orElse(null),
-                scenarios.state().orElse(null), DISCLAIMER);
+                scenarioState(request).orElse(null), DISCLAIMER);
     }
 
     /** Stores a check-in from the astronaut (SELF only at the web layer) and re-runs the rules. */
@@ -316,6 +329,7 @@ public final class Station {
             record(r.timestamp() != null ? r : new Reading(r.crewId(), r.metric(), r.value(), r.unit(), now,
                     r.provenance(), r.measuredHow(), r.note()));
         }
+        step.checkIns().forEach(checkIns::add);
         environment.addAll(step.environment().stream()
                 .map(e -> e.timestamp() != null ? e : new Environment(e.co2_mmHg(), e.temp_C(), e.rh_pct(),
                         e.doseRate_uGy_h(), e.doseEqRate_uSv_h(), e.instrument(), now, e.provenance()))
@@ -341,9 +355,10 @@ public final class Station {
         }
     }
 
-    /** Psych and support alerts never change a level: levels are shown to everyone on the Crew Deck. */
+    /** Psych, support and plan alerts never change a level: levels are shown to everyone on the Crew Deck. */
     private static boolean changesLevel(Alert alert) {
-        return alert.category() != DataKind.PSYCH && alert.category() != DataKind.SUPPORT;
+        return alert.category() != DataKind.PSYCH && alert.category() != DataKind.SUPPORT
+                && alert.category() != DataKind.PLAN;
     }
 
     private List<Reading> vitals(String crewId) {

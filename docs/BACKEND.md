@@ -181,7 +181,20 @@ Replay a rising CO2 curve (EDA data if available, else a sourced synthetic ramp 
 Replay the CDAWeb ISS TEPC 1-minute data, Sep 4–19, 2017 (`iss_dose.json`), at demo speed. The dose rule fires on Sep 11 (1.71 mSv/day, 1.90× the 7-day median) → shelter advice.
 
 ### `bad-news` (Target)
-Inject a family-event flag; personal support plan; Earth Twin 24–72 h plan for ground approval; Crew Deck sees only "reduced tasking requested".
+Inject a family-event flag; personal support plan; Earth Twin 24–72 h plan for ground approval; Crew Deck sees only "reduced tasking requested". *Built* (`BadNewsScenario`, C3, 6 steps, all simulated):
+
+| Step | What C3 sees | What everyone else sees |
+|---|---|---|
+| 07:30 A message from home | Flag `family_event` → `FamilyEventRule`: private L1 support steps on the head region (PSYCH) | "Nominal day" |
+| 08:00 A hard night | A check-in: mood 28, stress 74, 4.5 h; the Twin's sleep debt rises | "Nominal day" |
+| 09:00 Reduced tasking requested | Flag `tasking_reduced` → `ReducedTaskingRule`: L1 notice "Requested reduced tasking", "No reason is shared." (STATUS, everyone) | "C3 requested reduced tasking" |
+| 09:30 Earth Twin plan | Flag `support_plan` → `SupportPlanRule`: L3 "24–72 h support plan" (PLAN: C3, CMO, ground), which ground approves on the Twin screen | Crew Deck: "Ground is reviewing a schedule change." |
+| 13:00 Private Family Conference | — | "No reason is shared." |
+| Day 3 Back to the usual schedule | A better check-in; tasking and plan end; the private support steps stay until the next PPC | "C3 is back on the usual schedule" |
+
+- **Private scenario state:** a scenario with `privateTo()` is redacted in `GET /api/station` and in the start and step responses for every viewer except that astronaut. They get the public title "Crew support (private)" and each step's public view, with no roles, checklist, banner or evidence.
+- None of the new alerts changes C3's crew level: STATUS stays at C3's L1, and PSYCH and PLAN never count.
+- **Test:** at every step, the Crew Deck, CMO, ground, emergency and C2 views contain none of "family", "died", "home", "night", "mood" or "bad news".
 
 ---
 
@@ -197,9 +210,12 @@ Enforce here, not only in the UI:
 | Psych check-in, psych alerts | ✔ | — (shared to BHP by the astronaut) | — | **never** | **never** |
 | Support companion conversation (§10) | ✔ | **never** | **never** | **never** | **never** |
 | "Needs support now" alert (§10, #51): who and when, never the message | ✔ | ✔ | — | **never** | — |
+| Support or schedule plan (`PLAN`, e.g. the Earth Twin's 24–72 h plan in `bad-news`) | ✔ | ✔ | ✔ (approves) | **never** | — |
+| Status notice (`STATUS`, e.g. "requested reduced tasking"), never a reason | ✔ | ✔ | ✔ | ✔ | ✔ |
+| A private scenario's story (`bad-news`) | ✔ | public view only | public view only | public view only | public view only |
 | Crew climate | own answers | aggregate | aggregate | aggregate, min. response threshold | — |
 
-\* **Provisional (#56):** the frontend has a "Ground (flight surgeon)" role; the backend gives it the CMO tier without psychological data until the team decides. Psych and support alerts never change the crew level, because the level is visible on the Crew Deck. CMO and ground may approve or reject the alerts they can see; any other alert id answers 404, so its existence is not revealed.
+\* **Provisional (#56):** the frontend has a "Ground (flight surgeon)" role; the backend gives it the CMO tier without psychological data until the team decides. Psych, support and plan alerts never change the crew level, because the level is visible on the Crew Deck. CMO and ground may approve or reject the alerts they can see; any other alert id answers 404, so its existence is not revealed.
 
 Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psychological communications); AMIS 2024 (NTRS 20240004505); IOM *Safe Passage*.
 
