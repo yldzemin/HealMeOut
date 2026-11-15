@@ -6,6 +6,7 @@ import { SupportChat } from "@/components/SupportChat";
 import { postCheckIn } from "@/api/client";
 import { ReactionTest } from "@/components/ReactionTest";
 import { recentShortNights, REACTION_BASELINE_MS, type Routine } from "@/data/personal";
+import { profileFor } from "@/data/crewProfiles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -87,9 +88,10 @@ export function CheckInScreen({
       ) : (
         <ReactionTest
           baselineMs={REACTION_BASELINE_MS}
-          bestMs={routine.reactionBestMs}
+          bestMs={Math.min(routine.reactionBestMs, profileFor(role.crewId).reactionBestMs)}
           onResult={(r) => {
-            if (r.responses > 0 && r.medianMs < routine.reactionBestMs) onRoutine({ ...routine, reactionBestMs: r.medianMs });
+            if (r.responses > 0 && r.medianMs < Math.min(routine.reactionBestMs, profileFor(role.crewId).reactionBestMs))
+              onRoutine({ ...routine, reactionBestMs: r.medianMs });
           }}
         />
       )}

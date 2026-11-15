@@ -5,6 +5,7 @@
 
 import baselines from "@/mock/baselines.json";
 import type { Provenance, StatusLevel } from "@/types";
+import { IMM_SOURCE_LINK, profileFor, PROFILES, type CrewProfile } from "@/data/crewProfiles";
 
 export type RegionId = "head" | "eyes" | "heart" | "lungs" | "blood" | "musculo" | "whole";
 
@@ -128,47 +129,44 @@ const series = (values: number[]): TrendPoint[] => values.map((value, i) => ({ l
 /** Regions for one astronaut. Real blood baselines exist for C1–C4 only. */
 export function getRegions(crewId: string): Region[] {
   const hasRealBlood = analyte(crewId, "glucose") !== undefined;
-  const shortSleep = crewId === "C3";
+  const p = profileFor(crewId);
+  const lastNight = p.sleep7[p.sleep7.length - 1];
   const blood = ["glucose", "sodium", "potassium", "bun"]
     .map((id) => bloodIndicator(crewId, id))
     .filter((x): x is Indicator => x !== undefined);
 
-  return [
+  const regions: Region[] = [
     {
       id: "head",
       label: "Head and brain",
-      // Demo story: C3 had a short night (simulated); everyone else is nominal.
-      level: shortSleep ? "L1" : "L0",
-      status: shortSleep
-        ? "You slept 5.6 h last night, under 6 hours. Protect tonight’s sleep window."
-        : "Sleep, mood and reaction time are in your usual range.",
+      level: "L0",
+      status: "Sleep, mood and reaction time are in your usual range.",
       indicators: [
-        { id: "sleep", label: "Sleep last night", value: shortSleep ? "5.6" : "6.7", unit: "h", baseline: "scheduled 8.5", provenance: "simulated", measuredHow: "live" },
-        { id: "mood", label: "Mood (check-in)", value: "68", unit: "/ 100", provenance: "simulated", measuredHow: "periodic" },
-        { id: "rt", label: "Reaction test", value: "254", unit: "ms", baseline: "best 241", provenance: "simulated", measuredHow: "periodic" },
+        { id: "sleep", label: "Sleep last night", value: lastNight.toFixed(1), unit: "h", baseline: "scheduled 8.5", provenance: "simulated", measuredHow: "live" },
+        { id: "mood", label: "Mood (check-in)", value: String(p.mood), unit: "/ 100", provenance: "simulated", measuredHow: "periodic" },
+        { id: "rt", label: "Reaction test", value: String(p.reactionMs), unit: "ms", baseline: `best ${p.reactionBestMs}`, provenance: "simulated", measuredHow: "periodic" },
       ],
       trend: {
         title: "Sleep, last 7 nights",
         unit: "h",
         provenance: "simulated",
-        points: series(shortSleep ? [6.4, 6.1, 6.8, 5.9, 6.3, 6.0, 5.6] : [6.5, 6.2, 6.9, 6.4, 6.6, 6.3, 6.7]),
+        points: series(p.sleep7),
       },
       meaning:
         "ISS crews sleep about 6.1 hours a night on average, against 8.5 hours scheduled. Short sleep slows reaction time and makes decisions harder, which NASA tracks as a spaceflight risk. High cabin CO2 can also cause headaches and poor sleep.",
-      todo:
-        "Keep tonight’s sleep window free of tasks. Switch your module lights to the pre-sleep setting an hour before bed. If short nights continue, raise it at your next private conference.",
+      todo: "Keep your regular sleep window. Switch your module lights to the pre-sleep setting an hour before bed.",
       method:
-        "Sleep from a wrist activity monitor (live). Mood from your daily check-in. Reaction time from the weekly 3-minute test. The under-6-hours flag is our design, not a NASA threshold.",
+        "Sleep from a wrist activity monitor (live). Mood from your daily check-in. Reaction time from the weekly 3-minute test. The under-6-hours flag is our design, not a NASA threshold. All values simulated.",
       sources: [SRC.barger, SRC.hrpSleep, SRC.ssla, SRC.co2],
     },
     {
       id: "eyes",
       label: "Eyes",
       level: "L0",
-      status: "No change at your last eye exam. Next exam is due on flight day 90.",
+      status: `No change at your last eye exam (${p.lastEyeExam}). Next exam: ${p.nextEyeExam}.`,
       indicators: [
-        { id: "exam", label: "Last eye exam", value: "FD30", unit: "no change", provenance: "simulated", measuredHow: "periodic" },
-        { id: "next", label: "Next exam", value: "FD90", unit: "", provenance: "simulated", measuredHow: "periodic" },
+        { id: "exam", label: "Last eye exam", value: p.lastEyeExam, unit: "no change", provenance: "simulated", measuredHow: "periodic" },
+        { id: "next", label: "Next exam", value: p.nextEyeExam, unit: "", provenance: "simulated", measuredHow: "periodic" },
       ],
       meaning:
         "In microgravity, fluid shifts toward the head and can change the shape of the eye and the optic nerve. NASA calls this SANS and checks every long-duration crew member with scheduled eye exams.",
@@ -182,10 +180,10 @@ export function getRegions(crewId: string): Region[] {
       level: "L0",
       status: "Heart rate and blood pressure are within your usual range.",
       indicators: [
-        { id: "hr", label: "Resting heart rate", value: "64", unit: "bpm", baseline: "62 ± 5", provenance: "simulated", measuredHow: "live" },
-        { id: "bp", label: "Blood pressure", value: "111/70", unit: "mmHg", baseline: "~112/71 in flight", provenance: "simulated", measuredHow: "periodic" },
+        { id: "hr", label: "Resting heart rate", value: String(p.hr), unit: "bpm", baseline: `${p.hrBaselineMean} ± ${p.hrBaselineSd}`, provenance: "simulated", measuredHow: "live" },
+        { id: "bp", label: "Blood pressure", value: p.bp, unit: "mmHg", baseline: "~112/71 in flight", provenance: "simulated", measuredHow: "periodic" },
       ],
-      trend: { title: "Resting heart rate, last 7 days", unit: "bpm", provenance: "simulated", points: series([61, 63, 62, 65, 63, 62, 64]), band: { low: 52, high: 72, label: "Your baseline ± 2 SD" } },
+      trend: { title: "Resting heart rate, last 7 days", unit: "bpm", provenance: "simulated", points: series(p.hr7), band: { low: p.hrBaselineMean - 2 * p.hrBaselineSd, high: p.hrBaselineMean + 2 * p.hrBaselineSd, label: "Your baseline ± 2 SD" } },
       meaning:
         "In flight, blood pressure is a little lower than on Earth because fluid moves toward the upper body. The bigger risk comes later: when you return to gravity, standing up can make you dizzy.",
       todo: "No action now. Before landing, NASA uses weight-based fluid loading with salt tablets to prevent dizziness.",
@@ -198,8 +196,8 @@ export function getRegions(crewId: string): Region[] {
       level: "L0",
       status: "Your blood oxygen is normal.",
       indicators: [
-        { id: "spo2", label: "Blood oxygen (SpO2)", value: "98", unit: "%", baseline: "normal 96–99", provenance: "simulated", measuredHow: "live" },
-        { id: "rr", label: "Breathing rate", value: "14", unit: "/ min", provenance: "simulated", measuredHow: "live" },
+        { id: "spo2", label: "Blood oxygen (SpO2)", value: String(p.spo2), unit: "%", baseline: "normal 96–99", provenance: "simulated", measuredHow: "live" },
+        { id: "rr", label: "Breathing rate", value: String(p.breathing), unit: "/ min", provenance: "simulated", measuredHow: "live" },
       ],
       meaning:
         "The ISS cabin air is like sea level, so oxygen should read the same as on Earth. A reading below 90% means low oxygen in the blood and needs attention right away.",
@@ -218,8 +216,7 @@ export function getRegions(crewId: string): Region[] {
       trend: hasRealBlood ? bloodTrend(crewId) : undefined,
       meaning:
         "Blood values tell you about energy, hydration and kidneys. Your baseline is your own pre-flight average, so a change means more than a single number on a chart. Glucose under 70 mg/dL is low; under 54 is very low.",
-      todo:
-        "If glucose is under 70 mg/dL: take 15 g of fast carbohydrate, check again after 15 minutes, and repeat if still low. Drink to your 2.5 L daily target.",
+      todo: `If glucose is under 70 mg/dL: take 15 g of fast carbohydrate, check again after 15 minutes, and repeat if still low. Fluids today: ${p.fluidsL.toFixed(1)} of 2.5 L.`,
       method:
         "Real values from NASA OSDR (Inspiration4 crew, pre- and post-flight). On the ISS, blood samples are frozen and analysed after return; on-board analysers are still tech demos.",
       sources: [SRC.osd575, SRC.ada, SRC.water],
@@ -229,13 +226,18 @@ export function getRegions(crewId: string): Region[] {
       id: "musculo",
       label: "Bones and muscles",
       level: "L0",
-      status: "Log today’s exercise session to keep your streak.",
+      status:
+        p.exercise.planned === 0
+          ? "No exercise session planned today."
+          : p.exercise.done >= p.exercise.planned
+            ? "Today’s exercise is done."
+            : "Log today’s exercise session to keep your streak.",
       indicators: [
-        { id: "ex", label: "Exercise logged today", value: "0", unit: "of 1 session", provenance: "simulated", measuredHow: "periodic" },
+        { id: "ex", label: "Exercise logged today", value: String(p.exercise.done), unit: `of ${p.exercise.planned} session${p.exercise.planned === 1 ? "" : "s"}`, provenance: "simulated", measuredHow: "periodic" },
       ],
       meaning:
         "Without gravity, bones lose 1–1.5% of their density each month on 4–6 month missions, and muscles weaken. Daily exercise is the main protection.",
-      todo: "Do and log today’s planned session.",
+      todo: p.exercise.done >= p.exercise.planned ? "Keep the daily routine." : "Do and log today’s planned session.",
       method: "Exercise log from the daily routine. Bone density is measured before and after flight.",
       sources: [SRC.bone],
     },
@@ -245,8 +247,8 @@ export function getRegions(crewId: string): Region[] {
       level: "L0",
       status: "Radiation dose and body temperature are normal for the ISS.",
       indicators: [
-        { id: "dose", label: "Dose today", value: "0.32", unit: "mSv", baseline: "ISS 0.2–0.5 / day", provenance: "simulated", measuredHow: "live" },
-        { id: "temp", label: "Core temperature", value: "37.4", unit: "°C", baseline: "+~1 °C drift", provenance: "simulated", measuredHow: "live" },
+        { id: "dose", label: "Dose today", value: p.doseToday.toFixed(2), unit: "mSv", baseline: "ISS 0.2–0.5 / day", provenance: "simulated", measuredHow: "live" },
+        { id: "temp", label: "Core temperature", value: p.tempC.toFixed(1), unit: "°C", baseline: "+~1 °C drift", provenance: "simulated", measuredHow: "live" },
       ],
       meaning:
         "On the ISS you receive about 0.2–0.5 mSv of radiation a day, about 40–90 mSv in six months. NASA’s career limit is 600 mSv. Resting body temperature also rises by about 1 °C over long missions.",
@@ -255,6 +257,26 @@ export function getRegions(crewId: string): Region[] {
       sources: [SRC.dose, SRC.stahn],
     },
   ];
+  return applyStory(regions, p);
+}
+
+/** The crew member's own story replaces one region's status, meaning and next step. */
+function applyStory(regions: Region[], p: CrewProfile): Region[] {
+  const st = p.story;
+  if (!st) return regions;
+  return regions.map((r) => {
+    if (r.id !== st.region) return r;
+    const imm = st.imm ? `NASA IMM: ${st.imm.condition}, ${Math.round(st.imm.probability * 100)}% chance on a 6-month ISS mission.` : undefined;
+    return {
+      ...r,
+      level: st.level,
+      status: st.status,
+      meaning: st.meaning,
+      todo: st.todo,
+      method: imm ? `${r.method} ${imm}` : r.method,
+      sources: [...(st.imm ? [IMM_SOURCE_LINK] : []), ...(st.extraSource ? [st.extraSource] : []), ...r.sources],
+    };
+  });
 }
 
 export const LEVEL_RANK: Record<StatusLevel, number> = { L0: 0, L1: 1, L2: 2, L3: 3, L4: 4 };
@@ -271,7 +293,8 @@ export interface Routine {
   reactionBestMs: number;
 }
 
-export const INITIAL_ROUTINE: Routine = { checkinDone: false, reactionBestMs: 241 };
+/** reactionBestMs: best measured in this session (Infinity until a test is run); profiles hold the earlier best. */
+export const INITIAL_ROUTINE: Routine = { checkinDone: false, reactionBestMs: Number.POSITIVE_INFINITY };
 
 /** Simulated baseline for the reaction test (median, ms). */
 export const REACTION_BASELINE_MS = 265;
@@ -282,18 +305,24 @@ export function recentShortNights(crewId: string): number {
   return head?.trend?.points.filter((p) => p.value < 6).length ?? 0;
 }
 
-/** Simulated daily routine. Fluid target 2.5 L/day: CLAUDE_HAFIZASI.md §4.1. */
-export function getToday(routine: Routine = INITIAL_ROUTINE) {
+/** Simulated daily routine for one crew member. Fluid target 2.5 L/day: CLAUDE_HAFIZASI.md §4.1. */
+export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3") {
+  const p = profileFor(crewId);
   const tasks: TodayTask[] = [
     { id: "checkin", label: "Daily check-in", done: routine.checkinDone },
     { id: "morning", label: "Morning vitals", done: true },
-    { id: "exercise", label: "Exercise log", done: false },
-    { id: "fluids", label: "Fluids 2.5 L (1.4 L so far)", done: false },
+    { id: "exercise", label: p.exercise.planned === 0 ? "Exercise (none planned)" : "Exercise log", done: p.exercise.done >= p.exercise.planned },
+    { id: "fluids", label: `Fluids 2.5 L (${p.fluidsL.toFixed(1)} L so far)`, done: p.fluidsL >= 2.5 },
   ];
   return {
     tasks,
-    streakDays: routine.checkinDone ? 7 : 6,
-    nextMeasurement: "Evening vitals at 19:30 GMT",
-    reactionBestMs: routine.reactionBestMs,
+    streakDays: p.streakDays + (routine.checkinDone ? 1 : 0),
+    nextMeasurement: `Flight day ${p.missionDay} · evening vitals at 19:30 GMT`,
+    reactionBestMs: Math.min(routine.reactionBestMs, p.reactionBestMs),
   };
 }
+
+/** Status level implied by each crew member's own profile (for mock crew data). */
+export const PROFILE_LEVELS: Record<string, StatusLevel> = Object.fromEntries(
+  Object.entries(PROFILES).map(([id, pr]) => [id, pr.story?.level ?? "L0"]),
+);

@@ -70,7 +70,7 @@ export function PersonalScreen({
   }, [crewId, station]);
   // With the backend, only the CMO or ground may decide; mock mode keeps the original demo behaviour.
   const canDecide = !station || role.kind !== "astronaut";
-  const today = useMemo(() => getToday(routine), [routine]);
+  const today = useMemo(() => getToday(routine, crewId), [routine, crewId]);
   const top = worst(regions);
 
   // An alert opens its region; otherwise start on the day summary.
