@@ -86,7 +86,7 @@ Both sides use these names and values. If one changes, update this section in th
 | `MissionTag` | `name`, `kind` (`commercial`/`nasa`), `start`, `end` (ISO dates), `orbit`, `crew`, `hostedBy`, `studyId`, `link` |
 | `Reading` | `crewId`, `metric`, `value`, `unit`, `timestamp`, `provenance`, `measuredHow` |
 | `CheckIn` | `crewId`, `date`, mood/fatigue/stress/conflict (0–100), sleep hours and quality, workload, crew climate, MCC frustration, family, restorative activities, food |
-| `Alert` | `id`, `crewId` (or `STATION`), `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`), `category` (`VITALS`, `MEDICATION`, `PSYCH`, `ENVIRONMENT`, `EMERGENCY`; drives the privacy filter), `active` (false once the rule stops firing), `createdAt` |
+| `Alert` | `id`, `crewId` (or `STATION`), `level`, `title`, `explanation`, `recommendation`, `evidence`, `source`, `status` (`open`/`approved`/`rejected`), `category` (`VITALS`, `MEDICATION`, `PSYCH`, `ENVIRONMENT`, `EMERGENCY`, `SUPPORT`; drives the privacy filter), `active` (false once the rule stops firing), `createdAt` |
 | `Forecast` | `crewId`, `horizonHours` (6/12), `metric`, `points[]`, `label: "modelled"` |
 | `Environment` | `co2_mmHg`, `temp_C`, `rh_pct`, `doseRate_uGy_h` (absorbed), `doseEqRate_uSv_h` (dose equivalent, ICRP-60; empty if the source has none), `instrument`, `timestamp`, `provenance` |
 | `Scenario` | `id`, `title`, `steps[]` |

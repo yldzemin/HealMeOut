@@ -13,5 +13,7 @@ public enum DataKind {
     /** Cabin environment and radiation: station-wide. */
     ENVIRONMENT,
     /** A crew member needs help now: broadcast to everyone. */
-    EMERGENCY
+    EMERGENCY,
+    /** Crisis wording in the support companion (#51): the astronaut and the CMO, never the message itself. */
+    SUPPORT
 }

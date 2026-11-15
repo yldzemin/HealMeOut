@@ -53,7 +53,8 @@ export interface ApiCrewCard {
   checkIns?: { date: string; mood: number; fatigue: number; stress: number; conflict: number; sleepHours: number }[];
 }
 
-export type AlertCategory = "VITALS" | "MEDICATION" | "PSYCH" | "ENVIRONMENT" | "EMERGENCY";
+/** SUPPORT: crisis wording in the support companion (#51); only the astronaut and the CMO get it. */
+export type AlertCategory = "VITALS" | "MEDICATION" | "PSYCH" | "ENVIRONMENT" | "EMERGENCY" | "SUPPORT";
 
 export interface ApiAlert {
   id: string;

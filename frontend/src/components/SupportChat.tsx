@@ -83,7 +83,10 @@ export function SupportChat({ view }: { view: ViewKind }) {
                 {m.text}
               </p>
               {m.author === "companion" && m.flags.includes("crisis") && (
-                <p className="mt-1 text-[11px] text-status-emergency">Safety reply · contact your flight surgeon now</p>
+                <p className="mt-1 text-[11px] text-status-emergency">
+                  Safety reply · contact your flight surgeon now
+                  {m.flags.includes("cmo-alerted") && " · the CMO knows you need support, not what you wrote"}
+                </p>
               )}
             </div>
           ))}
@@ -120,6 +123,7 @@ export function SupportChat({ view }: { view: ViewKind }) {
         {error && <p className="text-xs text-status-emergency">{error}</p>}
         <p className="text-[11px] text-muted-foreground">
           Not a therapist and not medical advice. In a crisis, contact your flight surgeon or behavioral health provider now.
+          Crisis wording also tells the CMO that you need support; the CMO never sees what you wrote.
         </p>
       </CardContent>
     </Card>

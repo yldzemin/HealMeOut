@@ -46,6 +46,7 @@ import astratwin.store.InMemoryMedicalCardRepository;
 import astratwin.store.InMemoryReadingRepository;
 import astratwin.store.MedicalCardRepository;
 import astratwin.store.ReadingRepository;
+import astratwin.support.SupportAlert;
 import astratwin.twin.BaselineStatistics;
 import astratwin.twin.CumulativeDoseModel;
 import astratwin.twin.SleepDebtModel;
@@ -56,6 +57,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -85,6 +87,8 @@ public final class Station {
     private final AlertRepository alerts = new InMemoryAlertRepository();
     private final CheckInRepository checkIns = new InMemoryCheckInRepository();
     private final MedicalCardRepository cards = new InMemoryMedicalCardRepository();
+    /** Open "needs support now" requests (#51): crew id → time of the latest crisis message. Kept across resets. */
+    private final Map<String, Instant> supportRequests = new LinkedHashMap<>();
     private final RulesEngine rules;
     private final TwinEngine twin;
     private final PrivacyFilter privacy;
@@ -178,8 +182,33 @@ public final class Station {
         readingListeners.forEach(l -> l.accept(reading));
     }
 
-    public synchronized Alert setAlertStatus(String alertId, AlertStatus status) {
-        return alerts.setStatus(alertId, status);
+    /**
+     * CMO or ground decision on an alert this viewer can see; other alerts are reported as missing, so
+     * their existence is not revealed. Deciding a support alert closes the request.
+     */
+    public synchronized Alert setAlertStatus(String alertId, AlertStatus status, ViewRequest request) {
+        Alert alert = alerts.find(alertId)
+                .filter(a -> allows(a.category(), request, a.crewId()))
+                .orElseThrow(() -> new NoSuchElementException("no alert " + alertId));
+        Alert decided = alerts.setStatus(alertId, status);
+        if (alert.category() == DataKind.SUPPORT) {
+            supportRequests.remove(alert.crewId());
+            reevaluate();
+            return alerts.find(alertId).orElse(decided);
+        }
+        return decided;
+    }
+
+    /**
+     * Crisis wording in the support companion (#51): the CMO gets a "needs support now" alert with
+     * no message content. A new request reopens an alert the CMO has already acknowledged.
+     */
+    public synchronized void raiseSupportRequest(String crewId) {
+        member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
+        supportRequests.put(crewId, Instant.now());
+        String id = SupportAlert.id(crewId);
+        alerts.find(id).filter(a -> a.status() != AlertStatus.OPEN).ifPresent(a -> alerts.setStatus(id, AlertStatus.OPEN));
+        reevaluate();
     }
 
     public synchronized StationView view(ViewRequest request) {
@@ -188,7 +217,7 @@ public final class Station {
                         checkIns.forCrew(m.id())))
                 .toList();
         List<Alert> visible = privacy.alerts(request, alerts.all(), cards::find);
-        Level stationLevel = alerts.all().stream().filter(a -> a.active() && a.category() != DataKind.PSYCH)
+        Level stationLevel = alerts.all().stream().filter(a -> a.active() && changesLevel(a))
                 .map(Alert::level).reduce(Level.L0, Level::max);
         return new StationView(request.viewer(), request.viewerCrewId(), stationLevel, crewCards, visible,
                 environment.latest(e -> e.co2_mmHg() != null).orElse(null),
@@ -273,15 +302,20 @@ public final class Station {
             byCrew.put(m.id(), checkIns.forCrew(m.id()));
         }
         RuleContext context = new RuleContext(crew.all(), readings, environment.all(), baselines, byCrew, Instant.now());
-        List<Alert> firing = rules.evaluate(context);
+        List<Alert> firing = new ArrayList<>(rules.evaluate(context));
+        supportRequests.forEach((crewId, at) -> firing.add(SupportAlert.of(crewId, at)));
         alerts.sync(firing);
         for (CrewMember m : crew.all()) {
-            // Psych alerts never change the level: the level is shown on the Crew Deck.
-            Level level = firing.stream().filter(a -> a.crewId().equals(m.id()) && a.category() != DataKind.PSYCH)
+            Level level = firing.stream().filter(a -> a.crewId().equals(m.id()) && changesLevel(a))
                     .map(Alert::level)
                     .reduce(Level.L0, Level::max);
             crew.save(m.withLevel(level));
         }
+    }
+
+    /** Psych and support alerts never change a level: levels are shown to everyone on the Crew Deck. */
+    private static boolean changesLevel(Alert alert) {
+        return alert.category() != DataKind.PSYCH && alert.category() != DataKind.SUPPORT;
     }
 
     private List<Reading> vitals(String crewId) {

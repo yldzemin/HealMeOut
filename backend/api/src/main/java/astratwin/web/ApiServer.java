@@ -243,7 +243,7 @@ public final class ApiServer {
                     case "reject" -> AlertStatus.REJECTED;
                     default -> throw new IllegalArgumentException("use approve or reject");
                 };
-                yield station.setAlertStatus(p[1], status);
+                yield station.setAlertStatus(p[1], status, request);
             }
             case "GET crew" -> {
                 require(p.length == 3, "use GET /api/crew/{id}/baselines or /forecasts");

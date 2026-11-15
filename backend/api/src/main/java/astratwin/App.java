@@ -56,7 +56,8 @@ public final class App {
         Station station = Station.load(data);
         TelemetryStreamer streamer = new TelemetryStreamer(station, dataRoot.resolve("stream").resolve("out"));
         OllamaResponder llm = llmOn ? new OllamaResponder(URI.create(llmUrl), llmModel, Duration.ofSeconds(90)) : null;
-        SupportService support = new SupportService(llm, new GuidedResponder(), station::latestCheckIn);
+        SupportService support = new SupportService(llm, new GuidedResponder(), station::latestCheckIn,
+                station::raiseSupportRequest);
         ApiServer server = new ApiServer(station, streamer, dataRoot.resolve("stream"), support, host, port).serveUi(ui);
         server.start();
         if (streamOnStart) {

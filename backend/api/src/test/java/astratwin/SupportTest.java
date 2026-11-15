@@ -1,5 +1,11 @@
 package astratwin;
 
+import astratwin.domain.Alert;
+import astratwin.domain.AlertStatus;
+import astratwin.domain.DataKind;
+import astratwin.domain.Level;
+import astratwin.domain.Viewer;
+import astratwin.privacy.ViewRequest;
 import astratwin.stream.TelemetryStreamer;
 import astratwin.support.GuidedResponder;
 import astratwin.support.SupportMessage;
@@ -52,6 +58,17 @@ final class SupportTest {
     }
 
     private SupportTest() {
+    }
+
+    /** The active support alert this viewer can see, if any. */
+    private static Optional<Alert> support(Station station, ViewRequest request) {
+        return station.view(request).alerts().stream()
+                .filter(a -> a.active() && a.category() == DataKind.SUPPORT).findFirst();
+    }
+
+    private static Level level(Station station, String crewId) {
+        return station.view(new ViewRequest(Viewer.CREW_DECK, null)).crew().stream()
+                .filter(c -> c.id().equals(crewId)).findFirst().orElseThrow().level();
     }
 
     private static SupportService service(SupportResponder primary) {
@@ -160,6 +177,45 @@ final class SupportTest {
             s.send("C3", "I feel a bit lonely");
             Check.equal(2, s.conversation("C3").size(), "C3 messages");
             Check.equal(0, s.conversation("C2").size(), "C2 sees nothing of C3");
+        });
+        tests.put("support: crisis wording alerts the CMO (#51), without the message, and no one else", () -> {
+            Station station = Station.load(cache);
+            Level c3Before = level(station, "C3");
+            Level stationBefore = station.view(new ViewRequest(Viewer.CMO, null)).stationLevel();
+            SupportService s = new SupportService(null, new GuidedResponder(), station::latestCheckIn, station::raiseSupportRequest);
+            String text = "I don't want to live anymore";
+            SupportMessage reply = s.send("C3", text);
+            Check.equal(List.of("crisis", "cmo-alerted"), reply.flags(), "flags");
+            Check.isTrue(reply.text().endsWith(SupportService.CMO_NOTICE), "the astronaut is told who was alerted: " + reply.text());
+
+            Alert alert = support(station, new ViewRequest(Viewer.CMO, null)).orElseThrow(() -> new AssertionError("CMO has no alert"));
+            Check.equal(Level.L2, alert.level(), "level");
+            Check.equal(AlertStatus.OPEN, alert.status(), "status");
+            for (String field : new String[] {alert.title(), alert.explanation(), alert.recommendation(), alert.evidence()}) {
+                Check.isTrue(!field.contains("want to live"), "message text leaked into the alert: " + field);
+            }
+            Check.isTrue(support(station, new ViewRequest(Viewer.SELF, "C3")).isPresent(), "C3 sees the alert about itself");
+            for (ViewRequest other : List.of(new ViewRequest(Viewer.GROUND, null), new ViewRequest(Viewer.CREW_DECK, null),
+                    new ViewRequest(Viewer.EMERGENCY, null), new ViewRequest(Viewer.SELF, "C2"))) {
+                Check.isTrue(support(station, other).isEmpty(), other.viewer() + " sees the support alert");
+            }
+            Check.equal(c3Before, level(station, "C3"), "crew level on the Crew Deck is unchanged");
+            Check.equal(stationBefore, station.view(new ViewRequest(Viewer.CMO, null)).stationLevel(), "station level unchanged");
+
+            station.startScenario("co2");
+            Check.isTrue(support(station, new ViewRequest(Viewer.CMO, null)).isPresent(), "a scenario reset keeps the open request");
+            try {
+                station.setAlertStatus(alert.id(), AlertStatus.APPROVED, new ViewRequest(Viewer.GROUND, null));
+                throw new AssertionError("ground decided an alert it cannot see");
+            } catch (java.util.NoSuchElementException expected) {
+                // reported as missing
+            }
+            station.setAlertStatus(alert.id(), AlertStatus.APPROVED, new ViewRequest(Viewer.CMO, null));
+            Check.isTrue(support(station, new ViewRequest(Viewer.CMO, null)).isEmpty(), "acknowledged: no longer active");
+            s.send("C3", "kendime zarar vermek istiyorum");
+            Alert again = support(station, new ViewRequest(Viewer.CMO, null)).orElseThrow(() -> new AssertionError("not reopened"));
+            Check.equal(AlertStatus.OPEN, again.status(), "a new crisis message reopens it");
+            Check.equal(List.of("medical-redirect"), s.send("C3", "Can I take melatonin?").flags(), "medical: no CMO alert");
         });
         tests.put("support HTTP: only the astronaut (SELF) can use it; CMO, Crew Deck and emergency get 403", () -> {
             Station station = Station.load(cache);

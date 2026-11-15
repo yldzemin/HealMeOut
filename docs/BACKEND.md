@@ -190,9 +190,10 @@ Enforce here, not only in the UI:
 | Medication | ✔ | ✔ | ✔ | only if opted in | allergies + current meds |
 | Psych check-in, psych alerts | ✔ | — (shared to BHP by the astronaut) | — | **never** | **never** |
 | Support companion conversation (§10) | ✔ | **never** | **never** | **never** | **never** |
+| "Needs support now" alert (§10, #51): who and when, never the message | ✔ | ✔ | — | **never** | — |
 | Crew climate | own answers | aggregate | aggregate | aggregate, min. response threshold | — |
 
-\* **Provisional (#56):** the frontend has a "Ground (flight surgeon)" role; the backend gives it the CMO tier without psychological data until the team decides. Psych alerts never change the crew level, because the level is visible on the Crew Deck. CMO and ground may approve or reject alerts.
+\* **Provisional (#56):** the frontend has a "Ground (flight surgeon)" role; the backend gives it the CMO tier without psychological data until the team decides. Psych and support alerts never change the crew level, because the level is visible on the Crew Deck. CMO and ground may approve or reject the alerts they can see; any other alert id answers 404, so its existence is not revealed.
 
 Basis: NASA-STD-3001 Vol 1 V1 6002/6003/6010/6011 (private medical and psychological communications); AMIS 2024 (NTRS 20240004505); IOM *Safe Passage*.
 
@@ -247,7 +248,7 @@ Every message goes through these steps in order:
 
 | Step | Class | What it does |
 |---|---|---|
-| 1. Safety gate | `SafetyGate` | Crisis wording (EN/TR, accent-insensitive) gets a fixed reply: "contact your flight surgeon or behavioral health provider now, do not stay alone". Questions about medication, doses or diagnosis are redirected to the CMO. **The model is not called** in either case. |
+| 1. Safety gate | `SafetyGate` | Crisis wording (EN/TR, accent-insensitive) gets a fixed reply: "contact your flight surgeon or behavioral health provider now, do not stay alone", and **alerts the CMO** (see below). Questions about medication, doses or diagnosis are redirected to the CMO. **The model is not called** in either case. |
 | 2. Responder | `SupportResponder` → `OllamaResponder` | Calls `http://127.0.0.1:11434/api/chat` with the conditioning prompt, a worked example and the last 4 messages. |
 | 3. Output filter | `OutputFilter` | Rejects replies that name a drug or a dose, give a diagnosis, or claim to be human. Removes bracketed asides and cuts an unfinished last sentence. |
 | Fallback | `GuidedResponder` | Rule-based reply, used when the model is off, unreachable or failing, or its reply was filtered. |
@@ -277,4 +278,9 @@ Every message goes through these steps in order:
   - 34 cases: crisis in English and Turkish, false-positive traps, medication and diagnosis, adversarial, everyday, Turkish input.
   - Last run: **34/34**, reproducible across runs.
   - 18 fixed safety replies (the model is not called), 13 model replies (mean 2.9 s), 3 guided replies.
-- **Open decision (needs-human):** a crisis message currently gets the fixed reply and nothing else. Whether it should also alert the CMO or the flight surgeon, overriding the privacy rule for safety, is a team decision.
+- **Crisis → CMO alert (team decision, #51):**
+  - Crisis wording raises an L2 alert `support:<crewId>`, category `SUPPORT`: "Needs support now", the time, and what to do (check on them in person, stay with them, set up a private conference with the flight surgeon or behavioral health provider). **The message itself is never in the alert.**
+  - Visible to the astronaut and the CMO only: not ground, the Crew Deck or the emergency view (§6). It changes neither the crew level nor the station level, so the Crew Deck shows nothing.
+  - The reply tells the astronaut: "I have let the CMO know that you need support now. They do not see what you wrote." It says so only if the alert was actually raised (flag `cmo-alerted`).
+  - The CMO acknowledges it ("I am on it" in the app, `POST /api/alerts/support:<id>/approve?viewer=CMO`), which closes it. A new crisis message reopens it. Open requests survive a scenario reset.
+  - Medication questions and everything else alert no one.

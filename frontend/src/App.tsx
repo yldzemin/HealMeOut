@@ -8,6 +8,7 @@ import { LeftRail } from "@/components/LeftRail";
 import { PersonalScreen } from "@/screens/PersonalScreen";
 import { CrewDeckScreen } from "@/screens/CrewDeckScreen";
 import { EmergencyOverlay } from "@/components/EmergencyOverlay";
+import { SupportAlertBanner } from "@/components/SupportAlertBanner";
 import { CheckInScreen } from "@/screens/CheckInScreen";
 import { EnvironmentScreen } from "@/screens/EnvironmentScreen";
 import { TwinScreen } from "@/screens/TwinScreen";
@@ -53,6 +54,10 @@ export default function App() {
     ? station.alerts.filter((a) => a.active && a.status === "open" && LEVEL_RANK[a.level] >= LEVEL_RANK.L2).length
     : crew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
 
+  // Team decision #51: crisis wording in the support companion alerts the CMO (who and when, not what).
+  const supportAlerts =
+    live && role.kind === "cmo" ? station.alerts.filter((a) => a.active && a.status === "open" && a.category === "SUPPORT") : [];
+
   const startEmergency = async (patientId: string) => {
     if (!live) {
       setLocalEmergency({ patientId, startedAt: Date.now() });
@@ -73,6 +78,16 @@ export default function App() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <StatusBar crew={crew} role={role} onRoleChange={setRole} openAlerts={openAlerts} mode={mode} />
+      {supportAlerts.length > 0 && (
+        <SupportAlertBanner
+          alerts={supportAlerts}
+          crew={crew}
+          onAcknowledge={async (id) => {
+            await decideAlert(id, "approve", role);
+            await refresh();
+          }}
+        />
+      )}
       <div className="flex min-h-0 flex-1">
         <LeftRail current={screen} onSelect={setScreen} />
         <main className="min-w-0 flex-1 overflow-auto p-8">
