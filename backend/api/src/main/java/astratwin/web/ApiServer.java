@@ -284,7 +284,7 @@ public final class ApiServer {
                     String crewId = selfCrewId(request);
                     var context = station.companionContext(crewId)
                             .orElseThrow(() -> new NoSuchElementException("no companion profile for " + crewId));
-                    yield Map.of("persona", context.persona(), "recent", context.recent(),
+                    yield Map.of("who", context.who(), "persona", context.persona(), "recent", context.recent(),
                             "sentToCompanion", astratwin.support.SupportPrompt.context(context));
                 }
                 require(p[1].equals("conversation"), "use GET /api/support/status, /conversation or /profile");

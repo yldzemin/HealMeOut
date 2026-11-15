@@ -187,6 +187,8 @@ export interface ApiCrewPersona {
 
 /** What the companion knows: profile, last 3 days, and the exact text the local model receives. */
 export interface ApiCompanionProfile {
+  /** "LYRA (C3), crew member in the Columbus module". */
+  who: string;
   persona: ApiCrewPersona;
   recent: string[];
   sentToCompanion: string;

@@ -110,6 +110,10 @@ public final class SupportService {
                 // continue below
             }
         }
+        Optional<SupportReply> personal = PersonalReplies.reply(request.text(), request.context());
+        if (personal.isPresent()) {
+            return personal.get();
+        }
         if (primary == null) {
             return fallback(request, "llm-off");
         }
@@ -125,10 +129,11 @@ public final class SupportService {
             if (reply.isEmpty()) {
                 return fallback(request, "llm-error");
             }
-            Optional<String> safe = filter.check(reply.get().text(), request.context());
+            Optional<String> safe = filter.check(reply.get().text(), request.context())
+                    .filter(text -> !echoesExample(text, request));
             if (safe.isPresent()) {
-                return withHealthNudge(new SupportReply(safe.get(), reply.get().source(),
-                        attempt == 0 ? List.of() : List.of("retried")), request);
+                return withGriefNudge(withHealthNudge(new SupportReply(safe.get(), reply.get().source(),
+                        attempt == 0 ? List.of() : List.of("retried")), request), request);
             }
         }
         return fallback(request, "filtered");
@@ -149,6 +154,45 @@ public final class SupportService {
                 .replaceAll("\\.$", "") + ".";
         String body = OutputFilter.limitWords(reply.text(), OutputFilter.MAX_WORDS - nudge.split("\\s+").length);
         return new SupportReply(body + " " + nudge, reply.source(), reply.flags());
+    }
+
+    private static final String PEOPLE = "(mother|father|mom|mum|dad|grandmother|grandfather|grandma|grandpa|granny|brother|sister|"
+            + "friend|wife|husband|partner|son|daughter|aunt|uncle|cousin|parent)";
+    /** The death of a person close to them (not "my laptop died"); NASA BHP's top concern (Picano 2024). */
+    private static final Pattern BEREAVEMENT = Pattern.compile("\\bpassed away\\b|\\bfuneral\\b|\\blost (my|our) " + PEOPLE
+            + "|\\b" + PEOPLE + "s? (has |have )?(died|passed)|\\bvefat|\\bcenaze|\\b(annem|babam|anneannem|babaannem|dedem|"
+            + "kardesim|esim) (oldu|vefat)", Pattern.CASE_INSENSITIVE);
+    static final String GRIEF_NUDGE = "When you feel ready, a private family conference can help you be with your family, "
+            + "and your behavioral health provider is there for you at any time.";
+
+    /**
+     * Rule 5, made sure of for a death in the family: the reply points to the family conference or the
+     * behavioral health provider (phi3.5 offered only journaling once, eval 2026-11-15).
+     */
+    static SupportReply withGriefNudge(SupportReply reply, SupportRequest request) {
+        String lower = reply.text().toLowerCase(java.util.Locale.ROOT);
+        if (!BEREAVEMENT.matcher(SafetyGate.normalize(request.text())).find() || lower.contains("conference")
+                || lower.contains("behavioral health") || lower.contains("flight surgeon")) {
+            return reply;
+        }
+        String body = OutputFilter.limitWords(reply.text(), OutputFilter.MAX_WORDS - GRIEF_NUDGE.split("\\s+").length);
+        return new SupportReply(body + " " + GRIEF_NUDGE, reply.source(), reply.flags());
+    }
+
+    /** Phrases of the prompt's worked example; phi3.5 sometimes treats the example as the person's own words. */
+    private static final Pattern EXAMPLE_PHRASES = Pattern.compile(
+            "\\bsnap(s|ping|ped)?\\b|stretched thin|spilling into|clears? the air|edge off", Pattern.CASE_INSENSITIVE);
+
+    /** The reply borrows the worked example although the person never said anything like it. */
+    static boolean echoesExample(String reply, SupportRequest request) {
+        java.util.regex.Matcher m = EXAMPLE_PHRASES.matcher(reply);
+        if (!m.find()) {
+            return false;
+        }
+        String said = (request.text() + " " + String.join(" ", request.history().stream()
+                .filter(x -> x.author().equals("crew")).map(SupportMessage::text).toList())).toLowerCase(java.util.Locale.ROOT);
+        String first = m.group().toLowerCase(java.util.Locale.ROOT).split(" ")[0];
+        return !said.contains(first.startsWith("snap") ? "snap" : first);
     }
 
     /** True only if the CMO alert was raised; the reply never claims an alert that failed. */
@@ -178,7 +222,7 @@ public final class SupportService {
 
     private SupportReply fallback(SupportRequest request, String why) {
         SupportReply r = fallback.reply(request).orElseThrow(() -> new IllegalStateException("fallback must answer"));
-        return withHealthNudge(new SupportReply(r.text(), r.source(), List.of(why)), request);
+        return withGriefNudge(withHealthNudge(new SupportReply(r.text(), r.source(), List.of(why)), request), request);
     }
 
     public List<SupportMessage> conversation(String crewId) {

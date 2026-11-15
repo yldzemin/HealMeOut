@@ -307,7 +307,14 @@ public final class Station {
                                 ? " (waiting for the CMO)" : ""))
                 .toList();
         recent.add(notes.isEmpty() ? "Open health notes: none." : "Open health notes: " + String.join("; ", notes) + ".");
-        return Optional.of(new CompanionContext(persona.get(), List.copyOf(recent)));
+        CrewMember m = member(crewId).orElseThrow(() -> new NoSuchElementException("no crew member " + crewId));
+        String role = switch (m.role()) {
+            case CMO1 -> "crew medical officer 1";
+            case CMO2 -> "crew medical officer 2";
+            default -> "crew member";
+        };
+        String module = m.module().replaceAll(" \\(.*\\)$", "");
+        return Optional.of(new CompanionContext(crewId, m.callsign(), role, module, persona.get(), List.copyOf(recent)));
     }
 
     /** "heart rate 64 bpm", or "heart rate 58–72 bpm, now 64" when it varied in the window. */

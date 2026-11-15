@@ -98,6 +98,8 @@ public final class SupportPrompt {
     public static String context(CompanionContext context) {
         CrewPersona p = context.persona();
         StringBuilder s = new StringBuilder("The person you are talking to (their own profile and data, simulated; they can see it too):\n");
+        s.append("- Your name: ").append(context.callsign()).append(" (call sign); you are ").append(context.who())
+                .append(". Call them ").append(context.callsign()).append(" if you use a name.\n");
         s.append("- You are ").append(String.join(", ", p.traits())).append(".\n");
         s.append("- Your hobbies: ").append(String.join(", ", p.hobbies())).append(".\n");
         s.append("- What helps you: ").append(String.join(", ", p.helps())).append(".\n");

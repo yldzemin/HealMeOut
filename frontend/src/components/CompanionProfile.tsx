@@ -27,6 +27,7 @@ export function CompanionProfile({ view, refreshKey }: { view: ViewKind; refresh
   if (!profile) return <p className="text-xs text-muted-foreground">Loading your profile…</p>;
   const p = profile.persona;
   const rows: [string, string][] = [
+    ["You", profile.who],
     ["Personality", p.traits.join(", ")],
     ["Hobbies", p.hobbies.join(", ")],
     ["What helps you", p.helps.join(", ")],

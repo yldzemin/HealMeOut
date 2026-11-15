@@ -323,6 +323,7 @@ Every message goes through these steps in order:
     - **Guided fallback:** it adds one line from "what helps you".
   - `GET /api/support/profile` (SELF only) returns the profile, the 3-day lines and the exact text the model gets. The app shows them under *About you* in the chat.
   - The eval now gives each case its crew member's real context, starts each case with a fresh conversation (before, every case shared C1's history), and adds 11 personal cases: C3 gets meditation or prayer, C5 meditation, C7 ham radio; C1 and C4 never get prayer; C4's nausea is pointed to the CMO; and recent data is never read out as numbers.
+  - **Knows the person (2026-11-15, from a demo chat):** the context now names them ("LYRA (C3), crew member in the Columbus module"). A greeting and "what is my name" / "what do you know about me" (EN/TR) get a reply built from the profile (`PersonalReplies`, source `profile`). Before, phi3.5 answered "hi" with a line from the worked example ("snapping at others") and "what is my name" with "you don't have a personal name". A reply that borrows the worked example is rejected. A death in the family always points to the family conference or the behavioral health provider. Eval: 79 cases, **79/79**; `before` in a case replays earlier turns.
   - **Fixed replies added after evaluation:**
     - "Are you a real person?" (phi3.5 called itself "Phi").
     - Questions about another crew member's health: given its own user's data, phi3.5 reported it as C2's mood.

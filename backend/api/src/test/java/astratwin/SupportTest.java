@@ -202,6 +202,52 @@ final class SupportTest {
             Check.isTrue(station.companionContext("C3").orElseThrow().recent().stream().noneMatch(l -> l.contains("support now")),
                     "no support alert in the context");
         });
+        tests.put("support: it knows the person's name; greetings and 'what is my name' come from the profile", () -> {
+            Station station = Station.load(cache);
+            FakeResponder llm = new FakeResponder("Hello! Journaling might help before they lead to snapping at others.", true);
+            SupportService s = new SupportService(llm, new GuidedResponder(), station::companionContext);
+            SupportMessage hi = s.send("C3", "hi");
+            Check.equal(List.of("greeting"), hi.flags(), "greeting flag");
+            Check.isTrue(hi.text().startsWith("Hi LYRA."), "greets by name: " + hi.text());
+            SupportMessage name = s.send("C3", "what is my name");
+            Check.equal(List.of("about-you"), name.flags(), "about-you flag");
+            Check.isTrue(name.text().startsWith("You are LYRA (C3), crew member in the Columbus module."), name.text());
+            Check.isTrue(s.send("C3", "Benim adım ne?").text().contains("LYRA"), "Turkish");
+            Check.isTrue(s.send("C5", "merhaba").text().startsWith("Hi RIGEL."), "Turkish greeting, English reply");
+            Check.equal(0, llm.calls, "the model is not asked");
+            Check.equal(List.of("crisis"), s.send("C3", "hi, I don't want to live anymore").flags(), "crisis still wins");
+            String c7 = s.send("C7", "Do you know who I am?").text();
+            Check.isTrue(c7.indexOf("ham radio") == c7.lastIndexOf("ham radio"), "not the same thing twice: " + c7);
+            Check.isTrue(astratwin.support.SupportPrompt.context(station.companionContext("C3").orElseThrow())
+                    .contains("Your name: LYRA (call sign)"), "the model knows the name");
+            Check.equal(List.of(), service(new FakeResponder("Hello there, how are you today?", true)).send("C3", "hi").flags(),
+                    "without a context, the model answers");
+        });
+        tests.put("support: a reply that borrows the prompt's worked example is rejected", () -> {
+            Station station = Station.load(cache);
+            FakeResponder llm = new FakeResponder("Long days add up; journaling helps before they lead to snapping at others.", true);
+            SupportMessage r = new SupportService(llm, new GuidedResponder(), station::companionContext).send("C3", "I had a long day.");
+            Check.equal("guided", r.source(), "example echo rejected: " + r.text());
+            Check.equal(2, llm.calls, "retried once");
+            SupportMessage own = new SupportService(llm, new GuidedResponder(), station::companionContext)
+                    .send("C3", "I keep snapping at people.");
+            Check.equal("fake-llm", own.source(), "fine when the person said it");
+            SupportMessage snaps = new SupportService(new FakeResponder("Journaling might help with the snaps.", true),
+                    new GuidedResponder(), station::companionContext).send("C3", "I had a long day.");
+            Check.equal("guided", snaps.source(), "'the snaps' is the example too");
+        });
+        tests.put("support: a death in the family always points to the family conference or behavioral health", () -> {
+            Station station = Station.load(cache);
+            FakeResponder llm = new FakeResponder("That is a heavy loss. Journaling or sketching might help you hold her memory.", true);
+            SupportService s = new SupportService(llm, new GuidedResponder(), station::companionContext);
+            for (String text : List.of("My grandmother passed away and I can't be there.", "My dad died this morning.",
+                    "Babaannem vefat etti.")) {
+                String r = s.send("C3", text).text();
+                Check.isTrue(r.contains("family conference") || r.contains("behavioral health"), "support named: " + r);
+            }
+            String laptop = s.send("C3", "My laptop died and I lost an hour of work.").text();
+            Check.isTrue(!laptop.contains("behavioral health provider is there"), "not for a laptop: " + laptop);
+        });
         tests.put("support: faith only for people whose profile names one; never 'the crew member'", () -> {
             Station station = Station.load(cache);
             astratwin.support.OutputFilter f = new astratwin.support.OutputFilter();
