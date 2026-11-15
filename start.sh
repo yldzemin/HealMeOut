@@ -13,6 +13,9 @@ need java "Install the Java JDK 21 or newer: $JAVA_URL"
 need javac "Install the Java JDK (not only the JRE), 21 or newer: $JAVA_URL"
 need node "Install Node.js 22 LTS or newer: https://nodejs.org"
 need npm "Install Node.js 22 LTS or newer (npm comes with it): https://nodejs.org"
+# macOS has placeholder java/javac commands that only fail when run, so run them.
+java -version >/dev/null 2>&1 || { echo "Java is not installed. Install the Java JDK 21 or newer: $JAVA_URL"; exit 1; }
+javac -version >/dev/null 2>&1 || { echo "The Java JDK is not installed (javac). Install the JDK 21 or newer: $JAVA_URL"; exit 1; }
 major=$(java -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
 if ! [ "$major" -ge 21 ] 2>/dev/null; then
   echo "Java $major found; ASTRA-TWIN needs Java 21 or newer: $JAVA_URL"
@@ -24,8 +27,15 @@ if [ ! -f frontend/node_modules/.package-lock.json ] || [ frontend/package-lock.
   echo "== Installing the screen libraries (first run: a few minutes) =="
   (cd frontend && npm ci --no-audit --no-fund)
 fi
-if [ ! -f frontend/dist/index.html ] || [ -n "$(find frontend/src frontend/public frontend/index.html frontend/package.json \
-    -newer frontend/dist/index.html -print -quit)" ]; then
+# Node does the check, so it works the same everywhere (Git Bash on Windows may see Windows' own find.exe).
+stale=$(node -e '
+  const fs = require("fs"), path = require("path");
+  const built = (() => { try { return fs.statSync("frontend/dist/index.html").mtimeMs; } catch { return 0; } })();
+  const newer = (p) => { const s = fs.statSync(p);
+    return s.isDirectory() ? fs.readdirSync(p).some((f) => newer(path.join(p, f))) : s.mtimeMs > built; };
+  console.log(built === 0 || ["frontend/src", "frontend/public", "frontend/index.html", "frontend/package.json"].some(newer) ? "yes" : "");
+')
+if [ -n "$stale" ]; then
   echo "== Building the screens =="
   (cd frontend && npm run build)
 fi

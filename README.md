@@ -70,7 +70,7 @@ Run each installer and keep clicking **Next** with the default options.
 **Open a terminal.** You type every command below in it.
 
 - **Windows:** use **Git Bash**, which comes with Git. Open the Start menu, type `Git Bash` and open it. Do not use PowerShell or cmd.
-- **macOS:** press Cmd+Space, type `Terminal`, press Enter.
+- **macOS:** press Cmd+Space, type `Terminal`, press Enter. If `git --version` offers to install the command line developer tools, accept: they include Git.
 - **Linux:** press Ctrl+Alt+T.
 
 If a check says *command not found*, close the terminal and open a new one, because installers only update new terminals.

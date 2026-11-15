@@ -6,4 +6,5 @@ cd "$(dirname "$0")"
 [ -f out/astra-twin-api.jar ] || ./build.sh
 ui=()
 [ -f ../../frontend/dist/index.html ] && ui=(--ui ../../frontend/dist)
-exec java -jar out/astra-twin-api.jar --data ../../data/cache "${ui[@]}" "$@"
+# ${ui[@]+...}: bash 3.2 (macOS) treats an empty array as unbound under set -u.
+exec java -jar out/astra-twin-api.jar --data ../../data/cache ${ui[@]+"${ui[@]}"} "$@"
