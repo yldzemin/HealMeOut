@@ -55,16 +55,95 @@ Full inventory: [`NASA_DATA_SOURCES.md`](NASA_DATA_SOURCES.md). The 3D anatomy c
 
 ## Run it
 
+About 10 minutes the first time. You need the internet only for setup; after that the app runs offline in your browser.
+
+### Step 1: Install three programs (once)
+
+| Program | What it is for | Where to get it | Check: type this in a terminal |
+|---|---|---|---|
+| **Git** | downloads the code | [git-scm.com/downloads](https://git-scm.com/downloads) | `git --version` |
+| **Java JDK 21** or newer | runs the server | [adoptium.net](https://adoptium.net/temurin/releases/?version=21): pick your system and the **JDK** installer | `javac -version` shows `javac 21…` |
+| **Node.js 22 LTS** or newer | builds the screens | [nodejs.org](https://nodejs.org): the **LTS** installer | `node -v` shows `v22…` or higher |
+
+Run each installer and keep clicking **Next** with the default options.
+
+**Open a terminal.** You type every command below in it.
+
+- **Windows:** use **Git Bash**, which comes with Git. Open the Start menu, type `Git Bash` and open it. Do not use PowerShell or cmd.
+- **macOS:** press Cmd+Space, type `Terminal`, press Enter.
+- **Linux:** press Ctrl+Alt+T.
+
+If a check says *command not found*, close the terminal and open a new one, because installers only update new terminals.
+
+### Step 2: Download the code (once)
+
+Copy each line into the terminal and press Enter:
+
 ```sh
-# Full app: build the frontend once (Node.js), then start the API (Java 21, no other dependencies)
-cd frontend && npm ci && npm run build && cd ..
-backend/api/run.sh                 # app: http://127.0.0.1:8080/   demo console: /demo/
+git clone https://github.com/yldzemin/HealMeOut.git
+cd HealMeOut
 ```
 
-- **Support companion (optional):** install [Ollama](https://ollama.com), then `ollama pull phi3.5`. Without it, a rule-based companion answers.
-- **Desktop app:** `cd frontend && npm run tauri build` (Tauri v2; prerequisites in [`docs/FRONTEND.md`](docs/FRONTEND.md)).
-- **Tests:** `backend/api/test.sh` (55 tests).
-- **Companion evaluation against the model:** `backend/api/eval.sh`; report in [`backend/api/eval/REPORT.md`](backend/api/eval/REPORT.md).
+### Step 3: Build the app (once, and again after you download new code)
+
+Still in the `HealMeOut` folder:
+
+```sh
+cd frontend
+npm ci
+npm run build
+cd ..
+backend/api/build.sh
+```
+
+- `npm ci` downloads the libraries the screens need and takes a few minutes the first time.
+- The last command ends with `built …/astra-twin-api.jar`.
+
+### Step 4: Start it
+
+```sh
+backend/api/run.sh
+```
+
+1. Leave this terminal open: it is the server.
+2. Open **http://127.0.0.1:8080/** in your browser.
+3. The top bar should say **Live station data**.
+4. To stop the server, click the terminal and press **Ctrl+C**.
+5. To start it again next time, open a terminal, go to the folder with `cd HealMeOut`, and run `backend/api/run.sh`.
+
+**First things to try:**
+- Use **Viewing as** (top right) to switch between an astronaut, the CMO and ground; each sees only what they may see.
+- As C3, finish the **Check-in**, press **Next day** in the top bar, check in again, then open **Twin**: the sleep-debt card shows what your new night changed.
+- The sun button switches to the light theme.
+
+### Step 5 (optional): the support companion's language model
+
+The companion in **Check-in → Talk it through** works without this, with fixed guided replies. To use the local language model instead:
+
+1. Install **Ollama** from [ollama.com](https://ollama.com) and open it.
+2. In a terminal, run `ollama pull phi3.5`. This is a one-time download of about 2 GB.
+3. Stop the server (Ctrl+C) and start it again (Step 4). The chat now shows **Local model · phi3.5** instead of **Guided replies**.
+
+### If something goes wrong
+
+| What you see | What to do |
+|---|---|
+| `command not found` for `git`, `javac`, `node` or `npm` | Install that program (Step 1), then open a **new** terminal. |
+| `npm ci` or `npm run build` complains about the Node version (`EBADENGINE`) | Your Node.js is too old: install the current LTS from nodejs.org. |
+| `Address already in use` when starting | Another program uses port 8080. Run `backend/api/run.sh --port 8081` and open http://127.0.0.1:8081/ |
+| The top bar says **Mock data** | The server is not running. Do Step 4 and keep that terminal open. |
+| `Permission denied` on a `.sh` file | Put `bash` in front: `bash backend/api/build.sh`, `bash backend/api/run.sh`. |
+| `$'\r': command not found` (Windows) | The scripts were downloaded with Windows line endings. Download the code again (Step 2) with the current version, which keeps them correct. |
+| The page shows old screens after you downloaded new code | Do Step 3 again, then restart the server. |
+
+**For developers**
+
+- **Tests:** `backend/api/test.sh` runs 55 tests.
+- **Companion evaluation against the model:** `backend/api/eval.sh` (needs Step 5). The report is in [`backend/api/eval/REPORT.md`](backend/api/eval/REPORT.md).
+- **Live reload while editing the screens:** run `backend/api/run.sh` and `cd frontend && npm run dev` side by side, then open http://localhost:1420.
+- **Desktop app:** `cd frontend && npm run tauri build` (Tauri v2; extra prerequisites in [`docs/FRONTEND.md`](docs/FRONTEND.md)).
+- **Demo console:** http://127.0.0.1:8080/demo/
+- **Data:** `data/cache/` is already in the repository, so Rust (`backend/ingest`) is needed only to rebuild it from the raw NASA files.
 
 ## How it is built
 
