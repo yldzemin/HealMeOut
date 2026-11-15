@@ -27,7 +27,7 @@ export function CrewDeckScreen({ crew, onStartEmergency }: { crew: CrewMember[];
 
       <div className="relative min-h-[320px] flex-1 rounded-xl border border-border bg-card/40 p-4">
         <StationMap crew={crew} />
-        <div className="absolute right-3 top-3 h-36 w-56 overflow-hidden rounded-lg border border-border bg-background/80">
+        <div className="absolute left-3 top-3 h-36 w-56 overflow-hidden rounded-lg border border-border bg-background/80">
           <IssOverview3D />
         </div>
         <p className="absolute bottom-2 left-4 text-[11px] text-muted-foreground">

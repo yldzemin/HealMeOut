@@ -40,9 +40,10 @@ export function TodayStrip({
   level: StatusLevel;
   summary: string;
   tasks: TodayTask[];
-  streakDays: number;
+  /** Check-in streak and reaction best are private to the astronaut: left out for other viewers. */
+  streakDays?: number;
   nextMeasurement: string;
-  reactionBestMs: number;
+  reactionBestMs?: number;
 }) {
   const done = tasks.filter((t) => t.done).length;
   return (
@@ -76,14 +77,18 @@ export function TodayStrip({
       </div>
 
       <div className="flex items-center gap-6 text-sm">
-        <span className="flex items-center gap-1.5">
-          <Flame className="size-4 text-status-cmo" aria-hidden />
-          {streakDays}-day check-in streak
-        </span>
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Timer className="size-4" aria-hidden />
-          Reaction best {reactionBestMs} ms
-        </span>
+        {streakDays !== undefined && (
+          <span className="flex items-center gap-1.5">
+            <Flame className="size-4 text-status-cmo" aria-hidden />
+            {streakDays}-day check-in streak
+          </span>
+        )}
+        {reactionBestMs !== undefined && (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Timer className="size-4" aria-hidden />
+            Reaction best {reactionBestMs} ms
+          </span>
+        )}
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="size-4" aria-hidden />
           {nextMeasurement}

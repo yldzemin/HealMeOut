@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CrewMember, StatusLevel, ViewerRole } from "@/types";
-import { getRegions, getToday, LEVEL_RANK, type Region, type RegionId, type Routine } from "@/data/personal";
+import { forViewer, getRegions, getToday, LEVEL_RANK, type Region, type RegionId, type Routine } from "@/data/personal";
 import { Body3D, MODEL_CREDIT } from "@/components/Body3D";
 import { RegionChips } from "@/components/RegionChips";
 import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
@@ -10,6 +10,12 @@ import type { StationView } from "@/api/client";
 import { applyLive } from "@/data/live";
 import { TodayStrip } from "@/components/TodayStrip";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+/** The crew member a CMO or ground viewer opens first: the highest level, then the lowest id. */
+function mostUrgent(crew: CrewMember[]): string | undefined {
+  return [...crew].sort((a, b) => LEVEL_RANK[b.level] - LEVEL_RANK[a.level] || a.id.localeCompare(b.id))[0]?.id;
+}
 
 function worst(regions: Region[]): Region | undefined {
   return regions.reduce<Region | undefined>(
@@ -62,15 +68,26 @@ export function PersonalScreen({
   station?: StationView | null;
   onDecision?: AlertDecision;
 }) {
-  const crewId = role.kind === "astronaut" ? role.crewId : "C3";
+  const self = role.kind === "astronaut";
+  // CMO and ground pick whom to look at; they start on the most urgent crew member.
+  const [picked, setPicked] = useState<string | null>(null);
+  const crewId = self ? role.crewId : (picked ?? mostUrgent(crew) ?? "C1");
   const member = crew.find((c) => c.id === crewId);
+  const card = station?.crew.find((c) => c.id === crewId);
   const regions = useMemo(() => {
-    const base = getRegions(crewId);
-    return station ? applyLive(base, crewId, station.crew.find((c) => c.id === crewId), station.alerts) : base;
-  }, [crewId, station]);
+    const base = station ? applyLive(getRegions(crewId, true), crewId, card, station.alerts) : getRegions(crewId);
+    // Check-in and reaction-test values are the astronaut's own (BACKEND.md §6).
+    return forViewer(base, self);
+  }, [crewId, station, card, self]);
   // With the backend, only the CMO or ground may decide; mock mode keeps the original demo behaviour.
-  const canDecide = !station || role.kind !== "astronaut";
-  const today = useMemo(() => getToday(routine, crewId), [routine, crewId]);
+  const canDecide = !station || !self;
+  // Live: today's check-in may already be saved on the station.
+  const lastCheckIn = card?.checkIns?.[card.checkIns.length - 1];
+  const checkedInToday = lastCheckIn?.date === new Date().toISOString().slice(0, 10);
+  const today = useMemo(() => {
+    const t = getToday({ ...routine, checkinDone: routine.checkinDone || checkedInToday }, crewId);
+    return self ? t : { ...t, tasks: t.tasks.filter((x) => x.id !== "checkin"), streakDays: undefined, reactionBestMs: undefined };
+  }, [routine, checkedInToday, crewId, self]);
   const top = worst(regions);
 
   // An alert opens its region; otherwise start on the day summary.
@@ -79,6 +96,10 @@ export function PersonalScreen({
   );
   // Live alerts arrive after the first render: follow the worst region until the user picks one.
   const [userPicked, setUserPicked] = useState(false);
+  useEffect(() => {
+    setUserPicked(false);
+    setSelected(null);
+  }, [crewId]);
   const pick = (id: RegionId | null) => {
     setUserPicked(true);
     setSelected(id);
@@ -105,7 +126,23 @@ export function PersonalScreen({
             </span>
           )}
         </h1>
-        {member && <p className="text-sm text-muted-foreground">Module: {member.module}</p>}
+        <div className="flex items-center gap-3">
+          {member && <p className="text-sm text-muted-foreground">Module: {member.module}</p>}
+          {!self && (
+            <Select value={crewId} onValueChange={setPicked}>
+              <SelectTrigger className="w-48" aria-label="Crew member">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {crew.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.id} · {c.callsign} · {c.level}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       <TodayStrip level={level} summary={summary} {...today} />
@@ -122,7 +159,7 @@ export function PersonalScreen({
         <div className="min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
-              key={region?.id ?? "summary"}
+              key={`${crewId}-${region?.id ?? "summary"}`}
               className="h-full"
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}

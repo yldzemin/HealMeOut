@@ -6,6 +6,7 @@ import astratwin.domain.Alert;
 import astratwin.domain.AlertStatus;
 import astratwin.domain.BaselineStats;
 import astratwin.domain.CheckIn;
+import astratwin.domain.ConditionReport;
 import astratwin.domain.ConditionProbability;
 import astratwin.domain.CrewMember;
 import astratwin.domain.DataKind;
@@ -18,6 +19,7 @@ import astratwin.privacy.PrivacyFilter;
 import astratwin.privacy.StationView;
 import astratwin.privacy.ViewRequest;
 import astratwin.rules.CollapseRule;
+import astratwin.rules.ConditionReportRule;
 import astratwin.rules.Co2Rule;
 import astratwin.rules.DoseRateRule;
 import astratwin.rules.GlucoseRule;
@@ -55,6 +57,8 @@ import astratwin.twin.TwinEngine;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -89,6 +93,8 @@ public final class Station {
     private final MedicalCardRepository cards = new InMemoryMedicalCardRepository();
     /** Open "needs support now" requests (#51): crew id → time of the latest crisis message. Kept across resets. */
     private final Map<String, Instant> supportRequests = new LinkedHashMap<>();
+    /** Reported conditions (simulated stories of the crew profiles); reset with the station. */
+    private final List<ConditionReport> conditions = new ArrayList<>();
     private final RulesEngine rules;
     private final TwinEngine twin;
     private final PrivacyFilter privacy;
@@ -99,7 +105,7 @@ public final class Station {
         this.baselines = new BaselineStatistics(data.baselines());
         this.roster = new CrewRoster(baselines);
         this.rules = new RulesEngine(List.of(new CollapseRule(), new GlucoseRule(), new SpO2Rule(), new Co2Rule(),
-                new DoseRateRule(), new ZScoreRule(), new PsychTrendRule()));
+                new DoseRateRule(), new ZScoreRule(), new PsychTrendRule(), new ConditionReportRule()));
         this.twin = new TwinEngine(List.of(new CumulativeDoseModel(), new SleepDebtModel()));
         this.privacy = PrivacyFilter.standard();
         this.scenarios = new ScenarioEngine(List.of(
@@ -126,7 +132,9 @@ public final class Station {
         roster.members().forEach(crew::save);
         Instant now = Instant.now();
         roster.nominalReadings(now).forEach(this::record);
-        roster.checkIns().forEach(checkIns::add);
+        roster.checkIns(LocalDate.now(ZoneOffset.UTC)).forEach(checkIns::add);
+        conditions.clear();
+        conditions.addAll(roster.conditions());
         List<Environment> nominal = new ArrayList<>();
         nominal.add(Environment.co2(2.1, now, "simulated"));
         data.issDose().stream().filter(e -> e.timestamp().isBefore(SpeIssScenario.NOMINAL_END)).forEach(nominal::add);
@@ -301,7 +309,8 @@ public final class Station {
         for (CrewMember m : crew.all()) {
             byCrew.put(m.id(), checkIns.forCrew(m.id()));
         }
-        RuleContext context = new RuleContext(crew.all(), readings, environment.all(), baselines, byCrew, Instant.now());
+        RuleContext context = new RuleContext(crew.all(), readings, environment.all(), baselines, byCrew,
+                List.copyOf(conditions), Instant.now());
         List<Alert> firing = new ArrayList<>(rules.evaluate(context));
         supportRequests.forEach((crewId, at) -> firing.add(SupportAlert.of(crewId, at)));
         alerts.sync(firing);

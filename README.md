@@ -48,7 +48,7 @@ backend/api/run.sh                 # app: http://127.0.0.1:8080/   demo console:
 
 - **Support companion (optional):** install [Ollama](https://ollama.com), then `ollama pull phi3.5`. Without it, a rule-based companion answers.
 - **Desktop app:** `cd frontend && npm run tauri build` (Tauri v2; prerequisites in [`docs/FRONTEND.md`](docs/FRONTEND.md)).
-- **Tests:** `backend/api/test.sh` (39 tests).
+- **Tests:** `backend/api/test.sh` (41 tests).
 - **Companion evaluation against the model:** `backend/api/eval.sh`; report in [`backend/api/eval/REPORT.md`](backend/api/eval/REPORT.md).
 
 ## How it is built

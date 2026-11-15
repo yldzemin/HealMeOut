@@ -20,8 +20,13 @@ const BANDS = [
 ];
 const TICKS = [2.5, 3, 4.5, 6.8];
 
+/** Same boundaries as Co2Rule: above 3 is over the limit (3.0 is not); 4.5 and 6.8 start their bands. */
 function band(v: number) {
-  return BANDS.find((b) => v < b.to) ?? BANDS[BANDS.length - 1];
+  if (v >= 6.8) return BANDS[4];
+  if (v >= 4.5) return BANDS[3];
+  if (v > 3) return BANDS[2];
+  if (v >= 2.5) return BANDS[1];
+  return BANDS[0];
 }
 
 const config = { v: { label: "CO2 (mmHg)", color: "var(--primary)" } } satisfies ChartConfig;

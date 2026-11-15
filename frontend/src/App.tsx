@@ -30,7 +30,13 @@ export default function App() {
   const [mockCrew, setMockCrew] = useState<CrewMember[]>([]);
   const [role, setRole] = useState<ViewerRole>(initial.role);
   const [screen, setScreen] = useState<ScreenId>(initial.screen);
-  const [routine, setRoutine] = useState<Routine>(INITIAL_ROUTINE);
+  // Per astronaut: switching from C3 to C4 must not carry C3's check-in or reaction best over.
+  const [routines, setRoutines] = useState<Record<string, Routine>>({});
+  const routineId = role.kind === "astronaut" ? role.crewId : null;
+  const routine = (routineId && routines[routineId]) || INITIAL_ROUTINE;
+  const setRoutine = (r: Routine) => {
+    if (routineId) setRoutines((m) => ({ ...m, [routineId]: r }));
+  };
   // Mock mode only: the emergency is local. With the backend it follows the live EMERGENCY alert.
   const [localEmergency, setLocalEmergency] = useState<{ patientId: string; startedAt: number } | null>(null);
   const { mode, station, refresh } = useStation(role);
@@ -52,7 +58,10 @@ export default function App() {
   // An "open alert" needs CMO or ground action (L2+); L1 is self-care.
   const openAlerts = live
     ? station.alerts.filter((a) => a.active && a.status === "open" && LEVEL_RANK[a.level] >= LEVEL_RANK.L2).length
-    : crew.filter((c) => c.level !== "L0" && c.level !== "L1").length;
+    : // Mock: like the backend's privacy filter, an astronaut sees only their own alerts and emergencies.
+      crew.filter(
+        (c) => c.level === "L4" || (LEVEL_RANK[c.level] >= LEVEL_RANK.L2 && (role.kind !== "astronaut" || c.id === role.crewId)),
+      ).length;
 
   // Team decision #51: crisis wording in the support companion alerts the CMO (who and when, not what).
   const supportAlerts =

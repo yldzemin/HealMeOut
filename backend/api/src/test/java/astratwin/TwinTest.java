@@ -47,8 +47,8 @@ final class TwinTest {
             List<Forecast> self = station.forecasts("C3", new ViewRequest(Viewer.SELF, "C3"));
             Check.isTrue(self.stream().anyMatch(f -> f.metric().equals("sleep_debt")), "SELF must see its sleep debt");
             Check.isTrue(self.stream().anyMatch(f -> f.metric().equals("cumulative_dose")), "SELF must see its dose");
-            Check.equal(2.9, self.stream().filter(f -> f.metric().equals("sleep_debt")).findFirst().orElseThrow()
-                    .points().get(0).value(), "C3 T+0 (8.5 − 5.6 h)");
+            Check.equal(16.4, self.stream().filter(f -> f.metric().equals("sleep_debt")).findFirst().orElseThrow()
+                    .points().get(0).value(), "C3 T+0: 7 seeded nights, the same as the Personal sleep chart");
             for (Viewer viewer : new Viewer[] {Viewer.CMO, Viewer.GROUND, Viewer.EMERGENCY}) {
                 List<Forecast> other = station.forecasts("C3", new ViewRequest(viewer, null));
                 Check.isTrue(other.stream().noneMatch(f -> f.metric().equals("sleep_debt")), viewer + " sees sleep debt");

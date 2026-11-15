@@ -13,7 +13,7 @@ import {
 } from "@/api/client";
 import {
   EARTH_PLAN,
-  FORECAST_CHECK,
+  forecastCheck,
   firstCrossing,
   getTwin,
   liveDose,
@@ -73,7 +73,8 @@ function MetricChart({ m, cursor }: { m: TwinMetric; cursor: number }) {
           </div>
           <div className="shrink-0 whitespace-nowrap text-right">
             <p className="font-heading text-2xl font-semibold tabular-nums">
-              {v ?? "—"} <span className="text-sm font-normal text-muted-foreground">{m.unit}</span>
+              {v === undefined ? "—" : m.digits !== undefined ? v.toFixed(m.digits) : v}{" "}
+              <span className="text-sm font-normal text-muted-foreground">{m.unit}</span>
             </p>
             <p className="text-[11px] text-muted-foreground">at T{cursor >= 0 ? "+" : ""}{cursor} h</p>
           </div>
@@ -89,7 +90,7 @@ function MetricChart({ m, cursor }: { m: TwinMetric; cursor: number }) {
         {crossing !== null && (
           <p className={`flex items-center gap-1.5 text-xs ${warn ? "text-status-self" : "text-muted-foreground"}`}>
             <AlertTriangle className="size-3.5" aria-hidden />
-            Forecast reaches {m.threshold!.label} at T+{crossing} h
+            {crossing === 0 ? `Already past ${m.threshold!.label} now` : `Forecast reaches ${m.threshold!.label} at T+${crossing} h`}
           </p>
         )}
         <ChartContainer config={config} className="h-36 w-full">
@@ -167,7 +168,7 @@ export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: Cr
 
   const metrics = useMemo(() => {
     const out: TwinMetric[] = [];
-    for (const m of getTwin()) {
+    for (const m of getTwin(crewId)) {
       if (m.privateToSelf && !self) continue;
       if (!online) {
         out.push(m);
@@ -183,12 +184,12 @@ export function TwinScreen({ role, crew, station }: { role: ViewerRole; crew: Cr
       }
     }
     return out;
-  }, [online, self, loaded, doseSeries, forecasts]);
+  }, [crewId, online, self, loaded, doseSeries, forecasts]);
 
   const checks = useMemo(() => {
     const live = online ? liveDoseCheck(doseSeries) : null;
-    return FORECAST_CHECK.map((r) => (live && r.metric === live.metric ? live : r));
-  }, [online, doseSeries]);
+    return forecastCheck(crewId).map((r) => (live && r.metric === live.metric ? live : r));
+  }, [crewId, online, doseSeries]);
 
   const plan = EARTH_PLAN.filter((p) => self || !p.privateToSelf);
   const member = crew.find((c) => c.id === crewId);

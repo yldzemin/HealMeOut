@@ -2,8 +2,11 @@
 // astronaut. Every value here is SIMULATED. Each story is one of the most likely
 // conditions on a 6-month ISS mission in the NASA Integrated Medical Model
 // ranking (data/cache/imm_leo.json), or a sourced routine event (pre-landing
-// fluid loading, OCHMO-TB-027). Medication is only named from the ISS kit and
-// always goes through the CMO.
+// fluid loading, OCHMO-TB-027). Medication always goes through the CMO; no drug
+// is named until the ISS formulary question (#11) is decided.
+//
+// The backend seeds the same values (backend CrewRoster: vitals, 7 nights,
+// mood, and the L1+ stories as condition alerts). Keep both in sync.
 
 import type { StatusLevel } from "@/types";
 
@@ -43,7 +46,7 @@ export interface CrewProfile {
   story?: Story;
 }
 
-const IMM_SOURCE = {
+export const IMM_SOURCE = {
   label: "NASA IMM: ranking of medical conditions by probability",
   url: "https://www.nasa.gov/wp-content/uploads/2026/08/ranking-of-medical-conditions-by-probability.pdf",
 };
@@ -97,7 +100,7 @@ export const PROFILES: Record<string, CrewProfile> = {
       meaning:
         "Headaches are among the most common health events on the ISS. Dehydration and raised cabin CO2 are two usual causes; NASA keeps the 7-day CO2 average under 2.5 mmHg to keep headache risk low.",
       todo:
-        "Drink water now, rest in a well-ventilated module and ease off heavy work. If you need a pain reliever, the ISS kit has acetaminophen and ibuprofen: check with the CMO. Tell the CMO if the headache gets worse or comes with vision changes.",
+        "Drink water now, rest in a well-ventilated module and ease off heavy work. If you need a pain reliever, ask the CMO for one from the ISS medical kit. Tell the CMO if the headache gets worse or comes with vision changes.",
       imm: { condition: "Late headache", probability: 0.592 },
       extraSource: { label: "NASA OCHMO-TB-004 Carbon dioxide", url: "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf" },
     },
@@ -162,7 +165,6 @@ export const PROFILES: Record<string, CrewProfile> = {
       todo:
         "Anti-nausea medication from the ISS kit, decided by CMO-1 (you are CMO-2, so another CMO approves). Keep head movements slow, sip water, eat small amounts and keep a fixed visual reference.",
       imm: { condition: "Space motion sickness", probability: 0.73 },
-      extraSource: { label: "Diaz et al. 2024, ISS medication list", url: "https://doi.org/10.1038/s41526-024-00414-3" },
     },
   },
   C5: {
@@ -188,7 +190,7 @@ export const PROFILES: Record<string, CrewProfile> = {
     story: {
       region: "whole",
       level: "L1",
-      status: "Itchy rash on the left forearm, reported at this morning’s check-in.",
+      status: "Itchy rash on the left forearm. You reported it this morning.",
       meaning:
         "Skin rashes and abrasions are two of the most common health events on a 6-month ISS mission in NASA’s Integrated Medical Model. Most are minor, but a rash that spreads needs a look.",
       todo:
@@ -259,8 +261,6 @@ export const PROFILES: Record<string, CrewProfile> = {
     },
   },
 };
-
-export const IMM_SOURCE_LINK = IMM_SOURCE;
 
 export function profileFor(crewId: string): CrewProfile {
   return PROFILES[crewId] ?? PROFILES.C3;

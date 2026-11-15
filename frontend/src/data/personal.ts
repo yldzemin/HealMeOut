@@ -5,7 +5,7 @@
 
 import baselines from "@/mock/baselines.json";
 import type { Provenance, StatusLevel } from "@/types";
-import { IMM_SOURCE_LINK, profileFor, PROFILES, type CrewProfile } from "@/data/crewProfiles";
+import { IMM_SOURCE, profileFor, type CrewProfile } from "@/data/crewProfiles";
 
 export type RegionId = "head" | "eyes" | "heart" | "lungs" | "blood" | "musculo" | "whole";
 
@@ -54,6 +54,8 @@ export interface Region {
   missionTag?: string;
   /** Backend alert behind this region's level, if any (for CMO approve / decline). */
   alertId?: string;
+  /** The CMO's decision on that alert, once made. */
+  alertStatus?: "open" | "approved" | "rejected";
 }
 
 /** Same wording as the backend tag (TECH_OVERVIEW §4.4); values from the OSDR study metadata. */
@@ -126,8 +128,12 @@ function bloodTrend(crewId: string): Trend | undefined {
 const LAST_7 = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const series = (values: number[]): TrendPoint[] => values.map((value, i) => ({ label: LAST_7[i], value }));
 
-/** Regions for one astronaut. Real blood baselines exist for C1–C4 only. */
-export function getRegions(crewId: string): Region[] {
+/**
+ * Regions for one astronaut. Real blood baselines exist for C1–C4 only.
+ * `live`: the backend's condition alerts set the levels, so only an L0 story (information, no level)
+ * is applied here; live.ts adds the others when their alert is active.
+ */
+export function getRegions(crewId: string, live = false): Region[] {
   const hasRealBlood = analyte(crewId, "glucose") !== undefined;
   const p = profileFor(crewId);
   const lastNight = p.sleep7[p.sleep7.length - 1];
@@ -257,25 +263,40 @@ export function getRegions(crewId: string): Region[] {
       sources: [SRC.dose, SRC.stahn],
     },
   ];
-  return applyStory(regions, p);
+  return p.story && (!live || p.story.level === "L0") ? regions.map((r) => (r.id === p.story!.region ? withStory(r, p) : r)) : regions;
 }
 
-/** The crew member's own story replaces one region's status, meaning and next step. */
-function applyStory(regions: Region[], p: CrewProfile): Region[] {
+/** The crew member's own story replaces its region's status, meaning and next step. */
+export function withStory(r: Region, p: CrewProfile): Region {
   const st = p.story;
-  if (!st) return regions;
+  if (!st || st.region !== r.id) return r;
+  const imm = st.imm ? `NASA IMM: ${st.imm.condition}, ${Math.round(st.imm.probability * 100)}% chance on a 6-month ISS mission.` : undefined;
+  return {
+    ...r,
+    level: st.level,
+    status: st.status,
+    meaning: st.meaning,
+    todo: st.todo,
+    method: imm ? `${r.method} ${imm}` : r.method,
+    sources: [...(st.imm ? [IMM_SOURCE] : []), ...(st.extraSource ? [st.extraSource] : []), ...r.sources],
+  };
+}
+
+/** Indicators from the private check-in and reaction test: only the astronaut sees them (BACKEND.md §6). */
+const PRIVATE_INDICATORS = new Set(["mood", "rt"]);
+
+/** What a CMO or ground viewer may see of these regions: no check-in or reaction-test values. */
+export function forViewer(regions: Region[], self: boolean): Region[] {
+  if (self) return regions;
   return regions.map((r) => {
-    if (r.id !== st.region) return r;
-    const imm = st.imm ? `NASA IMM: ${st.imm.condition}, ${Math.round(st.imm.probability * 100)}% chance on a 6-month ISS mission.` : undefined;
-    return {
-      ...r,
-      level: st.level,
-      status: st.status,
-      meaning: st.meaning,
-      todo: st.todo,
-      method: imm ? `${r.method} ${imm}` : r.method,
-      sources: [...(st.imm ? [IMM_SOURCE_LINK] : []), ...(st.extraSource ? [st.extraSource] : []), ...r.sources],
-    };
+    const indicators = r.indicators.filter((i) => !PRIVATE_INDICATORS.has(i.id));
+    return indicators.length === r.indicators.length
+      ? r
+      : {
+          ...r,
+          indicators,
+          method: `${r.method} Mood and reaction-test results are private to the astronaut and not shown here.`,
+        };
   });
 }
 
@@ -321,8 +342,3 @@ export function getToday(routine: Routine = INITIAL_ROUTINE, crewId = "C3") {
     reactionBestMs: Math.min(routine.reactionBestMs, p.reactionBestMs),
   };
 }
-
-/** Status level implied by each crew member's own profile (for mock crew data). */
-export const PROFILE_LEVELS: Record<string, StatusLevel> = Object.fromEntries(
-  Object.entries(PROFILES).map(([id, pr]) => [id, pr.story?.level ?? "L0"]),
-);

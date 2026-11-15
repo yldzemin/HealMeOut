@@ -38,6 +38,33 @@ final class IntegrationTest {
             Check.equal("real", v.crew().get(0).baselineProvenance(), "C1 baseline");
             Check.equal("simulated", v.crew().get(6).baselineProvenance(), "C7 baseline");
         });
+        tests.put("crew profiles (#71): live levels, vitals, check-ins and conditions match the frontend stories", () -> {
+            Station station = Station.load(cache);
+            StationView deck = station.view(new ViewRequest(Viewer.CREW_DECK, null));
+            // Same levels as frontend/src/mock/crew.json.
+            Check.equal(List.of(Level.L0, Level.L1, Level.L1, Level.L2, Level.L1, Level.L1, Level.L0),
+                    deck.crew().stream().map(CrewCard::level).toList(), "Crew Deck levels");
+            Check.isTrue(deck.alerts().isEmpty(), "the Crew Deck sees no condition detail: " + deck.alerts());
+            StationView cmo = station.view(new ViewRequest(Viewer.CMO, null));
+            Alert c4 = cmo.alerts().stream().filter(a -> a.id().equals("condition:C4:head")).findFirst()
+                    .orElseThrow(() -> new AssertionError("CMO must see C4's motion sickness"));
+            Check.equal(Level.L2, c4.level(), "C4 level");
+            Check.equal(DataKind.VITALS, c4.category(), "C4 category");
+            Check.equal(72.0, cmo.crew().get(3).vitals().stream().filter(r -> r.metric().equals("hr")).findFirst()
+                    .orElseThrow().value(), "C4 heart rate from the profile");
+            Check.equal(37.6, cmo.crew().get(4).vitals().stream().filter(r -> r.metric().equals("temp_c")).findFirst()
+                    .orElseThrow().value(), "C5 temperature from the profile");
+            List<CheckIn> c3 = station.view(new ViewRequest(Viewer.SELF, "C3")).crew().get(2).checkIns();
+            Check.equal(7, c3.size(), "C3 check-ins: one per night");
+            Check.equal(5.6, c3.get(6).sleepHours(), "C3 last night");
+            Check.equal(64, c3.get(6).mood(), "C3 mood from the profile");
+            Check.isTrue(cmo.alerts().stream().noneMatch(a -> a.recommendation() != null
+                    && a.recommendation().matches("(?i).*(ibuprofen|acetaminophen|paracetamol|ondansetron|promethazine).*")),
+                    "no drug names until #11 is decided");
+            station.startScenario("chest-pain");
+            station.stopScenario();
+            Check.equal(5, station.view(new ViewRequest(Viewer.CMO, null)).alerts().size(), "conditions come back after a reset");
+        });
         tests.put("ground (flight surgeon) sees vitals and medication, never check-ins", () -> {
             StationView v = Station.load(cache).view(new ViewRequest(Viewer.GROUND, null));
             for (CrewCard c : v.crew()) {
@@ -47,6 +74,8 @@ final class IntegrationTest {
         });
         tests.put("low check-ins → private psych alert; never on the Crew Deck and never changes the level", () -> {
             Station station = Station.load(cache);
+            Level c5Before = station.member("C5").orElseThrow().level();
+            Level stationBefore = station.view(new ViewRequest(Viewer.CMO, null)).stationLevel();
             for (int i = 0; i < 3; i++) {
                 station.addCheckIn(new CheckIn("C5", "2026-11-1" + i, 35, 60, 75, 20, 5.0, "test"));
             }
@@ -57,8 +86,8 @@ final class IntegrationTest {
             for (Viewer v : List.of(Viewer.CREW_DECK, Viewer.CMO, Viewer.GROUND, Viewer.EMERGENCY)) {
                 StationView view = station.view(new ViewRequest(v, null));
                 Check.isTrue(view.alerts().stream().noneMatch(a -> a.category() == DataKind.PSYCH), v + " sees psych");
-                Check.equal(Level.L0, view.crew().get(4).level(), v + " level of C5");
-                Check.equal(Level.L0, view.stationLevel(), v + " station level");
+                Check.equal(c5Before, view.crew().get(4).level(), v + " level of C5");
+                Check.equal(stationBefore, view.stationLevel(), v + " station level");
             }
         });
         tests.put("HTTP: check-ins are SELF only; ground may approve; UI is served with SPA fallback", () -> {

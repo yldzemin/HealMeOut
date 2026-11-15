@@ -7,6 +7,7 @@ import astratwin.privacy.StationView;
 import astratwin.privacy.ViewRequest;
 import astratwin.scenario.ScenarioState;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -15,10 +16,11 @@ final class ScenarioTest {
     }
 
     static void register(Map<String, TestRunner.Test> tests, Path cache) {
-        tests.put("nominal station has no alerts (vitals sit on the personal baselines)", () -> {
+        tests.put("nominal station: only the crew's reported conditions; no rule fires (vitals sit on the baselines)", () -> {
             StationView view = Station.load(cache).view(new ViewRequest(Viewer.CMO, null));
-            Check.equal(Level.L0, view.stationLevel(), "station level");
-            Check.equal(0, view.alerts().size(), "alerts: " + view.alerts());
+            Check.equal(Level.L2, view.stationLevel(), "station level (C4's motion sickness)");
+            Check.equal(List.of("condition:C2:head", "condition:C3:head", "condition:C4:head", "condition:C5:whole",
+                    "condition:C6:musculo"), view.alerts().stream().map(Alert::id).toList(), "alerts");
         });
         tests.put("spe-iss: dose-rate alert fires on Sep 11 with real data and clears on Sep 12", () -> {
             Station station = Station.load(cache);

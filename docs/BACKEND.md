@@ -116,6 +116,10 @@ Rule-based and model-based. **No machine learning**: 4 people × 7 time points i
 - Baseline per analyte from the person's pre-flight points (L-92, L-44, L-3).
 - `z = (value − baseline_mean) / baseline_sd`. If `sd` is undefined, fall back to the reference range in the CSV.
 - Simulated in-flight indicators (HR, BP, SpO2, temperature) are generated around the baseline and labelled `provenance: "simulated"`.
+- **Seed data per crew member** (`CrewRoster`) follows the frontend profiles in `frontend/src/data/crewProfiles.ts` (#71), so the live app tells the same story as mock mode:
+  - HR, BP, SpO2 and temperature from the profile;
+  - one check-in for each of the 7 days before today, with the profile's nights and mood (today's check-in is still to do);
+  - the reported conditions of §4 (`condition:<crewId>:<region>`).
 
 ### 3.2 Forecasts (T+6, T+12)
 
@@ -148,6 +152,7 @@ Input: readings, check-ins, environment. Output: `Alert` objects with level L0�
 | SpO2 | <90% → L4 | <90% = hypoxaemia (ARASTIRMA_RAPORU §4, SpO2 row). NASA's own limit is PIO2 ≥122 mmHg (OCHMO-TB-003) |
 | Dose rate | 24-h rolling mean of `doseEqRate_uSv_h` > 1.5× the preceding 7-day median → L2 (shelter advice, ground informed). Never alert on single hours: South Atlantic Anomaly passes reach 183 μSv/h on normal days | our design (#30). Calibration from Sep 2017 TEPC data: normal days 0.86–1.04×, Sep 11 1.90× |
 | Lab analytes, HR, BP | |z| ≥ 2 vs personal baseline → L1; persists or combined with symptoms → L2 | our design (no universal in-flight threshold) |
+| Reported condition | Each simulated story of the crew profiles (#71) → alert `condition:<crewId>:<region>` at its level, category vitals (`ConditionReportRule`): C2 headache L1, C3 short sleep L1, C4 space motion sickness L2 (CMO card), C5 skin rash L1, C6 back pain L1. C1 and C7 have nothing to report. The nominal station is therefore L2. No drug is named until #11 is decided. | NASA IMM ranking (probability in each `evidence`); levels are our design |
 | Psych check-in trend | 3 check-ins in a row with mood ≤ 40/100 or stress ≥ 70/100 → private L1 prompt "discuss it at your next PPC, or contact your flight surgeon now" (`PsychTrendRule`) | our design; SELF only; never changes the crew level |
 
 Each alert carries `evidence` and `source` strings for the frontend "?" card. Thresholds marked "our design" must say so in `evidence`.

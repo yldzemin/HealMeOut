@@ -1,10 +1,12 @@
 // Twin forecasts for one astronaut over the last 12 h and the next 12 h.
-// getTwin() is the SIMULATED set (mock mode, and fluids/temperature always). With the backend
+// getTwin(crewId) is the SIMULATED set, built from that crew member's profile (crewProfiles.ts):
+// used in mock mode, and for fluids and temperature always. With the backend
 // running, liveDose() and liveSleepDebt() replace two curves with the API's data. Rates come from
 // sourced values in docs/BACKEND.md §3.2; thresholds marked "our design" are not NASA criteria.
 
 import type { ApiEnvironment, ApiForecast } from "@/api/client";
 import type { Source } from "@/data/personal";
+import { profileFor } from "@/data/crewProfiles";
 
 export interface TwinPoint {
   t: number; // hours from now (-12 … +12)
@@ -25,6 +27,8 @@ export interface TwinMetric {
   provenance: "nasa" | "checkins" | "simulated";
   /** Built from psychological check-ins: only the astronaut sees it (BACKEND.md §6). */
   privateToSelf?: boolean;
+  /** Decimals for the headline value (e.g. 37.0 °C rather than 37). */
+  digits?: number;
 }
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i - 12);
@@ -50,35 +54,39 @@ const DOSE_SOURCE: Source = {
   url: "https://cdaweb.gsfc.nasa.gov/hapi/data?id=ISS_DOSANL_TEPC&time.min=2017-09-04T00:00:00Z&time.max=2017-09-20T00:00:00Z&parameters=DOSE_EQ60&format=csv",
 };
 
-export function getTwin(): TwinMetric[] {
+/** Fluid deficit vs the 2.5 L/day target, paced over 16 waking hours from 06:00; `drunk` litres by now (14 h awake). */
+function fluidModel(drunk: number) {
+  const awakeNow = 14;
+  const rate = drunk / awakeNow;
+  const targetPerH = 2.5 / 16;
+  return (t: number) => {
+    const awake = Math.min(16, Math.max(0, awakeNow + t));
+    return targetPerH * awake - rate * awake;
+  };
+}
+
+export function getTwin(crewId: string): TwinMetric[] {
+  const p = profileFor(crewId);
   // Sleep debt: scheduled 8.5 h vs logged sleep, last 7 nights (Barger 2014). Planned sleep
   // tonight 6.5 h from T+3 to T+9.5 adds 2 h more debt.
-  const nights = [6.4, 6.1, 6.8, 5.9, 6.3, 6.0, 5.6];
+  const nights = p.sleep7;
   const debtNow = nights.reduce((d, s) => d + (8.5 - s), 0);
   const sleepDebt = series(
     (t) => (t <= 3 ? debtNow : t >= 9.5 ? debtNow + 2 : debtNow + ((t - 3) / 6.5) * 2),
     (t) => 0.1 * t,
   );
 
-  // Fluids: 2.5 L/day target (CLAUDE_HAFIZASI.md §4.1) paced over 16 waking hours from 06:00;
-  // 1.4 L drunk by now (14 h awake) at the same pace from here on.
-  const awakeNow = 14;
-  const rate = 1.4 / awakeNow;
-  const targetPerH = 2.5 / 16;
-  const deficit = (t: number) => {
-    const awake = Math.min(16, Math.max(0, awakeNow + t));
-    return targetPerH * awake - rate * awake;
-  };
+  // Fluids: 2.5 L/day target (CLAUDE_HAFIZASI.md §4.1); the profile's litres so far, same pace from here on.
+  const deficit = fluidModel(p.fluidsL);
   const fluid = series(deficit, (t) => 0.05 * t, r2);
 
-  // Dose: ISS ~0.2–0.5 mSv/day (Simonsen 2025); this crew member's dosimeter reads 0.32 mSv/day;
-  // mission day 90.
-  const perH = 0.32 / 24;
-  const dose = series((t) => 90 * 0.32 + perH * t, (t) => ((0.5 - 0.2) / 24 / 2) * t, r2);
+  // Dose: ISS ~0.2–0.5 mSv/day (Simonsen 2025); this crew member's dosimeter rate and mission day.
+  const perH = p.doseToday / 24;
+  const dose = series((t) => p.missionDay * p.doseToday + perH * t, (t) => ((0.5 - 0.2) / 24 / 2) * t, r2);
 
   // Core temperature: resting value drifts ~+1 °C over long missions (Stahn 2017);
   // flat forecast with a growing band.
-  const temp = series((t) => 37.4 + (t < 0 ? 0.05 * Math.sin(t) : 0), (t) => 0.02 * t, r2);
+  const temp = series((t) => p.tempC + (t < 0 ? 0.05 * Math.sin(t) : 0), (t) => 0.02 * t, r2);
 
   return [
     {
@@ -87,7 +95,7 @@ export function getTwin(): TwinMetric[] {
       unit: "L",
       points: fluid,
       threshold: { value: 0.8, above: true, label: "0.8 L behind (our design)" },
-      explain: "At today’s pace you finish the day behind your fluid target.",
+      explain: deficit(2) > 0 ? "At today’s pace you finish the day behind your fluid target." : "At today’s pace you reach your fluid target.",
       source: { label: "NASA OCHMO-TB-027 Water", url: "https://www.nasa.gov/wp-content/uploads/2023/03/water-technical-brief-ochmo.pdf" },
       provenance: "simulated",
     },
@@ -119,15 +127,16 @@ export function getTwin(): TwinMetric[] {
       explain: "Stable. Resting temperature runs about 1 °C higher on long missions.",
       source: { label: "Stahn et al. 2017, Scientific Reports", url: "https://doi.org/10.1038/s41598-017-15560-w" },
       provenance: "simulated",
+      digits: 1,
     },
   ];
 }
 
-/** First future hour where the forecast crosses the metric's threshold. */
+/** First hour from now (0 = already past it) where the forecast crosses the metric's threshold. */
 export function firstCrossing(m: TwinMetric): number | null {
   if (!m.threshold) return null;
   const hit = m.points.find(
-    (p) => p.t > 0 && p.forecast !== undefined && (m.threshold!.above ? p.forecast >= m.threshold!.value : p.forecast <= m.threshold!.value),
+    (p) => p.t >= 0 && p.forecast !== undefined && (m.threshold!.above ? p.forecast >= m.threshold!.value : p.forecast <= m.threshold!.value),
   );
   return hit ? hit.t : null;
 }
@@ -156,12 +165,24 @@ export interface ForecastCheck {
   provenance: "nasa" | "simulated";
 }
 
-/** Forecast made 6 h ago vs what was measured now (simulated; the dose row is replaced when live). */
-export const FORECAST_CHECK: ForecastCheck[] = [
-  { metric: "Fluid deficit", forecast: "0.72 L", actual: "0.79 L", error: "+0.07 L", provenance: "simulated" },
-  { metric: "Core temperature", forecast: "37.35 °C", actual: "37.40 °C", error: "+0.05 °C", provenance: "simulated" },
-  { metric: "Cumulative dose", forecast: "28.72 mSv", actual: "28.80 mSv", error: "+0.08 mSv", provenance: "simulated" },
-];
+const signed = (x: number, digits: number, unit: string) => `${x >= 0 ? "+" : ""}${x.toFixed(digits)} ${unit}`;
+
+/** Forecast made 6 h ago vs what was measured now, for one crew member (simulated; the dose row is replaced when live). */
+export function forecastCheck(crewId: string): ForecastCheck[] {
+  const p = profileFor(crewId);
+  const row = (metric: string, actual: number, error: number, digits: number, unit: string): ForecastCheck => ({
+    metric,
+    forecast: `${(actual - error).toFixed(digits)} ${unit}`,
+    actual: `${actual.toFixed(digits)} ${unit}`,
+    error: signed(error, digits, unit),
+    provenance: "simulated",
+  });
+  return [
+    row("Fluid deficit", fluidModel(p.fluidsL)(0), 0.07, 2, "L"),
+    row("Core temperature", p.tempC, 0.05, 2, "°C"),
+    row("Cumulative dose", p.missionDay * p.doseToday, 0.08, 2, "mSv"),
+  ];
+}
 
 // ---------- Live curves from the backend ----------
 

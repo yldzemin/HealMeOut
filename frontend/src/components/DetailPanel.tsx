@@ -43,15 +43,19 @@ export type AlertDecision = (alertId: string, decision: "approve" | "reject") =>
 function CmoCard({
   text,
   alertId,
+  alertStatus,
   canDecide,
   onDecision,
 }: {
   text: string;
   alertId?: string;
+  /** The backend's record of the decision, so everyone sees it, not only the CMO who clicked. */
+  alertStatus?: "open" | "approved" | "rejected";
   canDecide: boolean;
   onDecision?: AlertDecision;
 }) {
-  const [decision, setDecision] = useState<"approved" | "declined" | null>(null);
+  const [clicked, setDecision] = useState<"approved" | "declined" | null>(null);
+  const decision = clicked ?? (alertStatus === "approved" ? "approved" : alertStatus === "rejected" ? "declined" : null);
   const [error, setError] = useState<string | null>(null);
   const decide = async (d: "approve" | "reject") => {
     try {
@@ -135,7 +139,7 @@ export function DetailPanel({
         <section>
           <h3 className="mb-1 text-sm font-semibold">What to do</h3>
           {LEVEL_RANK[region.level] >= LEVEL_RANK.L2 ? (
-            <CmoCard text={region.todo} alertId={region.alertId} canDecide={canDecide} onDecision={onDecision} />
+            <CmoCard text={region.todo} alertId={region.alertId} alertStatus={region.alertStatus} canDecide={canDecide} onDecision={onDecision} />
           ) : (
             <p className="text-sm leading-relaxed text-muted-foreground">{region.todo}</p>
           )}
