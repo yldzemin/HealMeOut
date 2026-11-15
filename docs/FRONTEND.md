@@ -39,7 +39,7 @@ Each OS builds its own installer (`npm run tauri build` on that OS). Commit no b
 
 ### 1.2 App shell and navigation
 
-- **Top status bar:** station time · station date with **Next day** and **Back to today** (live only, #81) · Earth link status (icon only below 1536 px wide) · open alert count · **role switcher** (Astronaut C1–C7 / CMO / Ground).
+- **Top status bar:** station time · station date with **Next day** and **Back to today** (live only, #81) · Earth link status (icon only below 1536 px wide) · open alert count · **role switcher** (Astronaut C1–C7 / CMO / Ground) · light/dark theme button (#82).
   - The role switcher is a **simulation** (no real login); the UI says so.
   - Switching role changes what is visible, enforcing `TECH_OVERVIEW.md` §5 rule 4 on screen: the astronaut sees their own psych check-in; the CMO sees medication and detailed values; psych data never appears on the Crew Deck for any role.
 - **Left rail:** Personal · Crew Deck · Environment · Twin · Check-in.
@@ -131,6 +131,30 @@ Aesthetic reference: `57110f2f9bef1ff11b47b3e897d3eee2.jpg` (cyan wireframe astr
 ```
 
 Every status uses **colour + icon + text** (red/green may be confused by colour-blind users).
+
+**Light theme (optional, #82).** Dark stays the default.
+- **Switching:** the sun and moon button at the right of the status bar switches themes, and the choice is remembered on the device. The deep link `?theme=light|dark` sets it too.
+- **Tokens:** the same tokens are redefined under `:root[data-theme="light"]` in `src/index.css`. The status colours are darker there, so text in them keeps at least 4.5:1 contrast on white (WCAG AA):
+
+| Token | Dark | Light |
+|---|---|---|
+| background / card | `#0a0a0c` / `#121a24` | `#f3f6f8` / `#ffffff` |
+| info (primary) | `#00d2ff` | `#0072a3` |
+| L0 ok | `#00ff66` | `#00804f` |
+| L1 self | `#ffd400` | `#8a6a00` |
+| L2 CMO | `#ff8a00` | `#b04a00` |
+| L3 / L4 ground, emergency | `#ff0055` | `#c8003f` |
+| chart axis numbers | `#bcd0d7` | `#3e5560` |
+
+- **Theme-independent parts:** native controls and scrollbars follow the theme (`color-scheme`). The 3D canvases are transparent, so they work on both backgrounds.
+
+**Charts (#82):**
+- Axis numbers use the `--chart-axis` token at weight 500. Recharts 3 renders tick labels as `text.recharts-cartesian-axis-tick-value`; the older shadcn selector no longer matched, so the numbers had stayed at Recharts' default `#666`.
+- Ticks are round values (`src/lib/chartTicks.ts`: steps of 1, 2 or 5 × 10ⁿ, at most 6 ticks), so an axis reads `17 · 18 · 19 · 20 · 21` instead of `17.0 · 19.0 · 20.7`.
+- Threshold lines carry their value, e.g. "18 h".
+- Twin charts show a hover readout: the hour, the value with its unit, actual or forecast, and the likely range.
+
+**Motion:** "reduce motion" in the operating system turns screen transitions off (`MotionConfig reducedMotion="user"`).
 
 ---
 
@@ -246,5 +270,5 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
     - The button is disabled while a scenario runs, because scenarios keep their own timeline.
   - **About you (companion):** a button in *Talk it through* opens what the companion knows about the astronaut: their profile (personality, hobbies, what helps, faith, worries, style, family), their last 3 days, and the exact text the local model gets. SELF only (`GET /api/support/profile`).
   - **Crisis → CMO (#51):** when crisis wording reaches the companion, the CMO's view shows a "needs support now" band under the status bar on every screen: who, when and what to do, never the message. "I am on it" acknowledges and closes it. The astronaut's chat says that the CMO was told.
-- **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk`.
+- **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk&theme=light|dark`.
 - **Plan B (browser):** `cd frontend && npm ci && npm run build`, then `backend/api/run.sh`, which serves the build at `http://127.0.0.1:8080/`.

@@ -1,6 +1,7 @@
 import { CartesianGrid, Line, LineChart, ReferenceArea, XAxis, YAxis } from "recharts";
 import type { Trend } from "@/data/personal";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { niceTicks } from "@/lib/chartTicks";
 
 /**
  * Trend line with the personal baseline band. Real data: solid line;
@@ -9,9 +10,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 export function TrendChart({ trend }: { trend: Trend }) {
   const config = { value: { label: trend.title, color: "var(--primary)" } } satisfies ChartConfig;
   const values = trend.points.map((p) => p.value);
-  const lo = Math.min(...values, trend.band?.low ?? Infinity);
-  const hi = Math.max(...values, trend.band?.high ?? -Infinity);
-  const pad = (hi - lo) * 0.15 || 1;
+  // Round tick values (#82) over the points and the baseline band.
+  const { ticks, decimals } = niceTicks(Math.min(...values, trend.band?.low ?? Infinity), Math.max(...values, trend.band?.high ?? -Infinity), 5);
 
   return (
     <figure className="flex flex-col gap-2">
@@ -29,7 +29,9 @@ export function TrendChart({ trend }: { trend: Trend }) {
           <CartesianGrid vertical={false} strokeOpacity={0.15} />
           <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
           <YAxis
-            domain={[Math.floor(lo - pad), Math.ceil(hi + pad)]}
+            domain={[ticks[0], ticks[ticks.length - 1]]}
+            ticks={ticks}
+            tickFormatter={(v: number) => v.toFixed(decimals)}
             tickLine={false}
             axisLine={false}
             fontSize={11}

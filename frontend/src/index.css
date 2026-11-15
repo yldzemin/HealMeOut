@@ -22,6 +22,7 @@
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
     --color-chart-5: var(--chart-5);
+    --color-chart-axis: var(--chart-axis);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
@@ -54,7 +55,8 @@
 }
 
 :root {
-    /* ASTRA-TWIN: hybrid "calm mission control" (docs/FRONTEND.md §3). Dark only. */
+    /* ASTRA-TWIN: hybrid "calm mission control" (docs/FRONTEND.md §3). Dark is the default; light is optional (#82). */
+    color-scheme: dark;
     --background: #0a0a0c;
     --foreground: #eaf6fa;
     --card: #121a24;
@@ -78,6 +80,8 @@
     --chart-3: #ffb347;
     --chart-4: #ff8a00;
     --chart-5: #8fa9b3;
+    /* Axis numbers: brighter than muted text, so small tick labels stay readable (#82). */
+    --chart-axis: #bcd0d7;
     --radius: 0.75rem;
     --sidebar: #0d131b;
     --sidebar-foreground: #bfd8df;
@@ -94,6 +98,52 @@
     --status-cmo: #ff8a00;
     --status-ground: #ff0055;
     --status-emergency: #ff0055;
+}
+
+/*
+ * Optional light theme (#82): the same tokens for a bright room. Status colours are darker so that
+ * text in them keeps at least 4.5:1 contrast on white (WCAG AA); each still pairs with an icon and a word.
+ */
+:root[data-theme="light"] {
+    color-scheme: light;
+    --background: #f3f6f8;
+    --foreground: #0c1f27;
+    --card: #ffffff;
+    --card-foreground: #0c1f27;
+    --popover: #ffffff;
+    --popover-foreground: #0c1f27;
+    --primary: #0072a3;
+    --primary-foreground: #ffffff;
+    --secondary: #e7eef2;
+    --secondary-foreground: #0c1f27;
+    --muted: #e7eef2;
+    --muted-foreground: #4b616b;
+    --accent: #dcedf4;
+    --accent-foreground: #0c1f27;
+    --destructive: #c8003f;
+    --border: #d3dee4;
+    --input: #c9d6dd;
+    --ring: #0072a3;
+    --chart-1: #0072a3;
+    --chart-2: #00804f;
+    --chart-3: #a86500;
+    --chart-4: #b04a00;
+    --chart-5: #4b616b;
+    --chart-axis: #3e5560;
+    --sidebar: #e9eff2;
+    --sidebar-foreground: #23404b;
+    --sidebar-primary: #0072a3;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #d6e9f1;
+    --sidebar-accent-foreground: #0c1f27;
+    --sidebar-border: #d3dee4;
+    --sidebar-ring: #0072a3;
+
+    --status-ok: #00804f;
+    --status-self: #8a6a00;
+    --status-cmo: #b04a00;
+    --status-ground: #c8003f;
+    --status-emergency: #c8003f;
 }
 
 @layer base {

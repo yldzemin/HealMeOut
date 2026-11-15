@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
-import { BellRing, CalendarClock, ChevronsRight, Database, RadioTower, Undo2 } from "lucide-react";
+import { BellRing, CalendarClock, ChevronsRight, Database, Moon, RadioTower, Sun, Undo2 } from "lucide-react";
 import type { DataMode } from "@/api/useStation";
 import type { ApiClock } from "@/api/client";
 import type { CrewMember, ViewerRole } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { useTheme } from "@/lib/theme";
+
+/** Dark by default; light is optional and remembered on this device (#82). */
+function ThemeToggle() {
+  const [theme, setTheme] = useTheme();
+  const next = theme === "dark" ? "light" : "dark";
+  const label = `Switch to the ${next} theme`;
+  return (
+    <Button size="icon" variant="ghost" className="size-8 text-muted-foreground hover:text-foreground" aria-label={label} title={label} onClick={() => setTheme(next)}>
+      {theme === "dark" ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
+    </Button>
+  );
+}
 
 /** ISS keeps GMT/UTC as station time. */
 function useStationTime(): string {
@@ -152,6 +165,7 @@ export function StatusBar({
           {openAlerts === 0 ? "No open alerts" : `${openAlerts} open alert${openAlerts > 1 ? "s" : ""}`}
         </Badge>
         <RoleSwitcher crew={crew} role={role} onChange={onRoleChange} />
+        <ThemeToggle />
       </div>
     </header>
   );

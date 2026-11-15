@@ -129,6 +129,7 @@ export function SupportChat({ view }: { view: ViewKind }) {
             type="button"
             variant="outline"
             aria-label="Clear conversation"
+            title="Clear conversation (nothing is kept)"
             onClick={() => void clearConversation(view).then(() => setMessages([]))}
           >
             <Trash2 className="size-4" aria-hidden />

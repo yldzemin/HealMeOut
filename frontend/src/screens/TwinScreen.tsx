@@ -22,10 +22,12 @@ import {
   liveSleepDebt,
   sleepDebtChange,
   type TwinMetric,
+  type TwinPoint,
 } from "@/data/twin";
 import { NASA_HOSTED_NOTE } from "@/data/personal";
 import type { AlertDecision } from "@/components/DetailPanel";
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
+import { niceTicks } from "@/lib/chartTicks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,17 +56,38 @@ function valueAt(m: TwinMetric, t: number) {
   return p?.forecast ?? p?.actual;
 }
 
+const hourLabel = (t: number) => (t === 0 ? "Now" : `T${t > 0 ? "+" : ""}${t} h`);
+
+/** Hover readout for a Twin chart (#82): the hour, the value with its unit, and whether it is measured or forecast. */
+function TwinTooltip({ active, payload, unit, decimals }: { active?: boolean; payload?: { payload: TwinPoint }[]; unit: string; decimals: number }) {
+  const p = active ? payload?.[0]?.payload : undefined;
+  if (!p) return null;
+  const forecast = p.t > 0 && p.forecast !== undefined;
+  const v = forecast ? p.forecast : p.actual;
+  if (v === undefined) return null;
+  return (
+    <div className="rounded-lg border border-border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-lg">
+      <p className="text-muted-foreground">{hourLabel(p.t)}</p>
+      <p className="font-mono font-semibold tabular-nums">
+        {v.toFixed(decimals)} {unit} <span className="font-sans font-normal text-muted-foreground">{forecast ? "forecast" : "actual"}</span>
+      </p>
+      {forecast && p.band && (
+        <p className="tabular-nums text-muted-foreground">
+          likely {p.band[0].toFixed(decimals)}–{p.band[1].toFixed(decimals)} {unit}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function MetricChart({ m, cursor }: { m: TwinMetric; cursor: number }) {
   const crossing = firstCrossing(m);
   const warn = crossing !== null && cursor >= crossing;
   const v = valueAt(m, cursor);
   const values = m.points.flatMap((p) => [p.actual, p.forecast, ...(p.band ?? [])]).filter((x): x is number => x !== undefined);
   if (m.threshold) values.push(m.threshold.value);
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const pad = (hi - lo) * 0.15 || 0.1;
-  // Axis labels short enough for the 40 px axis: whole numbers for wide ranges.
-  const decimals = hi - lo >= 5 ? 0 : hi - lo >= 0.5 ? 1 : 2;
+  // Round tick values (#82); short enough for the 40 px axis.
+  const { ticks, decimals } = niceTicks(Math.min(...values), Math.max(...values));
   const prov = PROVENANCE[m.provenance];
 
   return (
@@ -116,16 +139,27 @@ function MetricChart({ m, cursor }: { m: TwinMetric; cursor: number }) {
             <CartesianGrid vertical={false} strokeOpacity={0.15} />
             <XAxis dataKey="t" type="number" domain={[-12, 12]} ticks={[-12, -6, 0, 6, 12]} tickFormatter={(t) => (t === 0 ? "now" : `${t > 0 ? "+" : ""}${t}h`)} fontSize={11} tickLine={false} axisLine={false} />
             <YAxis
-              domain={[Math.floor((lo - pad) * 100) / 100, Math.ceil((hi + pad) * 100) / 100]}
-              tickCount={4}
+              domain={[ticks[0], ticks[ticks.length - 1]]}
+              ticks={ticks}
               tickFormatter={(v: number) => v.toFixed(decimals)}
               fontSize={11}
               tickLine={false}
               axisLine={false}
               width={40}
             />
-            <Area dataKey="band" stroke="none" fill="var(--primary)" fillOpacity={0.12} isAnimationActive={false} />
-            {m.threshold && <ReferenceLine y={m.threshold.value} stroke="var(--status-self)" strokeDasharray="4 4" />}
+            <Area dataKey="band" stroke="none" fill="var(--primary)" fillOpacity={0.12} activeDot={false} isAnimationActive={false} />
+            {m.threshold && (
+              <ReferenceLine
+                y={m.threshold.value}
+                stroke="var(--status-self)"
+                strokeDasharray="4 4"
+                label={{ value: `${m.threshold.value} ${m.unit}`, position: "insideTopLeft", fill: "var(--status-self)", fontSize: 10, fontWeight: 600 }}
+              />
+            )}
+            <ChartTooltip
+              cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "2 3" }}
+              content={<TwinTooltip unit={m.unit} decimals={Math.max(decimals, m.digits ?? 1)} />}
+            />
             <ReferenceLine x={0} stroke="var(--muted-foreground)" strokeOpacity={0.5} />
             <ReferenceLine x={cursor} stroke="var(--primary)" />
             <Line dataKey="actual" stroke="var(--color-actual)" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls={false} />
