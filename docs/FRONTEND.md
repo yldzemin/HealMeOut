@@ -207,3 +207,24 @@ Personal screen support steps; Crew Deck shows only "C3 requested reduced taskin
 - Plan B works: `npm run build` output opens from the Java API on `localhost`.
 - MVP screens work on mock data.
 - Every number on screen has a `real`/`simulated` badge and a source link in its "?" card.
+
+---
+
+## 10. Backend integration (#56)
+
+- **Client:** `src/api/client.ts` (types match `backend/README.md`) and `src/api/useStation.ts`, which polls `GET /api/station` every 2 s.
+  - When the API answers, the status bar shows **Live station data**; otherwise the UI uses its mock data and keeps retrying. `VITE_USE_MOCK=true` forces mock data.
+  - Base URL: the same origin when the API serves the build, otherwise `http://127.0.0.1:8080`.
+- **Roles → viewer:** astronaut → `SELF`, CMO → `CMO`, ground → `GROUND` (provisional, see `BACKEND.md` §6).
+- **Screens on live data:**
+  - **Personal:** live vitals and rule alerts on the body regions (`src/data/live.ts`). The worst region opens first. The CMO card approves or rejects the backend alert; the astronaut sees "waiting for review". The commercial-mission tag sits under the real Inspiration4 values.
+  - **Crew Deck / Emergency:** *Run scenario* starts the backend `chest-pain` scenario. The full-screen overlay follows the live EMERGENCY alert; *End drill* resets the station.
+  - **Environment:**
+    - Cabin CO2 and the real ISS dose chart (NASA SRAG TEPC, Sep 2017).
+    - The NASA IMM top conditions.
+    - CO2 and solar-particle-event scenarios with *Next step*.
+    - Live telemetry read line by line from the CSV stream.
+  - **Twin:** T+6 / T+12 dose forecasts (labelled modelled) and the real pre-flight baseline with the commercial-mission tag.
+  - **Check-in:** answers are saved privately (`POST /api/checkins`, SELF only). The **Talk it through** tab is the private support companion (local model).
+- **Deep links for demos and screenshots:** `?screen=personal|crew|environment|twin|checkin&role=astronaut:C3|cmo|ground&tab=talk`.
+- **Plan B (browser):** `cd frontend && npm ci && npm run build`, then `backend/api/run.sh`, which serves the build at `http://127.0.0.1:8080/`.

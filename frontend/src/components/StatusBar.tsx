@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { BellRing, RadioTower } from "lucide-react";
+import { BellRing, Database, RadioTower } from "lucide-react";
+import type { DataMode } from "@/api/useStation";
 import type { CrewMember, ViewerRole } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
@@ -19,11 +20,13 @@ export function StatusBar({
   role,
   onRoleChange,
   openAlerts,
+  mode,
 }: {
   crew: CrewMember[];
   role: ViewerRole;
   onRoleChange: (role: ViewerRole) => void;
   openAlerts: number;
+  mode: DataMode;
 }) {
   const time = useStationTime();
 
@@ -41,6 +44,14 @@ export function StatusBar({
       </div>
 
       <div className="flex items-center gap-5">
+        <Badge
+          variant="outline"
+          className="gap-1.5"
+          title={mode === "live" ? "Connected to the station backend" : "Backend not reachable: showing mock data"}
+        >
+          <Database className={`size-3.5 ${mode === "live" ? "text-status-ok" : "text-muted-foreground"}`} aria-hidden />
+          {mode === "live" ? "Live station data" : mode === "connecting" ? "Connecting…" : "Mock data"}
+        </Badge>
         <Badge variant={openAlerts > 0 ? "destructive" : "secondary"} className="gap-1.5">
           <BellRing className="size-3.5" aria-hidden />
           {openAlerts === 0 ? "No open alerts" : `${openAlerts} open alert${openAlerts > 1 ? "s" : ""}`}

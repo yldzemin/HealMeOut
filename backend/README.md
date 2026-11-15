@@ -9,6 +9,8 @@ Two parts that never call each other; the JSON files in `data/cache/` are the on
 
 The cache files are committed, so **to run the demo you only need Java 21**.
 
+**Full app (frontend + backend):** `cd frontend && npm ci && npm run build` once (needs Node.js), then `backend/api/run.sh` serves the app at **http://127.0.0.1:8080/** and the demo console at `/demo/`.
+
 ## Run the demo
 
 ```sh

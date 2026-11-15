@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { CrewMember, StatusLevel, ViewerRole } from "@/types";
 import { getRegions, getToday, LEVEL_RANK, type Region, type RegionId, type Routine } from "@/data/personal";
 import { Body3D, MODEL_CREDIT } from "@/components/Body3D";
 import { RegionChips } from "@/components/RegionChips";
 import { LEVEL_COLOR, LEVEL_WORD } from "@/components/regionStyle";
-import { DetailPanel } from "@/components/DetailPanel";
+import { DetailPanel, type AlertDecision } from "@/components/DetailPanel";
+import type { StationView } from "@/api/client";
+import { applyLive } from "@/data/live";
 import { TodayStrip } from "@/components/TodayStrip";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -46,10 +48,28 @@ function DaySummary({ regions, onSelect }: { regions: Region[]; onSelect: (id: R
   );
 }
 
-export function PersonalScreen({ crew, role, routine }: { crew: CrewMember[]; role: ViewerRole; routine: Routine }) {
+export function PersonalScreen({
+  crew,
+  role,
+  routine,
+  station = null,
+  onDecision,
+}: {
+  crew: CrewMember[];
+  role: ViewerRole;
+  routine: Routine;
+  /** Live backend view for this role; null in mock mode. */
+  station?: StationView | null;
+  onDecision?: AlertDecision;
+}) {
   const crewId = role.kind === "astronaut" ? role.crewId : "C3";
   const member = crew.find((c) => c.id === crewId);
-  const regions = useMemo(() => getRegions(crewId), [crewId]);
+  const regions = useMemo(() => {
+    const base = getRegions(crewId);
+    return station ? applyLive(base, crewId, station.crew.find((c) => c.id === crewId), station.alerts) : base;
+  }, [crewId, station]);
+  // With the backend, only the CMO or ground may decide; mock mode keeps the original demo behaviour.
+  const canDecide = !station || role.kind !== "astronaut";
   const today = useMemo(() => getToday(routine), [routine]);
   const top = worst(regions);
 
@@ -57,6 +77,15 @@ export function PersonalScreen({ crew, role, routine }: { crew: CrewMember[]; ro
   const [selected, setSelected] = useState<RegionId | null>(
     top && top.level !== "L0" ? top.id : null,
   );
+  // Live alerts arrive after the first render: follow the worst region until the user picks one.
+  const [userPicked, setUserPicked] = useState(false);
+  const pick = (id: RegionId | null) => {
+    setUserPicked(true);
+    setSelected(id);
+  };
+  useEffect(() => {
+    if (!userPicked && top && top.level !== "L0") setSelected(top.id);
+  }, [userPicked, top?.id, top?.level]);
   const region = regions.find((r) => r.id === selected) ?? null;
   const level: StatusLevel = top?.level ?? "L0";
   const attention = regions.filter((r) => r.level !== "L0");
@@ -84,9 +113,9 @@ export function PersonalScreen({ crew, role, routine }: { crew: CrewMember[]; ro
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-5">
         <div className="flex min-h-[520px] flex-col gap-4">
           <div className="min-h-0 flex-1 rounded-xl border border-border bg-card/40">
-            <Body3D regions={regions} selected={selected} onSelect={setSelected} />
+            <Body3D regions={regions} selected={selected} onSelect={pick} />
           </div>
-          <RegionChips regions={regions} selected={selected} onSelect={setSelected} />
+          <RegionChips regions={regions} selected={selected} onSelect={pick} />
           <p className="text-center text-[11px] text-muted-foreground">{MODEL_CREDIT}</p>
         </div>
 
@@ -100,7 +129,11 @@ export function PersonalScreen({ crew, role, routine }: { crew: CrewMember[]; ro
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.18 }}
             >
-              {region ? <DetailPanel region={region} /> : <DaySummary regions={regions} onSelect={setSelected} />}
+              {region ? (
+                <DetailPanel region={region} canDecide={canDecide} onDecision={station ? onDecision : undefined} />
+              ) : (
+                <DaySummary regions={regions} onSelect={pick} />
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
